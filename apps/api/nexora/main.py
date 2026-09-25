@@ -22,6 +22,8 @@ from nexora.domains.projects.router import router as project_router
 from nexora.domains.workflows.router import router as workflow_router
 from nexora.domains.policies.router import router as policy_router
 from nexora.domains.decisions.router import router as decision_router
+from nexora.domains.intelligence.router import router as intelligence_router
+from nexora.domains.resources.router import router as resource_router
 
 # Import all models so Alembic/SQLAlchemy can discover them
 import nexora.domains.auth.models  # noqa: F401
@@ -31,6 +33,8 @@ import nexora.domains.projects.models  # noqa: F401
 import nexora.domains.workflows.models  # noqa: F401
 import nexora.domains.policies.models  # noqa: F401
 import nexora.domains.decisions.models  # noqa: F401
+import nexora.domains.intelligence.models  # noqa: F401
+import nexora.domains.resources.models  # noqa: F401
 
 settings = get_settings()
 logger = structlog.get_logger(__name__)
@@ -81,6 +85,8 @@ def create_app() -> FastAPI:
     app.include_router(workflow_router, prefix=API_PREFIX)
     app.include_router(policy_router, prefix=API_PREFIX)
     app.include_router(decision_router, prefix=API_PREFIX)
+    app.include_router(intelligence_router, prefix=API_PREFIX)
+    app.include_router(resource_router, prefix=API_PREFIX)
 
     # ── UI Route ───────────────────────────────────────────────────────────
     from pathlib import Path
@@ -94,6 +100,14 @@ def create_app() -> FastAPI:
         @app.get("/ui/agents", tags=["UI"], summary="Agent Profile Inspector UI")
         async def agent_profile_ui():
             return FileResponse(static_dir / "agent_profile.html")
+
+        @app.get("/ui/intelligence", tags=["UI"], summary="Intelligence Exchange Dashboard UI")
+        async def intelligence_dashboard_ui():
+            return FileResponse(static_dir / "intelligence_dashboard.html")
+
+        @app.get("/ui/resources", tags=["UI"], summary="Resource Control Center UI")
+        async def resource_control_center_ui():
+            return FileResponse(static_dir / "resource_control_center.html")
 
     # ── Health Check ───────────────────────────────────────────────────────
     @app.get("/health", tags=["System"], summary="Health check")

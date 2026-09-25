@@ -182,11 +182,27 @@ class AgentExecutionEngine:
 
             # ── 5. INTELLIGENCE SELECTION ──────────────────────────────────────
             t0 = time.perf_counter()
+            from nexora.domains.intelligence.service import IntelligenceService
+            from nexora.domains.intelligence.schemas import ModelRequest
+
+            intel_service = IntelligenceService(self.db)
+            await intel_service.seed_default_providers_if_empty()
+
             intel_cfg = dict(agent.intelligence_config or {})
-            if override_model:
-                intel_cfg["model"] = override_model
-            selected_provider = intel_cfg.get("provider", "openai")
-            selected_model = intel_cfg.get("model", "gpt-4o")
+            preferred_model = override_model or intel_cfg.get("model")
+            required_caps = agent.capabilities or ["reasoning"]
+
+            intel_req = ModelRequest(
+                prompt=f"Task: {task.title}. Instructions: {agent.system_instructions or 'Execute with precision.'}",
+                required_capabilities=required_caps,
+                preferred_model=preferred_model,
+            )
+
+            # Route model through exchange
+            policy = await intel_service.router.get_or_create_default_policy(company_id)
+            candidates = await intel_service.router.resolve_candidate_models(intel_req, policy)
+            selected_model = preferred_model or (candidates[0].model_identifier if candidates else "gpt-4o")
+            selected_provider = candidates[0].provider_id if candidates else "openai"
 
             await self.audit_repo.record_audit(
                 agent_id=agent.id,
@@ -196,19 +212,19 @@ class AgentExecutionEngine:
                 action=AuditAction.EXECUTION_STEP,
                 step=ExecutionStep.INTELLIGENCE_SELECTION,
                 status=ExecutionStatus.SUCCESS,
-                details={"provider": selected_provider, "model": selected_model},
+                details={"model": selected_model, "capabilities": required_caps},
             )
             step_records.append(ExecutionStepRecord(
                 step=ExecutionStep.INTELLIGENCE_SELECTION,
                 status=ExecutionStatus.SUCCESS,
-                details={"provider": selected_provider, "model": selected_model},
+                details={"model": selected_model, "capabilities": required_caps},
                 duration_ms=(time.perf_counter() - t0) * 1000,
             ))
 
             # ── 6. TOOL EXECUTION ──────────────────────────────────────────────
             t0 = time.perf_counter()
             # Enforce capability-based permission verification
-            allowed_tools = agent.permissions.get("allowed_tools", ["analysis_tool", "reporting_tool"])
+            allowed_tools = agent.permissions.get("allowed_tools", ["analysis_tool", "reporting_tool", "unit_test"])
             executed_tools = []
             for tool in (agent.tools or []):
                 t_name = tool.get("name") if isinstance(tool, dict) else str(tool)
@@ -234,14 +250,25 @@ class AgentExecutionEngine:
 
             # ── 7. RESULT ──────────────────────────────────────────────────────
             t0 = time.perf_counter()
+            # Execute actual generation via Intelligence Exchange
+            gen_resp = await intel_service.execute_request(
+                company_id=company_id,
+                request=intel_req,
+                agent_id=agent.id,
+                task_id=task.id,
+            )
+
             output_result = {
                 "task_title": task.title,
-                "summary": f"Completed autonomously by agent {agent.name}.",
+                "summary": gen_resp.text,
                 "outcome_achieved": task.expected_outcome or "Task requirements satisfied successfully.",
                 "tools_utilized": executed_tools,
+                "model_used": gen_resp.model_used,
+                "provider_used": gen_resp.provider_used,
             }
-            tokens_consumed = 512
-            cost_usd = 0.002
+            tokens_consumed = gen_resp.total_tokens
+            cost_usd = gen_resp.estimated_cost_usd
+
             await self.audit_repo.record_audit(
                 agent_id=agent.id,
                 company_id=company_id,

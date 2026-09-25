@@ -262,3 +262,55 @@ class DecisionStatus(str, Enum):
     DECIDED = "DECIDED"
     IMPLEMENTED = "IMPLEMENTED"
     EVALUATED = "EVALUATED"
+
+
+# ── Resources ──────────────────────────────────────────────────────────────
+
+
+class ResourceCategory(str, Enum):
+    COMPUTE = "COMPUTE"
+    INTELLIGENCE = "INTELLIGENCE"
+    FINANCIAL = "FINANCIAL"
+    OPERATIONAL = "OPERATIONAL"
+
+
+class ResourcePriority(str, Enum):
+    CRITICAL = "CRITICAL"
+    HIGH = "HIGH"
+    NORMAL = "NORMAL"
+    LOW = "LOW"
+    BACKGROUND = "BACKGROUND"
+
+    @property
+    def rank(self) -> int:
+        return {
+            "CRITICAL": 50,
+            "HIGH": 40,
+            "NORMAL": 30,
+            "LOW": 20,
+            "BACKGROUND": 10,
+        }[self.value]
+
+
+class ResourceEvaluationDecision(str, Enum):
+    APPROVE = "APPROVE"
+    DENY = "DENY"
+    DEFER = "DEFER"
+    REDUCE = "REDUCE"
+    QUEUE = "QUEUE"
+
+
+class MetricState(str, Enum):
+    OBSERVED = "OBSERVED"
+    ESTIMATED = "ESTIMATED"
+    ALLOCATED = "ALLOCATED"
+    LIMITED = "LIMITED"
+    AVAILABLE = "AVAILABLE"
+
+
+class AllocationStatus(str, Enum):
+    PENDING = "PENDING"
+    ACTIVE = "ACTIVE"
+    RELEASED = "RELEASED"
+    REVOKED = "REVOKED"
+    EXPIRED = "EXPIRED"
