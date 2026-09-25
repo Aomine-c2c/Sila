@@ -224,6 +224,33 @@ class WorkflowTriggerType(str, Enum):
     AGENT = "AGENT"
 
 
+class WorkflowExecutionStatus(str, Enum):
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    WAITING_APPROVAL = "WAITING_APPROVAL"
+    WAITING_RESOURCE = "WAITING_RESOURCE"
+    WAITING_RETRY = "WAITING_RETRY"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    ESCALATED = "ESCALATED"
+    CANCELLED = "CANCELLED"
+    TIMED_OUT = "TIMED_OUT"
+
+
+class WorkflowStepType(str, Enum):
+    AGENT = "AGENT"
+    TOOL = "TOOL"
+    TASK = "TASK"
+    APPROVAL = "APPROVAL"
+    RESOURCE_REQUEST = "RESOURCE_REQUEST"
+    DECISION = "DECISION"
+    CONDITION = "CONDITION"
+    ESCALATION = "ESCALATION"
+    PARALLEL = "PARALLEL"
+    DELAY = "DELAY"
+    WEBHOOK = "WEBHOOK"
+
+
 # ── Policy ─────────────────────────────────────────────────────────────────
 
 

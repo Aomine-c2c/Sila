@@ -78,3 +78,63 @@ class WorkflowResponse(BaseModel):
     status: WorkflowStatus
     created_at: datetime
     updated_at: datetime
+
+
+# -------------------------------------------------------------
+# WORKFLOW EXECUTION SCHEMAS
+# -------------------------------------------------------------
+class WorkflowExecutionTriggerRequest(BaseModel):
+    title: str | None = None
+    input_payload: dict = Field(default_factory=dict)
+    override_agent_ids: dict[str, uuid.UUID] | None = None
+    max_retries: int = 3
+    timeout_seconds: int = 3600
+
+
+class WorkflowExecutionStepResponse(BaseModel):
+    model_config = {"from_attributes": True}
+
+    id: uuid.UUID
+    step_id: str
+    step_name: str
+    step_type: str
+    step_index: int
+    agent_id: uuid.UUID | None = None
+    agent_name: str | None = None
+    tool_name: str | None = None
+    status: str
+    input_data: dict
+    output_data: dict
+    error_message: str | None = None
+    retries_attempted: int
+    duration_ms: float
+    created_at: datetime
+
+
+class WorkflowExecutionResponse(BaseModel):
+    model_config = {"from_attributes": True}
+
+    id: uuid.UUID
+    workflow_id: uuid.UUID
+    company_id: uuid.UUID
+    triggered_by_user_id: uuid.UUID | None = None
+    triggered_by_agent_id: uuid.UUID | None = None
+    title: str
+    status: str
+    current_step_id: str | None = None
+    current_step_name: str | None = None
+    current_step_index: int
+    total_steps: int
+    input_payload: dict
+    state_payload: dict
+    output_payload: dict
+    error_message: str | None = None
+    retries_count: int
+    max_retries: int
+    timeout_seconds: int
+    duration_ms: float
+    pending_approval_id: uuid.UUID | None = None
+    pending_escalation_id: uuid.UUID | None = None
+    created_at: datetime
+    updated_at: datetime
+    step_records: list[WorkflowExecutionStepResponse] = Field(default_factory=list)

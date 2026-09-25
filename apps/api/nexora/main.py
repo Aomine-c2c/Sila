@@ -130,6 +130,10 @@ def create_app() -> FastAPI:
         async def blueprints_ui():
             return FileResponse(static_dir / "company_blueprints.html")
 
+        @app.get("/ui/workflows", tags=["UI"], summary="NEXORA Workflow Observability & Execution Engine UI")
+        async def workflows_ui():
+            return FileResponse(static_dir / "workflow_dashboard.html")
+
     # ── Health Check ───────────────────────────────────────────────────────
     @app.get("/health", tags=["System"], summary="Health check")
     async def health():

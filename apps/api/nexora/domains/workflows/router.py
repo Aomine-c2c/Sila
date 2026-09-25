@@ -63,3 +63,91 @@ async def delete_workflow(
     _: None = Depends(require_admin()),
 ):
     await WorkflowService(db).delete(workflow_id, company_id)
+
+
+# -------------------------------------------------------------
+# WORKFLOW EXECUTION ENDPOINTS (Observability & Engine Control)
+# -------------------------------------------------------------
+from nexora.domains.workflows.schemas import (
+    WorkflowExecutionResponse,
+    WorkflowExecutionTriggerRequest,
+)
+
+
+@router.post("/{workflow_id}/execute", response_model=WorkflowExecutionResponse, status_code=status.HTTP_201_CREATED)
+async def execute_workflow(
+    company_id: uuid.UUID,
+    workflow_id: uuid.UUID,
+    body: WorkflowExecutionTriggerRequest,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_member()),
+):
+    """Triggers an orchestrated workflow execution run."""
+    return await WorkflowService(db).trigger_execution(
+        workflow_id=workflow_id,
+        company_id=company_id,
+        title=body.title,
+        input_payload=body.input_payload,
+        triggered_by_user_id=current_user.id,
+        max_retries=body.max_retries,
+        timeout_seconds=body.timeout_seconds,
+    )
+
+
+@router.get("/{workflow_id}/executions", response_model=list[WorkflowExecutionResponse])
+async def list_workflow_executions(
+    company_id: uuid.UUID,
+    workflow_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+    status: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    _: None = Depends(require_viewer()),
+):
+    """Lists executions for a specific workflow."""
+    return await WorkflowService(db).list_executions(
+        company_id=company_id,
+        workflow_id=workflow_id,
+        status=status,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get("/executions/{execution_id}", response_model=WorkflowExecutionResponse)
+async def get_workflow_execution(
+    company_id: uuid.UUID,
+    execution_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_viewer()),
+):
+    """Retrieves full observable state of a workflow execution, including audit step records."""
+    return await WorkflowService(db).get_execution(execution_id, company_id)
+
+
+@router.post("/executions/{execution_id}/resume", response_model=WorkflowExecutionResponse)
+async def resume_workflow_execution(
+    company_id: uuid.UUID,
+    execution_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_manager()),
+):
+    """Resumes a paused workflow execution (e.g. after approval or resource allocation)."""
+    return await WorkflowService(db).resume_execution(execution_id, company_id)
+
+
+@router.post("/executions/{execution_id}/cancel", response_model=WorkflowExecutionResponse)
+async def cancel_workflow_execution(
+    company_id: uuid.UUID,
+    execution_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_manager()),
+):
+    """Cancels an in-flight workflow execution."""
+    return await WorkflowService(db).cancel_execution(execution_id, company_id)
+
