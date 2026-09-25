@@ -82,6 +82,19 @@ def create_app() -> FastAPI:
     app.include_router(policy_router, prefix=API_PREFIX)
     app.include_router(decision_router, prefix=API_PREFIX)
 
+    # ── UI Route ───────────────────────────────────────────────────────────
+    from pathlib import Path
+    from fastapi.responses import FileResponse
+    from fastapi.staticfiles import StaticFiles
+
+    static_dir = Path(__file__).parent / "static"
+    if static_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+        @app.get("/ui/agents", tags=["UI"], summary="Agent Profile Inspector UI")
+        async def agent_profile_ui():
+            return FileResponse(static_dir / "agent_profile.html")
+
     # ── Health Check ───────────────────────────────────────────────────────
     @app.get("/health", tags=["System"], summary="Health check")
     async def health():
@@ -94,7 +107,7 @@ def create_app() -> FastAPI:
 
     @app.get("/", include_in_schema=False)
     async def root():
-        return {"message": "NEXORA API", "docs": "/api/docs"}
+        return {"message": "NEXORA API", "docs": "/api/docs", "ui": "/ui/agents"}
 
     return app
 

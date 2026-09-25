@@ -1,11 +1,11 @@
-"""Tests for the Agents domain."""
+"""Comprehensive tests for the Multi-Agent Organizational Platform."""
 import pytest
 from httpx import AsyncClient
 
 pytestmark = pytest.mark.asyncio
 
 
-class TestAgents:
+class TestAgentBasics:
     async def test_create_agent(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
         company_id = company_via_api["id"]
         resp = await client.post(
@@ -28,7 +28,7 @@ class TestAgents:
         assert data["name"] == "Research Agent"
         assert data["autonomy"] == "SUPERVISED"
         assert "web_search" in data["capabilities"]
-        assert data["status"] == "ACTIVE"
+        assert data["status"] in ("CREATED", "CONFIGURED", "AVAILABLE")
 
     async def test_list_agents(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
         company_id = company_via_api["id"]
@@ -95,3 +95,222 @@ class TestAgents:
         )
         assert resp.status_code == 201
         assert resp.json()["identity"]["tone"] == "friendly"
+
+
+class TestAgentLifecycle:
+    async def test_lifecycle_transitions(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+        company_id = company_via_api["id"]
+        # 1. Create -> CREATED
+        res = await client.post(
+            f"/api/v1/companies/{company_id}/agents",
+            json={"name": "Lifecycle Agent"},
+            headers=auth_headers,
+        )
+        agent_id = res.json()["id"]
+        assert res.json()["status"] == "CREATED"
+
+        # 2. Transition CREATED -> CONFIGURED
+        t1 = await client.post(
+            f"/api/v1/companies/{company_id}/agents/{agent_id}/transition",
+            json={"status": "CONFIGURED", "reason": "Configured tools and system prompt"},
+            headers=auth_headers,
+        )
+        assert t1.status_code == 200
+        assert t1.json()["status"] == "CONFIGURED"
+
+        # 3. Transition CONFIGURED -> AVAILABLE
+        t2 = await client.post(
+            f"/api/v1/companies/{company_id}/agents/{agent_id}/transition",
+            json={"status": "AVAILABLE", "reason": "Ready for assignment"},
+            headers=auth_headers,
+        )
+        assert t2.status_code == 200
+        assert t2.json()["status"] == "AVAILABLE"
+
+        # 4. Transition AVAILABLE -> PAUSED
+        t3 = await client.post(
+            f"/api/v1/companies/{company_id}/agents/{agent_id}/transition",
+            json={"status": "PAUSED", "reason": "Maintenance window"},
+            headers=auth_headers,
+        )
+        assert t3.status_code == 200
+        assert t3.json()["status"] == "PAUSED"
+
+        # 5. Invalid transition: PAUSED directly to WORKING should be rejected
+        inv = await client.post(
+            f"/api/v1/companies/{company_id}/agents/{agent_id}/transition",
+            json={"status": "WORKING"},
+            headers=auth_headers,
+        )
+        assert inv.status_code == 400
+
+
+class TestAgentHierarchyAndCollaboration:
+    async def test_manager_subordinate_hierarchy(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+        company_id = company_via_api["id"]
+        # Create Manager Agent
+        mgr_resp = await client.post(
+            f"/api/v1/companies/{company_id}/agents",
+            json={"name": "Lead Architect Agent"},
+            headers=auth_headers,
+        )
+        mgr_id = mgr_resp.json()["id"]
+
+        # Create Worker Agent reporting to Manager Agent
+        worker_resp = await client.post(
+            f"/api/v1/companies/{company_id}/agents",
+            json={"name": "Frontend Worker Agent", "manager_agent_id": mgr_id},
+            headers=auth_headers,
+        )
+        assert worker_resp.status_code == 201
+        assert worker_resp.json()["manager_agent_id"] == mgr_id
+
+        # Profile check should reflect hierarchy
+        profile = await client.get(
+            f"/api/v1/companies/{company_id}/agents/{worker_resp.json()['id']}/profile",
+            headers=auth_headers,
+        )
+        assert profile.status_code == 200
+        assert profile.json()["manager_name"] == "Lead Architect Agent"
+
+    async def test_cannot_be_own_manager(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+        company_id = company_via_api["id"]
+        agent = await client.post(
+            f"/api/v1/companies/{company_id}/agents",
+            json={"name": "Self Manager Attempt"},
+            headers=auth_headers,
+        )
+        aid = agent.json()["id"]
+        resp = await client.patch(
+            f"/api/v1/companies/{company_id}/agents/{aid}",
+            json={"manager_agent_id": aid},
+            headers=auth_headers,
+        )
+        assert resp.status_code == 400
+
+    async def test_task_delegation(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+        company_id = company_via_api["id"]
+        mgr = await client.post(f"/api/v1/companies/{company_id}/agents", json={"name": "PM Agent"}, headers=auth_headers)
+        sub = await client.post(f"/api/v1/companies/{company_id}/agents", json={"name": "Coder Agent"}, headers=auth_headers)
+
+        # Create project and task
+        proj = await client.post(f"/api/v1/companies/{company_id}/projects", json={"name": "Nexus Launch"}, headers=auth_headers)
+        task = await client.post(f"/api/v1/companies/{company_id}/projects/{proj.json()['id']}/tasks",
+            json={"title": "Implement auth middleware"}, headers=auth_headers)
+
+        del_resp = await client.post(
+            f"/api/v1/companies/{company_id}/agents/{mgr.json()['id']}/delegate",
+            params={
+                "to_agent_id": sub.json()["id"],
+                "task_id": task.json()["id"],
+                "instructions": "Implement standard Bearer token verification.",
+            },
+            headers=auth_headers,
+        )
+        assert del_resp.status_code == 200
+        msg = del_resp.json()
+        assert msg["message_type"] == "DELEGATION"
+        assert "Implement auth middleware" in msg["subject"]
+
+    async def test_problem_escalation(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+        company_id = company_via_api["id"]
+        mgr = await client.post(f"/api/v1/companies/{company_id}/agents", json={"name": "Director Agent"}, headers=auth_headers)
+        worker = await client.post(
+            f"/api/v1/companies/{company_id}/agents",
+            json={"name": "Junior Agent", "manager_agent_id": mgr.json()["id"]},
+            headers=auth_headers,
+        )
+
+        esc = await client.post(
+            f"/api/v1/companies/{company_id}/agents/{worker.json()['id']}/escalate",
+            params={"problem": "Database schema locked by migration process"},
+            headers=auth_headers,
+        )
+        assert esc.status_code == 200
+        data = esc.json()
+        assert data["message_type"] == "ESCALATION"
+        assert data["to_agent_id"] == mgr.json()["id"]
+
+        # Worker agent should now be in BLOCKED state
+        w_curr = await client.get(f"/api/v1/companies/{company_id}/agents/{worker.json()['id']}", headers=auth_headers)
+        assert w_curr.json()["status"] == "BLOCKED"
+
+
+class TestAgentExecutionLifecycleAndAudits:
+    async def test_10_step_execution_lifecycle(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+        company_id = company_via_api["id"]
+        # Setup agent with tools and permissions
+        agent = await client.post(
+            f"/api/v1/companies/{company_id}/agents",
+            json={
+                "name": "Full Lifecycle Worker",
+                "capabilities": ["code_generation", "unit_test"],
+                "permissions": {"allowed_tools": ["unit_test"]},
+                "tools": [{"name": "unit_test", "description": "Runs test suites"}],
+                "resource_limits": {"max_daily_budget_usd": 15.0},
+            },
+            headers=auth_headers,
+        )
+        aid = agent.json()["id"]
+        # Transition to AVAILABLE
+        await client.post(
+            f"/api/v1/companies/{company_id}/agents/{aid}/transition",
+            json={"status": "AVAILABLE"},
+            headers=auth_headers,
+        )
+
+        proj = await client.post(f"/api/v1/companies/{company_id}/projects", json={"name": "Test Exec Suite"}, headers=auth_headers)
+        task = await client.post(f"/api/v1/companies/{company_id}/projects/{proj.json()['id']}/tasks",
+            json={"title": "Run test suite", "expected_outcome": "All tests pass"}, headers=auth_headers)
+
+        exec_resp = await client.post(
+            f"/api/v1/companies/{company_id}/agents/{aid}/execute",
+            json={"task_id": task.json()["id"]},
+            headers=auth_headers,
+        )
+        assert exec_resp.status_code == 200
+        result = exec_resp.json()
+        assert result["final_status"] == "SUCCESS"
+        assert len(result["steps"]) == 10
+
+        steps_order = [s["step"] for s in result["steps"]]
+        expected_steps = [
+            "TASK_RECEIVED",
+            "CONTEXT_ASSEMBLY",
+            "PLAN",
+            "RESOURCE_CHECK",
+            "INTELLIGENCE_SELECTION",
+            "TOOL_EXECUTION",
+            "RESULT",
+            "VALIDATION",
+            "REPORT",
+            "MEMORY_UPDATE",
+        ]
+        assert steps_order == expected_steps
+
+        # Verify audits were stored
+        audits_resp = await client.get(f"/api/v1/companies/{company_id}/agents/{aid}/audits", headers=auth_headers)
+        assert audits_resp.status_code == 200
+        assert len(audits_resp.json()) >= 10
+
+    async def test_memory_persistence(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+        company_id = company_via_api["id"]
+        agent = await client.post(f"/api/v1/companies/{company_id}/agents", json={"name": "Memory Agent"}, headers=auth_headers)
+        aid = agent.json()["id"]
+
+        mem_resp = await client.post(
+            f"/api/v1/companies/{company_id}/agents/{aid}/memories",
+            json={
+                "memory_type": "semantic",
+                "key": "company_mission",
+                "content": "NEXORA is building the autonomous organization OS.",
+                "importance": 3.0,
+            },
+            headers=auth_headers,
+        )
+        assert mem_resp.status_code == 201
+        assert mem_resp.json()["key"] == "company_mission"
+
+        list_resp = await client.get(f"/api/v1/companies/{company_id}/agents/{aid}/memories", headers=auth_headers)
+        assert list_resp.status_code == 200
+        assert len(list_resp.json()) == 1
