@@ -402,7 +402,16 @@ class AgentExecutionEngine:
         except Exception as e:
             # Revert agent and task status on failure
             await self.task_repo.update(task, status=TaskStatus.BLOCKED)
-            await self.agent_repo.update(agent, status=AgentStatus.BLOCKED)
+            updated_perf = dict(agent.performance_metadata or {})
+            updated_perf["tasks_failed"] = updated_perf.get("tasks_failed", 0) + 1
+            completed = updated_perf.get("tasks_completed", 0)
+            updated_perf["success_rate"] = completed / (completed + updated_perf["tasks_failed"])
+            updated_perf["last_active_at"] = datetime.now(UTC).isoformat()
+            await self.agent_repo.update(
+                agent,
+                status=AgentStatus.BLOCKED,
+                performance_metadata=updated_perf,
+            )
             await self.audit_repo.record_audit(
                 agent_id=agent.id,
                 company_id=company_id,

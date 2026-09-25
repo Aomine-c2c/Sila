@@ -24,6 +24,7 @@ from nexora.domains.policies.router import router as policy_router
 from nexora.domains.decisions.router import router as decision_router
 from nexora.domains.intelligence.router import router as intelligence_router
 from nexora.domains.resources.router import router as resource_router
+from nexora.domains.memory.router import router as memory_router
 
 # Import all models so Alembic/SQLAlchemy can discover them
 import nexora.domains.auth.models  # noqa: F401
@@ -35,6 +36,7 @@ import nexora.domains.policies.models  # noqa: F401
 import nexora.domains.decisions.models  # noqa: F401
 import nexora.domains.intelligence.models  # noqa: F401
 import nexora.domains.resources.models  # noqa: F401
+import nexora.domains.memory.models  # noqa: F401
 
 settings = get_settings()
 logger = structlog.get_logger(__name__)
@@ -87,6 +89,7 @@ def create_app() -> FastAPI:
     app.include_router(decision_router, prefix=API_PREFIX)
     app.include_router(intelligence_router, prefix=API_PREFIX)
     app.include_router(resource_router, prefix=API_PREFIX)
+    app.include_router(memory_router, prefix=API_PREFIX)
 
     # ── UI Route ───────────────────────────────────────────────────────────
     from pathlib import Path
@@ -108,6 +111,10 @@ def create_app() -> FastAPI:
         @app.get("/ui/resources", tags=["UI"], summary="Resource Control Center UI")
         async def resource_control_center_ui():
             return FileResponse(static_dir / "resource_control_center.html")
+
+        @app.get("/ui/memory", tags=["UI"], summary="Organizational Knowledge & Memory UI")
+        async def memory_ui():
+            return FileResponse(static_dir / "organizational_memory.html")
 
     # ── Health Check ───────────────────────────────────────────────────────
     @app.get("/health", tags=["System"], summary="Health check")

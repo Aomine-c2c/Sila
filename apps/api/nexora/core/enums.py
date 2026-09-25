@@ -1,5 +1,5 @@
 """All domain enums for NEXORA."""
-from enum import Enum
+from enum import Enum, StrEnum
 
 
 # ── Company ────────────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ class AgentAutonomy(str, Enum):
     AUTONOMOUS = "AUTONOMOUS"
 
 
-class AgentStatus(str, Enum):
+class AgentStatus(StrEnum):
     # NEXORA Employee Lifecycle
     CREATED = "CREATED"
     CONFIGURED = "CONFIGURED"
@@ -130,11 +130,6 @@ class AgentStatus(str, Enum):
     BLOCKED = "BLOCKED"
     PAUSED = "PAUSED"
     RETIRED = "RETIRED"
-    # Backwards compatibility / synonyms
-    ACTIVE = "AVAILABLE"
-    INACTIVE = "PAUSED"
-    SUSPENDED = "BLOCKED"
-    TRAINING = "CONFIGURED"
 
 
 class AgentMessageType(str, Enum):
@@ -314,3 +309,46 @@ class AllocationStatus(str, Enum):
     RELEASED = "RELEASED"
     REVOKED = "REVOKED"
     EXPIRED = "EXPIRED"
+
+
+# ── Organizational Memory System ───────────────────────────────────────────
+
+
+class MemoryDomain(str, Enum):
+    COMPANY = "COMPANY"
+    DEPARTMENT = "DEPARTMENT"
+    AGENT = "AGENT"
+    PROJECT = "PROJECT"
+    CUSTOMER = "CUSTOMER"
+    DECISION = "DECISION"
+    POLICY = "POLICY"
+    EXPERIMENT = "EXPERIMENT"
+    FAILURE = "FAILURE"
+    KNOWLEDGE_BASE = "KNOWLEDGE_BASE"
+
+
+class MemoryScope(str, Enum):
+    PUBLIC = "PUBLIC"              # Organization-wide
+    INTERNAL = "INTERNAL"          # Department or project-wide
+    CONFIDENTIAL = "CONFIDENTIAL"  # Role or team restricted
+    RESTRICTED = "RESTRICTED"      # Executive or owner only
+    PRIVATE = "PRIVATE"            # Single agent/user only
+
+
+class RetentionPolicy(str, Enum):
+    PERMANENT = "PERMANENT"
+    YEAR_1 = "YEAR_1"
+    DAYS_90 = "DAYS_90"
+    DAYS_30 = "DAYS_30"
+    SESSION_ONLY = "SESSION_ONLY"
+
+
+class ProvenanceType(str, Enum):
+    HUMAN_INPUT = "HUMAN_INPUT"
+    AGENT_OBSERVATION = "AGENT_OBSERVATION"
+    TASK_EXECUTION = "TASK_EXECUTION"
+    DECISION_OUTCOME = "DECISION_OUTCOME"
+    POLICY_DOCUMENT = "POLICY_DOCUMENT"
+    SYSTEM_SYNTHESIS = "SYSTEM_SYNTHESIS"
+    EXTERNAL_INGESTION = "EXTERNAL_INGESTION"
+
