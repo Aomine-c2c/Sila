@@ -352,3 +352,48 @@ class ProvenanceType(str, Enum):
     SYSTEM_SYNTHESIS = "SYSTEM_SYNTHESIS"
     EXTERNAL_INGESTION = "EXTERNAL_INGESTION"
 
+
+# ── Organizational Governance & Autonomy ────────────────────────────────────
+
+
+class GovernanceAutonomyLevel(int, Enum):
+    LEVEL_0 = 0  # OBSERVE - Listen only, no recommendations or executions
+    LEVEL_1 = 1  # RECOMMEND - Can formulate suggestions, proposals, and plans
+    LEVEL_2 = 2  # EXECUTE WITH APPROVAL - Must obtain explicit human/manager approval before execution
+    LEVEL_3 = 3  # EXECUTE WITHIN POLICY - Autonomous execution allowed within defined boundaries/ceilings
+    LEVEL_4 = 4  # AUTONOMOUS - Proactive execution across assigned scope, auto-escalates exceptions
+    LEVEL_5 = 5  # AUTONOMOUS + ADAPTIVE - Self-optimizing, adaptive policy tuning, full delegation
+
+    @property
+    def label(self) -> str:
+        return {
+            0: "LEVEL 0 — OBSERVE",
+            1: "LEVEL 1 — RECOMMEND",
+            2: "LEVEL 2 — EXECUTE WITH APPROVAL",
+            3: "LEVEL 3 — EXECUTE WITHIN POLICY",
+            4: "LEVEL 4 — AUTONOMOUS",
+            5: "LEVEL 5 — AUTONOMOUS + ADAPTIVE",
+        }[self.value]
+
+
+class GovernanceRiskLevel(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+
+
+class ApprovalStatus(str, Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    CANCELLED = "CANCELLED"
+    EXPIRED = "EXPIRED"
+
+
+class EscalationStatus(str, Enum):
+    OPEN = "OPEN"
+    UNDER_REVIEW = "UNDER_REVIEW"
+    RESOLVED = "RESOLVED"
+    DISMISSED = "DISMISSED"
+

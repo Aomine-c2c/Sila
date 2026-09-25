@@ -136,6 +136,29 @@ class AgentExecutionEngine:
                 "Evaluate allowed tools and policies",
                 "Execute synthesis and generate expected outcome",
             ]
+            # Governance evaluation & constitutional check
+            from nexora.domains.governance.service import GovernanceService
+            from nexora.domains.governance.schemas import GovernanceActionEvaluationRequest
+
+            gov_service = GovernanceService(self.db)
+            gov_eval = await gov_service.evaluate_action(
+                company_id=company_id,
+                req=GovernanceActionEvaluationRequest(
+                    actor_id=agent.id,
+                    actor_name=agent.name,
+                    actor_type="AGENT",
+                    department_id=agent.department_id,
+                    role_id=agent.role_id,
+                    agent_id=agent.id,
+                    action_name="EXECUTE_TASK",
+                    target=f"Task:{task.id}",
+                    reason=f"Assigned task execution: {task.title}",
+                    payload={"priority": task.priority, "input_data": input_data or {}},
+                ),
+            )
+            if gov_eval.is_prohibited:
+                raise ForbiddenError(f"Action blocked by Company Constitution: {gov_eval.matched_constitution_clause}")
+
             await self.audit_repo.record_audit(
                 agent_id=agent.id,
                 company_id=company_id,
@@ -144,12 +167,17 @@ class AgentExecutionEngine:
                 action=AuditAction.EXECUTION_STEP,
                 step=ExecutionStep.PLAN,
                 status=ExecutionStatus.SUCCESS,
-                details={"plan_steps": plan_steps},
+                details={
+                    "plan_steps": plan_steps,
+                    "autonomy_level": gov_eval.effective_autonomy_level,
+                    "autonomy_label": gov_eval.effective_autonomy_label,
+                    "requires_approval": gov_eval.requires_approval,
+                },
             )
             step_records.append(ExecutionStepRecord(
                 step=ExecutionStep.PLAN,
                 status=ExecutionStatus.SUCCESS,
-                details={"steps_count": len(plan_steps), "plan": plan_steps},
+                details={"steps_count": len(plan_steps), "plan": plan_steps, "autonomy": gov_eval.effective_autonomy_label},
                 duration_ms=(time.perf_counter() - t0) * 1000,
             ))
 
