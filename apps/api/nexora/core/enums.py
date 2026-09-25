@@ -424,3 +424,29 @@ class EscalationStatus(str, Enum):
     RESOLVED = "RESOLVED"
     DISMISSED = "DISMISSED"
 
+
+# ── Agent Council & Deliberation ──────────────────────────────────────────
+
+
+class CouncilType(str, Enum):
+    PERMANENT = "PERMANENT"
+    TEMPORARY = "TEMPORARY"
+
+
+class DeliberationStage(str, Enum):
+    PROPOSAL = "PROPOSAL"
+    INDEPENDENT_REVIEW = "INDEPENDENT_REVIEW"
+    OBJECTIONS = "OBJECTIONS"
+    DISCUSSION = "DISCUSSION"
+    SYNTHESIS = "SYNTHESIS"
+    DECISION = "DECISION"
+    RECORDED = "RECORDED"
+
+
+class DeliberationStatus(str, Enum):
+    PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
+    SYNTHESIZED = "SYNTHESIZED"
+    RESOLVED = "RESOLVED"
+    CANCELLED = "CANCELLED"
+

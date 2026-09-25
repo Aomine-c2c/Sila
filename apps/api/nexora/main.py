@@ -27,6 +27,7 @@ from nexora.domains.resources.router import router as resource_router
 from nexora.domains.memory.router import router as memory_router
 from nexora.domains.governance.router import router as governance_router
 from nexora.domains.blueprints.router import router as blueprint_router
+from nexora.domains.councils.router import router as council_router
 
 # Import all models so Alembic/SQLAlchemy can discover them
 import nexora.domains.auth.models  # noqa: F401
@@ -41,6 +42,8 @@ import nexora.domains.resources.models  # noqa: F401
 import nexora.domains.memory.models  # noqa: F401
 import nexora.domains.governance.models  # noqa: F401
 import nexora.domains.blueprints.models  # noqa: F401
+import nexora.domains.councils.models  # noqa: F401
+
 
 settings = get_settings()
 logger = structlog.get_logger(__name__)
@@ -96,6 +99,7 @@ def create_app() -> FastAPI:
     app.include_router(memory_router, prefix=API_PREFIX)
     app.include_router(governance_router, prefix=API_PREFIX)
     app.include_router(blueprint_router, prefix=API_PREFIX)
+    app.include_router(council_router, prefix=API_PREFIX)
 
     # ── UI Route ───────────────────────────────────────────────────────────
     from pathlib import Path
@@ -133,6 +137,11 @@ def create_app() -> FastAPI:
         @app.get("/ui/workflows", tags=["UI"], summary="NEXORA Workflow Observability & Execution Engine UI")
         async def workflows_ui():
             return FileResponse(static_dir / "workflow_dashboard.html")
+
+        @app.get("/ui/councils", tags=["UI"], summary="Agent Council & Deliberation UI")
+        async def councils_ui():
+            return FileResponse(static_dir / "council_deliberation.html")
+
 
     # ── Health Check ───────────────────────────────────────────────────────
     @app.get("/health", tags=["System"], summary="Health check")
