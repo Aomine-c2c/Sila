@@ -239,10 +239,10 @@ class DeliberationEngine:
         if record_in_memory:
             deliberation.current_stage = DeliberationStage.RECORDED.value
             for idx, d in enumerate(deliberation.disagreements_recorded):
-                await self.memory_repo.create_memory(
+                await self.memory_repo.create_memory_item(
                     company_id=deliberation.company_id,
                     domain=MemoryDomain.DECISION.value,
-                    scope=MemoryScope.COMPANY.value,
+                    scope=MemoryScope.PUBLIC.value,
                     title=f"Deliberation Dissent Record #{idx+1}: {deliberation.title}",
                     content=(
                         f"Problem: {deliberation.problem_statement}\n"
