@@ -1,0 +1,14 @@
+apiVersion: v2
+name: nexora-web
+description: NEXORA Web Helm Chart
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - nexora
+  - web
+  - nextjs
+  - frontend
+maintainers:
+  - name: NEXORA Team
+    email: team@nexora.example.com
