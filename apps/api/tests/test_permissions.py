@@ -2,6 +2,7 @@
 Tests for the RBAC permission system.
 Validates that role hierarchy is enforced correctly across all domains.
 """
+
 import pytest
 from httpx import AsyncClient
 
@@ -9,10 +10,13 @@ pytestmark = pytest.mark.asyncio
 
 
 async def _register_and_login(client: AsyncClient, email: str, username: str) -> dict:
-    await client.post("/api/v1/auth/register", json={
-        "email": email, "username": username, "password": "TestPass123!"
-    })
-    resp = await client.post("/api/v1/auth/login", json={"email": email, "password": "TestPass123!"})
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "username": username, "password": "TestPass123!"},
+    )
+    resp = await client.post(
+        "/api/v1/auth/login", json={"email": email, "password": "TestPass123!"}
+    )
     return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
 
@@ -22,9 +26,10 @@ class TestMembershipPermissions:
     ):
         company_id = company_via_api["id"]
         # Register bob
-        await client.post("/api/v1/auth/register", json={
-            "email": "bob@example.com", "username": "bob", "password": "TestPass123!"
-        })
+        await client.post(
+            "/api/v1/auth/register",
+            json={"email": "bob@example.com", "username": "bob", "password": "TestPass123!"},
+        )
         me = await client.get("/api/v1/auth/me", headers=auth_headers)
         # Get bob's user_id
         bob_headers = await _register_and_login(client, "carol@example.com", "carol")
@@ -88,6 +93,7 @@ class TestMembershipPermissions:
     async def test_member_level_hierarchy(self):
         """Unit test: MembershipRole.can() respects hierarchy."""
         from nexora.core.enums import MembershipRole
+
         assert MembershipRole.OWNER.can(MembershipRole.ADMIN) is True
         assert MembershipRole.OWNER.can(MembershipRole.VIEWER) is True
         assert MembershipRole.ADMIN.can(MembershipRole.OWNER) is False

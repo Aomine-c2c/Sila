@@ -2,8 +2,8 @@
 Service layer for NEXORA Organizational Memory System.
 Coordinates storage, search, decision tracking, context assembly, and seed data.
 """
+
 import uuid
-from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,7 +11,6 @@ from nexora.core.enums import (
     MemoryDomain,
     MemoryScope,
     ProvenanceType,
-    RetentionPolicy,
 )
 from nexora.domains.memory.context_engine import ContextAssemblyEngine
 from nexora.domains.memory.models import DecisionRecord, MemoryItem
@@ -22,9 +21,8 @@ from nexora.domains.memory.schemas import (
     DecisionRecordCreate,
     DecisionRecordOutcomeUpdate,
     MemoryItemCreate,
-    MemoryItemUpdate,
 )
-from nexora.exceptions import NotFoundError, ValidationError
+from nexora.exceptions import NotFoundError
 
 
 class MemoryService:
@@ -36,7 +34,9 @@ class MemoryService:
     # DEFAULT SEED MEMORIES
     # -------------------------------------------------------------
     async def ensure_baseline_memories(self, company_id: uuid.UUID) -> list[MemoryItem]:
-        existing_charter = await self.repo.search_memories(company_id, query="Operating Principles", limit=1)
+        existing_charter = await self.repo.search_memories(
+            company_id, query="Operating Principles", limit=1
+        )
         if existing_charter:
             return await self.repo.list_memories(company_id, limit=20)
 
@@ -274,7 +274,9 @@ class MemoryService:
         if data.lessons_learned:
             await self.repo.create_memory_item(
                 company_id=company_id,
-                domain=MemoryDomain.FAILURE.value if "failed" in data.actual_outcome.lower() else MemoryDomain.DECISION.value,
+                domain=MemoryDomain.FAILURE.value
+                if "failed" in data.actual_outcome.lower()
+                else MemoryDomain.DECISION.value,
                 title=f"Outcome & Lessons: {record.title}",
                 content=f"Outcome: {data.actual_outcome}\nLessons: {', '.join(data.lessons_learned)}",
                 summary=f"Lessons from {record.title}",

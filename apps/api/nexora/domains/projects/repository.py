@@ -1,11 +1,12 @@
 """Project and Task repositories."""
+
 import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from nexora.domains.projects.models import Project, Task
 from nexora.core.enums import ProjectStatus, TaskStatus
+from nexora.domains.projects.models import Project, Task
 
 
 class ProjectRepository:
@@ -20,9 +21,9 @@ class ProjectRepository:
 
     async def list_by_company(self, company_id: uuid.UUID) -> list[Project]:
         result = await self.db.execute(
-            select(Project).where(
-                Project.company_id == company_id, Project.is_deleted.is_(False)
-            ).order_by(Project.created_at.desc())
+            select(Project)
+            .where(Project.company_id == company_id, Project.is_deleted.is_(False))
+            .order_by(Project.created_at.desc())
         )
         return list(result.scalars().all())
 
@@ -51,6 +52,7 @@ class ProjectRepository:
 
     async def soft_delete(self, project: Project) -> None:
         from datetime import UTC, datetime
+
         project.is_deleted = True
         project.deleted_at = datetime.now(UTC)
         project.status = ProjectStatus.CANCELLED
@@ -95,6 +97,7 @@ class TaskRepository:
 
     async def soft_delete(self, task: Task) -> None:
         from datetime import UTC, datetime
+
         task.is_deleted = True
         task.deleted_at = datetime.now(UTC)
         task.status = TaskStatus.CANCELLED

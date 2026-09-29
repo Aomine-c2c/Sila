@@ -1,13 +1,14 @@
 """Domain exceptions and FastAPI exception handlers."""
+
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
-
 
 # ── Domain Exceptions ──────────────────────────────────────────────────────
 
 
 class NexoraError(Exception):
     """Base exception for all NEXORA domain errors."""
+
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
     detail: str = "An unexpected error occurred."
 

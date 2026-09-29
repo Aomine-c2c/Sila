@@ -1,4 +1,5 @@
 """Pydantic schemas for NEXORA Organizational Governance Layer."""
+
 import uuid
 from datetime import datetime
 from typing import Any
@@ -8,7 +9,6 @@ from pydantic import BaseModel, Field
 from nexora.core.enums import (
     ApprovalStatus,
     EscalationStatus,
-    GovernanceAutonomyLevel,
     GovernanceRiskLevel,
 )
 
@@ -20,12 +20,24 @@ class CompanyConstitutionCreate(BaseModel):
     mission: str = Field(..., min_length=5, description="Core mission statement")
     values: list[str] = Field(default_factory=list, description="Core values and ethics")
     operating_principles: list[str] = Field(default_factory=list, description="Guiding principles")
-    prohibited_actions: list[str] = Field(default_factory=list, description="Explicitly forbidden actions")
-    approval_requirements: list[str] = Field(default_factory=list, description="Thresholds requiring human approval")
-    security_rules: list[str] = Field(default_factory=list, description="Data & security guardrails")
-    financial_rules: list[str] = Field(default_factory=list, description="Financial & spending ceilings")
-    data_rules: list[str] = Field(default_factory=list, description="Data classification and privacy rules")
-    autonomy_boundaries: dict[str, Any] = Field(default_factory=dict, description="Autonomy boundaries per domain")
+    prohibited_actions: list[str] = Field(
+        default_factory=list, description="Explicitly forbidden actions"
+    )
+    approval_requirements: list[str] = Field(
+        default_factory=list, description="Thresholds requiring human approval"
+    )
+    security_rules: list[str] = Field(
+        default_factory=list, description="Data & security guardrails"
+    )
+    financial_rules: list[str] = Field(
+        default_factory=list, description="Financial & spending ceilings"
+    )
+    data_rules: list[str] = Field(
+        default_factory=list, description="Data classification and privacy rules"
+    )
+    autonomy_boundaries: dict[str, Any] = Field(
+        default_factory=dict, description="Autonomy boundaries per domain"
+    )
     escalation_rules: list[str] = Field(default_factory=list, description="Triggers for escalation")
 
 
@@ -71,7 +83,11 @@ class CompanyConstitutionResponse(BaseModel):
 # AUTONOMY CONFIG SCHEMAS
 # -------------------------------------------------------------
 class AutonomyConfigCreate(BaseModel):
-    autonomy_level: int = Field(ge=0, le=5, description="0=OBSERVE, 1=RECOMMEND, 2=EXECUTE_WITH_APPROVAL, 3=EXECUTE_WITHIN_POLICY, 4=AUTONOMOUS, 5=AUTONOMOUS_ADAPTIVE")
+    autonomy_level: int = Field(
+        ge=0,
+        le=5,
+        description="0=OBSERVE, 1=RECOMMEND, 2=EXECUTE_WITH_APPROVAL, 3=EXECUTE_WITHIN_POLICY, 4=AUTONOMOUS, 5=AUTONOMOUS_ADAPTIVE",
+    )
     risk_level: GovernanceRiskLevel = GovernanceRiskLevel.MEDIUM
     requires_explicit_approval: bool = True
     department_id: uuid.UUID | None = None

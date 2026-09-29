@@ -3,18 +3,19 @@ Organization domain models.
 
 Entities: Company, OrganizationalDNA, Department, OrgRole, CompanyMember
 """
+
 import uuid
 
 from sqlalchemy import (
-    Boolean,
-    DateTime,
-    Enum as SAEnum,
-    ForeignKey,
-    Integer,
     JSON,
+    Boolean,
+    ForeignKey,
     String,
     Text,
     UniqueConstraint,
+)
+from sqlalchemy import (
+    Enum as SAEnum,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -39,6 +40,7 @@ class Company(NexoraBase):
     The top-level organizational entity in NEXORA.
     Everything — departments, agents, projects — belongs to a Company.
     """
+
     __tablename__ = "companies"
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -59,8 +61,11 @@ class Company(NexoraBase):
     # Relationships
     owner: Mapped["User"] = relationship("User", back_populates="owned_companies", lazy="select")  # noqa: F821
     dna: Mapped["OrganizationalDNA | None"] = relationship(
-        "OrganizationalDNA", back_populates="company", uselist=False, lazy="select",
-        cascade="all, delete-orphan"
+        "OrganizationalDNA",
+        back_populates="company",
+        uselist=False,
+        lazy="select",
+        cascade="all, delete-orphan",
     )
     departments: Mapped[list["Department"]] = relationship(
         "Department", back_populates="company", lazy="select"
@@ -69,10 +74,18 @@ class Company(NexoraBase):
         "CompanyMember", back_populates="company", lazy="select", cascade="all, delete-orphan"
     )
     agents: Mapped[list["Agent"]] = relationship("Agent", back_populates="company", lazy="select")  # noqa: F821
-    projects: Mapped[list["Project"]] = relationship("Project", back_populates="company", lazy="select")  # noqa: F821
-    workflows: Mapped[list["Workflow"]] = relationship("Workflow", back_populates="company", lazy="select")  # noqa: F821
-    policies: Mapped[list["Policy"]] = relationship("Policy", back_populates="company", lazy="select")  # noqa: F821
-    decisions: Mapped[list["Decision"]] = relationship("Decision", back_populates="company", lazy="select")  # noqa: F821
+    projects: Mapped[list["Project"]] = relationship(
+        "Project", back_populates="company", lazy="select"
+    )  # noqa: F821
+    workflows: Mapped[list["Workflow"]] = relationship(
+        "Workflow", back_populates="company", lazy="select"
+    )  # noqa: F821
+    policies: Mapped[list["Policy"]] = relationship(
+        "Policy", back_populates="company", lazy="select"
+    )  # noqa: F821
+    decisions: Mapped[list["Decision"]] = relationship(
+        "Decision", back_populates="company", lazy="select"
+    )  # noqa: F821
 
     def __repr__(self) -> str:
         return f"<Company id={self.id} name={self.name}>"
@@ -84,6 +97,7 @@ class OrganizationalDNA(UUIDBase, TimestampMixin):
     This defines how the organization thinks, decides, and operates —
     which in turn shapes how its AI agents behave.
     """
+
     __tablename__ = "organizational_dna"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -139,6 +153,7 @@ class Department(NexoraBase):
     A functional unit within a Company.
     Departments can be nested (parent/child) and own Roles.
     """
+
     __tablename__ = "departments"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -167,9 +182,7 @@ class Department(NexoraBase):
     parent: Mapped["Department | None"] = relationship(
         "Department", remote_side="Department.id", back_populates="children"
     )
-    children: Mapped[list["Department"]] = relationship(
-        "Department", back_populates="parent"
-    )
+    children: Mapped[list["Department"]] = relationship("Department", back_populates="parent")
     roles: Mapped[list["OrgRole"]] = relationship(
         "OrgRole", back_populates="department", cascade="all, delete-orphan"
     )
@@ -185,6 +198,7 @@ class OrgRole(NexoraBase):
     OrgRoles define what capabilities and authority a position carries.
     Agents are assigned to OrgRoles.
     """
+
     __tablename__ = "org_roles"
 
     department_id: Mapped[uuid.UUID] = mapped_column(
@@ -223,10 +237,9 @@ class CompanyMember(UUIDBase, TimestampMixin):
     Junction table: User ↔ Company membership with role.
     A user can be a member of multiple companies with different roles.
     """
+
     __tablename__ = "company_members"
-    __table_args__ = (
-        UniqueConstraint("company_id", "user_id", name="uq_company_member"),
-    )
+    __table_args__ = (UniqueConstraint("company_id", "user_id", name="uq_company_member"),)
 
     company_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True

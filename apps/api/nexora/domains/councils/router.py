@@ -1,13 +1,14 @@
 """
 Agent Council & Deliberation API Router.
 """
+
 import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from nexora.core.permissions import require_admin, require_manager, require_member, require_viewer
+from nexora.core.permissions import require_manager, require_member, require_viewer
 from nexora.database import get_db
 from nexora.domains.auth.models import User
 from nexora.domains.auth.router import get_current_user
@@ -20,7 +21,9 @@ from nexora.domains.councils.schemas import (
 )
 from nexora.domains.councils.service import CouncilService
 
-router = APIRouter(prefix="/companies/{company_id}/councils", tags=["Agent Councils & Deliberation"])
+router = APIRouter(
+    prefix="/companies/{company_id}/councils", tags=["Agent Councils & Deliberation"]
+)
 CurrentUser = Annotated[User, Depends(get_current_user)]
 DB = Annotated[AsyncSession, Depends(get_db)]
 
@@ -74,7 +77,11 @@ async def get_council(
 # -------------------------------------------------------------
 # DELIBERATION LIFECYCLE
 # -------------------------------------------------------------
-@router.post("/{council_id}/deliberations", response_model=CouncilDeliberationResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{council_id}/deliberations",
+    response_model=CouncilDeliberationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def start_deliberation(
     company_id: uuid.UUID,
     council_id: uuid.UUID,

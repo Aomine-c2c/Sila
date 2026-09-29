@@ -1,4 +1,5 @@
 """Decision Pydantic schemas."""
+
 import uuid
 from datetime import datetime
 
@@ -51,6 +52,7 @@ class DecisionUpdate(BaseModel):
 
 class DecisionResolve(BaseModel):
     """Used to close a decision with an outcome."""
+
     decision: str = Field(min_length=10, description="The decision that was made")
     rationale: str = Field(min_length=10)
     expected_outcome: str | None = None
@@ -58,6 +60,7 @@ class DecisionResolve(BaseModel):
 
 class DecisionOutcome(BaseModel):
     """Record the actual outcome after implementation."""
+
     actual_outcome: str = Field(min_length=10)
 
 

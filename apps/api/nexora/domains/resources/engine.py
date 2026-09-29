@@ -22,11 +22,11 @@ Metric states:
 - LIMITED: Hard quota cap.
 - AVAILABLE: Limited - Allocated.
 """
+
 import logging
 import os
 import shutil
 import uuid
-from datetime import datetime, timedelta, timezone
 
 from nexora.core.enums import (
     MetricState,
@@ -34,7 +34,7 @@ from nexora.core.enums import (
     ResourceEvaluationDecision,
     ResourcePriority,
 )
-from nexora.domains.resources.models import ResourceBudget, ResourcePool, ResourceRequest
+from nexora.domains.resources.models import ResourceBudget, ResourcePool
 from nexora.domains.resources.schemas import (
     RequestedComputeSpec,
     RequestedIntelligenceSpec,
@@ -92,7 +92,7 @@ class ResourceEngine:
         # RAM via /proc/meminfo on Linux without third-party dependencies
         try:
             if os.path.exists("/proc/meminfo"):
-                with open("/proc/meminfo", "r") as f:
+                with open("/proc/meminfo") as f:
                     for line in f:
                         if line.startswith("MemTotal:"):
                             parts = line.split()
@@ -124,7 +124,9 @@ class ResourceEngine:
                     decision=ResourceEvaluationDecision.DENY,
                     decision_reason=f"Financial/token budget '{budget.name}' is fully exhausted.",
                 )
-            if (budget.spent_budget_usd + intelligence.max_inference_cost_usd) > budget.total_budget_usd:
+            if (
+                budget.spent_budget_usd + intelligence.max_inference_cost_usd
+            ) > budget.total_budget_usd:
                 return ResourceEvaluationResult(
                     decision=ResourceEvaluationDecision.DENY,
                     decision_reason=f"Requested cost ${intelligence.max_inference_cost_usd:.2f} exceeds remaining budget for '{budget.name}'.",

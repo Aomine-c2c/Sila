@@ -23,6 +23,7 @@ Verifies:
    - DECISION: Official ratification
    - RECORD: Stored in Decision domain and Organizational Memory domain.
 """
+
 import pytest
 from httpx import AsyncClient
 
@@ -189,7 +190,7 @@ class TestAgentCouncilsAndDeliberation:
 
         # 6. Verify Disagreements Are Stored in Organizational Memory
         mem_resp = await client.get(
-            f"/api/v1/companies/{company_id}/memory/search?query=Dissent",
+            f"/api/v1/companies/{company_id}/memory/search?q=Dissent",
             headers=auth_headers,
         )
         assert mem_resp.status_code == 200

@@ -25,6 +25,7 @@ Verifies:
 6. Persistence:
    - Confirming workflow state is fully persisted in the database across queries.
 """
+
 import pytest
 from httpx import AsyncClient
 
@@ -39,19 +40,54 @@ class TestWorkflowEngine:
 
         # 1. Define the Canonical Software Engineering Workflow
         steps = [
-            {"id": "step_req", "type": "AGENT", "name": "Product Agent Analyzes Requirement", "config": {"agent": "Product Agent"}},
-            {"id": "step_arch", "type": "AGENT", "name": "Architect Reviews Design", "config": {"agent": "Architect Agent"}},
-            {"id": "step_cto_approval", "type": "APPROVAL", "name": "CTO Approves Architecture", "config": {"title": "Approve Core Architecture", "risk_level": "HIGH"}},
+            {
+                "id": "step_req",
+                "type": "AGENT",
+                "name": "Product Agent Analyzes Requirement",
+                "config": {"agent": "Product Agent"},
+            },
+            {
+                "id": "step_arch",
+                "type": "AGENT",
+                "name": "Architect Reviews Design",
+                "config": {"agent": "Architect Agent"},
+            },
+            {
+                "id": "step_cto_approval",
+                "type": "APPROVAL",
+                "name": "CTO Approves Architecture",
+                "config": {"title": "Approve Core Architecture", "risk_level": "HIGH"},
+            },
             {
                 "id": "step_parallel_impl",
                 "type": "PARALLEL",
                 "name": "Engineers Implement (Parallel)",
                 "config": {"tasks": [{"name": "Backend Services"}, {"name": "Frontend Portal"}]},
             },
-            {"id": "step_qa", "type": "TOOL", "name": "QA Tests Implementation", "config": {"tool_name": "pytest_runner"}},
-            {"id": "step_sec", "type": "AGENT", "name": "Security Reviews Code", "config": {"agent": "Security Agent"}},
-            {"id": "step_deploy", "type": "TOOL", "name": "Production Deployment", "config": {"tool_name": "k8s_deployer"}},
-            {"id": "step_done", "type": "AGENT", "name": "Project Completion Monitor", "config": {"agent": "Monitoring Agent"}},
+            {
+                "id": "step_qa",
+                "type": "TOOL",
+                "name": "QA Tests Implementation",
+                "config": {"tool_name": "pytest_runner"},
+            },
+            {
+                "id": "step_sec",
+                "type": "AGENT",
+                "name": "Security Reviews Code",
+                "config": {"agent": "Security Agent"},
+            },
+            {
+                "id": "step_deploy",
+                "type": "TOOL",
+                "name": "Production Deployment",
+                "config": {"tool_name": "k8s_deployer"},
+            },
+            {
+                "id": "step_done",
+                "type": "AGENT",
+                "name": "Project Completion Monitor",
+                "config": {"agent": "Monitoring Agent"},
+            },
         ]
 
         create_wf = await client.post(
@@ -79,7 +115,10 @@ class TestWorkflowEngine:
             f"/api/v1/companies/{company_id}/workflows/{wf_id}/execute",
             json={
                 "title": "Build Real-Time Notification Service",
-                "input_payload": {"requirement": "Websocket push notifications", "priority": "CRITICAL"},
+                "input_payload": {
+                    "requirement": "Websocket push notifications",
+                    "priority": "CRITICAL",
+                },
             },
             headers=auth_headers,
         )
@@ -108,7 +147,10 @@ class TestWorkflowEngine:
         appr_id = execution["pending_approval_id"]
         review_resp = await client.post(
             f"/api/v1/companies/{company_id}/governance/approvals/{appr_id}/decision",
-            json={"decision": "APPROVED", "reviewer_notes": "Architecture looks solid and scalable."},
+            json={
+                "decision": "APPROVED",
+                "reviewer_notes": "Architecture looks solid and scalable.",
+            },
             headers=auth_headers,
         )
         assert review_resp.status_code == 200

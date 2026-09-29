@@ -1,8 +1,10 @@
 """Decision model — organizational decision tracking and auditing."""
+
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, Enum as SAEnum, ForeignKey, String, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, String, Text
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from nexora.core.base import NexoraBase
@@ -17,6 +19,7 @@ class Decision(NexoraBase):
 
     This is the organizational memory layer — enabling learning and accountability.
     """
+
     __tablename__ = "decisions"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -25,25 +28,41 @@ class Decision(NexoraBase):
 
     # Problem framing
     title: Mapped[str] = mapped_column(String(255), nullable=False)
-    problem: Mapped[str] = mapped_column(Text, nullable=False,
-        comment="Clear statement of the problem being decided")
+    problem: Mapped[str] = mapped_column(
+        Text, nullable=False, comment="Clear statement of the problem being decided"
+    )
 
     # Deliberation
-    proposals: Mapped[list] = mapped_column(JSON, default=list, nullable=False,
-        comment="List of proposals: {id, title, description, pros, cons, proposed_by}")
-    evidence: Mapped[list] = mapped_column(JSON, default=list, nullable=False,
-        comment="Supporting evidence: {id, type, source, summary, url}")
-    participants: Mapped[list] = mapped_column(JSON, default=list, nullable=False,
-        comment="Decision participants: {user_id, agent_id, role, input}")
+    proposals: Mapped[list] = mapped_column(
+        JSON,
+        default=list,
+        nullable=False,
+        comment="List of proposals: {id, title, description, pros, cons, proposed_by}",
+    )
+    evidence: Mapped[list] = mapped_column(
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Supporting evidence: {id, type, source, summary, url}",
+    )
+    participants: Mapped[list] = mapped_column(
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Decision participants: {user_id, agent_id, role, input}",
+    )
 
     # Outcome
-    decision: Mapped[str | None] = mapped_column(Text, nullable=True,
-        comment="The actual decision that was made")
-    rationale: Mapped[str | None] = mapped_column(Text, nullable=True,
-        comment="Why this decision was chosen over alternatives")
+    decision: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="The actual decision that was made"
+    )
+    rationale: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="Why this decision was chosen over alternatives"
+    )
     expected_outcome: Mapped[str | None] = mapped_column(Text, nullable=True)
-    actual_outcome: Mapped[str | None] = mapped_column(Text, nullable=True,
-        comment="Filled in after implementation — enables learning")
+    actual_outcome: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="Filled in after implementation — enables learning"
+    )
 
     # Metadata
     status: Mapped[DecisionStatus] = mapped_column(

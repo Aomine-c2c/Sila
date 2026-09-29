@@ -7,10 +7,11 @@ Handles DB persistence and querying for:
 - Resource Allocations
 - Resource Usage Records (OBSERVED & ESTIMATED)
 """
-import uuid
-from datetime import datetime, timezone
 
-from sqlalchemy import delete, func, select
+import uuid
+from datetime import UTC, datetime
+
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.core.enums import AllocationStatus, MetricState
@@ -63,7 +64,9 @@ class ResourceRepository:
         result = await self.db.execute(stmt)
         return result.scalars().first()
 
-    async def list_pools(self, company_id: uuid.UUID, category: str | None = None) -> list[ResourcePool]:
+    async def list_pools(
+        self, company_id: uuid.UUID, category: str | None = None
+    ) -> list[ResourcePool]:
         stmt = select(ResourcePool).where(ResourcePool.company_id == company_id)
         if category:
             stmt = stmt.where(ResourcePool.category == category)
@@ -115,7 +118,9 @@ class ResourceRepository:
         await self.db.refresh(budget)
         return budget
 
-    async def get_budget(self, budget_id: uuid.UUID, company_id: uuid.UUID) -> ResourceBudget | None:
+    async def get_budget(
+        self, budget_id: uuid.UUID, company_id: uuid.UUID
+    ) -> ResourceBudget | None:
         stmt = select(ResourceBudget).where(
             ResourceBudget.id == budget_id,
             ResourceBudget.company_id == company_id,
@@ -124,7 +129,11 @@ class ResourceRepository:
         return result.scalars().first()
 
     async def list_budgets(self, company_id: uuid.UUID) -> list[ResourceBudget]:
-        stmt = select(ResourceBudget).where(ResourceBudget.company_id == company_id).order_by(ResourceBudget.created_at.desc())
+        stmt = (
+            select(ResourceBudget)
+            .where(ResourceBudget.company_id == company_id)
+            .order_by(ResourceBudget.created_at.desc())
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
@@ -177,7 +186,9 @@ class ResourceRepository:
         await self.db.refresh(req)
         return req
 
-    async def get_request(self, request_id: uuid.UUID, company_id: uuid.UUID) -> ResourceRequest | None:
+    async def get_request(
+        self, request_id: uuid.UUID, company_id: uuid.UUID
+    ) -> ResourceRequest | None:
         stmt = select(ResourceRequest).where(
             ResourceRequest.id == request_id,
             ResourceRequest.company_id == company_id,
@@ -209,7 +220,7 @@ class ResourceRepository:
     ) -> ResourceRequest:
         request.decision = decision
         request.decision_reason = reason
-        request.evaluated_at = datetime.now(timezone.utc)
+        request.evaluated_at = datetime.now(UTC)
         await self.db.flush()
         await self.db.refresh(request)
         return request
@@ -240,7 +251,9 @@ class ResourceRepository:
         await self.db.refresh(alloc)
         return alloc
 
-    async def get_allocation(self, allocation_id: uuid.UUID, company_id: uuid.UUID) -> ResourceAllocation | None:
+    async def get_allocation(
+        self, allocation_id: uuid.UUID, company_id: uuid.UUID
+    ) -> ResourceAllocation | None:
         stmt = select(ResourceAllocation).where(
             ResourceAllocation.id == allocation_id,
             ResourceAllocation.company_id == company_id,
@@ -262,7 +275,7 @@ class ResourceRepository:
 
     async def release_allocation(self, allocation: ResourceAllocation) -> ResourceAllocation:
         allocation.status = AllocationStatus.RELEASED.value
-        allocation.released_at = datetime.now(timezone.utc)
+        allocation.released_at = datetime.now(UTC)
         await self.db.flush()
         await self.db.refresh(allocation)
         return allocation

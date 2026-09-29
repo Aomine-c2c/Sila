@@ -46,15 +46,28 @@ SYSTEM_BLUEPRINTS = [
             },
         },
         "departments": [
-            {"name": "Product & Architecture", "purpose": "System specifications, requirements roadmapping, and domain modeling"},
-            {"name": "Core Engineering", "purpose": "Frontend, backend, and distributed services development"},
-            {"name": "Quality & Reliability", "purpose": "Automated regression testing, CI/CD pipelines, and SRE operations"},
+            {
+                "name": "Product & Architecture",
+                "purpose": "System specifications, requirements roadmapping, and domain modeling",
+            },
+            {
+                "name": "Core Engineering",
+                "purpose": "Frontend, backend, and distributed services development",
+            },
+            {
+                "name": "Quality & Reliability",
+                "purpose": "Automated regression testing, CI/CD pipelines, and SRE operations",
+            },
         ],
         "roles": [
             {
                 "department_name": "Product & Architecture",
                 "title": "Lead Software Architect",
-                "responsibilities": ["Define technical architecture", "Evaluate scalability tradeoffs", "Enforce clean design patterns"],
+                "responsibilities": [
+                    "Define technical architecture",
+                    "Evaluate scalability tradeoffs",
+                    "Enforce clean design patterns",
+                ],
                 "capabilities": ["architectural_reasoning", "system_design", "adr_synthesis"],
                 "authority": "MANAGE",
                 "autonomy_level": 4,
@@ -62,7 +75,11 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Core Engineering",
                 "title": "Full Stack Engineer",
-                "responsibilities": ["Implement REST/GraphQL endpoints", "Build responsive UI components", "Write unit tests"],
+                "responsibilities": [
+                    "Implement REST/GraphQL endpoints",
+                    "Build responsive UI components",
+                    "Write unit tests",
+                ],
                 "capabilities": ["code_generation", "refactoring", "debugging"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -70,7 +87,11 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Quality & Reliability",
                 "title": "Site Reliability Engineer",
-                "responsibilities": ["Monitor latency and error rates", "Automate rollback procedures", "Enforce infrastructure guardrails"],
+                "responsibilities": [
+                    "Monitor latency and error rates",
+                    "Automate rollback procedures",
+                    "Enforce infrastructure guardrails",
+                ],
                 "capabilities": ["log_analysis", "incident_remediation", "ci_cd_deployment"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -82,9 +103,14 @@ SYSTEM_BLUEPRINTS = [
                 "role_title": "Lead Software Architect",
                 "department_name": "Product & Architecture",
                 "system_instructions": "Design maintainable, decoupled microservices. Prioritize asynchronous patterns and strict typing.",
-                "responsibilities": ["Review technical proposals", "Enforce database normalization and indexing"],
+                "responsibilities": [
+                    "Review technical proposals",
+                    "Enforce database normalization and indexing",
+                ],
                 "capabilities": ["architectural_reasoning", "system_design"],
-                "tools": [{"name": "repo_indexer", "description": "Index repo AST", "risk_level": "LOW"}],
+                "tools": [
+                    {"name": "repo_indexer", "description": "Index repo AST", "risk_level": "LOW"}
+                ],
                 "autonomy_level": 4,
                 "intelligence_config": {"model": "claude-3-5-sonnet", "temperature": 0.2},
                 "resource_limits": {"max_tokens_per_call": 16384, "max_daily_budget_usd": 15.0},
@@ -96,7 +122,9 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Write performant Python/FastAPI code with SQLAlchemy 2.0 async and comprehensive test fixtures.",
                 "responsibilities": ["Implement backend features", "Validate input schemas"],
                 "capabilities": ["code_generation", "debugging"],
-                "tools": [{"name": "test_runner", "description": "Run pytest suite", "risk_level": "LOW"}],
+                "tools": [
+                    {"name": "test_runner", "description": "Run pytest suite", "risk_level": "LOW"}
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gpt-4o", "temperature": 0.1},
                 "resource_limits": {"max_tokens_per_call": 8192, "max_daily_budget_usd": 12.0},
@@ -108,7 +136,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Maintain 99.99% uptime. Block unverified deployment artifacts. Escalate error spikes immediately.",
                 "responsibilities": ["Monitor telemetry", "Execute canary rollouts"],
                 "capabilities": ["log_analysis", "incident_remediation"],
-                "tools": [{"name": "telemetry_probe", "description": "Poll health endpoints", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "telemetry_probe",
+                        "description": "Poll health endpoints",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gemini-1.5-flash", "temperature": 0.0},
                 "resource_limits": {"max_tokens_per_call": 4096, "max_daily_budget_usd": 8.0},
@@ -138,19 +172,43 @@ SYSTEM_BLUEPRINTS = [
         "constitution": {
             "mission": "Deliver rock-solid, verified software without manual toil.",
             "values": ["Engineering excellence", "Automated verification", "Data security"],
-            "operating_principles": ["Never deploy unverified binaries", "Test continuously in staging first"],
-            "prohibited_actions": ["Deploying directly to production without CI check", "Exposing API keys in public code repositories"],
-            "approval_requirements": ["Production schema drops or destructive database migrations", "Altering master security policies"],
-            "security_rules": ["All network traffic encrypted via TLS 1.3", "Zero secret retention in memory prompts"],
+            "operating_principles": [
+                "Never deploy unverified binaries",
+                "Test continuously in staging first",
+            ],
+            "prohibited_actions": [
+                "Deploying directly to production without CI check",
+                "Exposing API keys in public code repositories",
+            ],
+            "approval_requirements": [
+                "Production schema drops or destructive database migrations",
+                "Altering master security policies",
+            ],
+            "security_rules": [
+                "All network traffic encrypted via TLS 1.3",
+                "Zero secret retention in memory prompts",
+            ],
             "financial_rules": ["Cloud infrastructure cost alert threshold at $250/day"],
             "data_rules": ["Strict tenant isolation across storage buckets"],
             "autonomy_boundaries": {"deployment": "LEVEL_2", "code_authoring": "LEVEL_3"},
             "escalation_rules": ["Escalate build failures blocking main for over 30 minutes"],
         },
         "recommended_tools": [
-            {"name": "git_adapter", "description": "Git pull/commit/push integration", "risk_level": "MEDIUM"},
-            {"name": "pytest_executor", "description": "Test runner container", "risk_level": "LOW"},
-            {"name": "docker_builder", "description": "Container image compiler", "risk_level": "MEDIUM"},
+            {
+                "name": "git_adapter",
+                "description": "Git pull/commit/push integration",
+                "risk_level": "MEDIUM",
+            },
+            {
+                "name": "pytest_executor",
+                "description": "Test runner container",
+                "risk_level": "LOW",
+            },
+            {
+                "name": "docker_builder",
+                "description": "Container image compiler",
+                "risk_level": "MEDIUM",
+            },
         ],
         "intelligence_requirements": {
             "capabilities_required": ["deep_coding", "architectural_reasoning", "fast_inference"],
@@ -162,17 +220,36 @@ SYSTEM_BLUEPRINTS = [
             "execution_slots": 5,
         },
         "kpis": [
-            {"name": "Deployment Frequency", "metric": "deploys_per_day", "target": ">= 4", "review_frequency": "WEEKLY"},
-            {"name": "Mean Time to Recovery", "metric": "mttr_minutes", "target": "< 15", "review_frequency": "MONTHLY"},
+            {
+                "name": "Deployment Frequency",
+                "metric": "deploys_per_day",
+                "target": ">= 4",
+                "review_frequency": "WEEKLY",
+            },
+            {
+                "name": "Mean Time to Recovery",
+                "metric": "mttr_minutes",
+                "target": "< 15",
+                "review_frequency": "MONTHLY",
+            },
         ],
         "approval_rules": [
-            {"action": "PROD_DEPLOY", "condition": "target == 'production'", "approver_role": "ADMIN", "risk_level": "HIGH"}
+            {
+                "action": "PROD_DEPLOY",
+                "condition": "target == 'production'",
+                "approver_role": "ADMIN",
+                "risk_level": "HIGH",
+            }
         ],
         "escalation_rules": [
-            {"trigger": "Test failure on release branch", "route_to": "Lead Software Architect", "severity": "HIGH", "sla_minutes": 15}
+            {
+                "trigger": "Test failure on release branch",
+                "route_to": "Lead Software Architect",
+                "severity": "HIGH",
+                "sla_minutes": 15,
+            }
         ],
     },
-
     # -------------------------------------------------------------
     # 2. FOREX TRADING COMPANY
     # -------------------------------------------------------------
@@ -204,15 +281,27 @@ SYSTEM_BLUEPRINTS = [
             },
         },
         "departments": [
-            {"name": "Quantitative Research", "purpose": "Market regime modeling, backtesting, and indicator generation"},
-            {"name": "Execution & Trading", "purpose": "Order routing, latency optimization, and liquidity management"},
-            {"name": "Risk Management & Compliance", "purpose": "VaR computation, drawdown limits, and margin monitoring"},
+            {
+                "name": "Quantitative Research",
+                "purpose": "Market regime modeling, backtesting, and indicator generation",
+            },
+            {
+                "name": "Execution & Trading",
+                "purpose": "Order routing, latency optimization, and liquidity management",
+            },
+            {
+                "name": "Risk Management & Compliance",
+                "purpose": "VaR computation, drawdown limits, and margin monitoring",
+            },
         ],
         "roles": [
             {
                 "department_name": "Quantitative Research",
                 "title": "Quant Alpha Researcher",
-                "responsibilities": ["Identify statistical arbitrage opportunities", "Backtest mean-reversion signals"],
+                "responsibilities": [
+                    "Identify statistical arbitrage opportunities",
+                    "Backtest mean-reversion signals",
+                ],
                 "capabilities": ["time_series_analysis", "backtesting", "macroeconomic_reasoning"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -220,7 +309,11 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Execution & Trading",
                 "title": "Execution Algorithmic Trader",
-                "responsibilities": ["Route limit orders", "Minimize slippage", "Manage FIX protocol connections"],
+                "responsibilities": [
+                    "Route limit orders",
+                    "Minimize slippage",
+                    "Manage FIX protocol connections",
+                ],
                 "capabilities": ["order_routing", "slippage_optimization"],
                 "authority": "EXECUTE",
                 "autonomy_level": 2,
@@ -228,7 +321,11 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Risk Management & Compliance",
                 "title": "Chief Risk Officer Agent",
-                "responsibilities": ["Monitor max daily drawdown", "Enforce leverage caps", "Halt runaway algorithms"],
+                "responsibilities": [
+                    "Monitor max daily drawdown",
+                    "Enforce leverage caps",
+                    "Halt runaway algorithms",
+                ],
                 "capabilities": ["risk_modeling", "circuit_breaker_enforcement"],
                 "authority": "FULL",
                 "autonomy_level": 4,
@@ -240,9 +337,17 @@ SYSTEM_BLUEPRINTS = [
                 "role_title": "Quant Alpha Researcher",
                 "department_name": "Quantitative Research",
                 "system_instructions": "Analyze currency correlations, central bank rate curves, and COT reports. Propose probabilistic trade setups.",
-                "responsibilities": ["Formulate trade hypotheses with strict risk-to-reward ratios"],
+                "responsibilities": [
+                    "Formulate trade hypotheses with strict risk-to-reward ratios"
+                ],
                 "capabilities": ["time_series_analysis", "macroeconomic_reasoning"],
-                "tools": [{"name": "market_feed_poller", "description": "FX tick data reader", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "market_feed_poller",
+                        "description": "FX tick data reader",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gpt-4o", "temperature": 0.2},
                 "resource_limits": {"max_tokens_per_call": 12000, "max_daily_budget_usd": 20.0},
@@ -254,7 +359,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Execute approved trade signals only when spread and volatility metrics are within predefined thresholds.",
                 "responsibilities": ["Execute orders", "Monitor fill rates"],
                 "capabilities": ["order_routing"],
-                "tools": [{"name": "broker_api_bridge", "description": "FIX protocol trading bridge", "risk_level": "HIGH"}],
+                "tools": [
+                    {
+                        "name": "broker_api_bridge",
+                        "description": "FIX protocol trading bridge",
+                        "risk_level": "HIGH",
+                    }
+                ],
                 "autonomy_level": 2,
                 "intelligence_config": {"model": "gemini-1.5-pro", "temperature": 0.0},
                 "resource_limits": {"max_tokens_per_call": 4096, "max_daily_budget_usd": 25.0},
@@ -266,7 +377,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Enforce maximum 1.5% single-trade risk and 4% daily portfolio drawdown. Kill all open positions upon breach.",
                 "responsibilities": ["Portfolio circuit breakers", "Margin compliance"],
                 "capabilities": ["circuit_breaker_enforcement"],
-                "tools": [{"name": "emergency_kill_switch", "description": "Flatten all broker positions", "risk_level": "CRITICAL"}],
+                "tools": [
+                    {
+                        "name": "emergency_kill_switch",
+                        "description": "Flatten all broker positions",
+                        "risk_level": "CRITICAL",
+                    }
+                ],
                 "autonomy_level": 4,
                 "intelligence_config": {"model": "claude-3-5-sonnet", "temperature": 0.0},
                 "resource_limits": {"max_tokens_per_call": 8192, "max_daily_budget_usd": 30.0},
@@ -296,36 +413,83 @@ SYSTEM_BLUEPRINTS = [
         "constitution": {
             "mission": "Maximize risk-adjusted returns while eliminating ruin scenarios through strict algorithmic governance.",
             "values": ["Capital protection", "Systematic discipline", "Zero emotional override"],
-            "operating_principles": ["Never trade through tier-1 high impact news without manual review", "Honor stop losses without exception"],
-            "prohibited_actions": ["Exceeding 2% single trade loss risk", "Disabling stop loss parameters", "Trading unapproved illiquid pairs"],
-            "approval_requirements": ["Initial strategy capital allocation > $5,000", "Manual overnight position rollover exemptions"],
+            "operating_principles": [
+                "Never trade through tier-1 high impact news without manual review",
+                "Honor stop losses without exception",
+            ],
+            "prohibited_actions": [
+                "Exceeding 2% single trade loss risk",
+                "Disabling stop loss parameters",
+                "Trading unapproved illiquid pairs",
+            ],
+            "approval_requirements": [
+                "Initial strategy capital allocation > $5,000",
+                "Manual overnight position rollover exemptions",
+            ],
             "security_rules": ["API credentials stored in HSM vaults with IP whitelisting"],
             "financial_rules": ["Daily max loss circuit breaker at $1,000"],
             "data_rules": ["Tick logs preserved for 7 years regulatory compliance"],
-            "autonomy_boundaries": {"order_placement": "LEVEL_2", "market_analysis": "LEVEL_3", "emergency_stop": "LEVEL_4"},
-            "escalation_rules": ["Immediately notify Risk Officer on 3 consecutive losing trades in any single currency pair"],
+            "autonomy_boundaries": {
+                "order_placement": "LEVEL_2",
+                "market_analysis": "LEVEL_3",
+                "emergency_stop": "LEVEL_4",
+            },
+            "escalation_rules": [
+                "Immediately notify Risk Officer on 3 consecutive losing trades in any single currency pair"
+            ],
         },
         "recommended_tools": [
-            {"name": "meta_trader_gateway", "description": "MT5 / cTrader bridge", "risk_level": "HIGH"},
-            {"name": "economic_calendar_feed", "description": "News volatility radar", "risk_level": "LOW"},
+            {
+                "name": "meta_trader_gateway",
+                "description": "MT5 / cTrader bridge",
+                "risk_level": "HIGH",
+            },
+            {
+                "name": "economic_calendar_feed",
+                "description": "News volatility radar",
+                "risk_level": "LOW",
+            },
         ],
         "intelligence_requirements": {
-            "capabilities_required": ["fast_inference", "probabilistic_reasoning", "strict_precision"],
+            "capabilities_required": [
+                "fast_inference",
+                "probabilistic_reasoning",
+                "strict_precision",
+            ],
             "recommended_models": ["claude-3-5-sonnet", "gpt-4o", "gemini-1.5-flash"],
         },
         "resource_policies": {"financial_budget_usd": 1500.0, "execution_slots": 10},
         "kpis": [
-            {"name": "Sharpe Ratio", "metric": "sharpe_ratio", "target": ">= 2.0", "review_frequency": "MONTHLY"},
-            {"name": "Max Drawdown", "metric": "max_drawdown_pct", "target": "<= 5%", "review_frequency": "WEEKLY"},
+            {
+                "name": "Sharpe Ratio",
+                "metric": "sharpe_ratio",
+                "target": ">= 2.0",
+                "review_frequency": "MONTHLY",
+            },
+            {
+                "name": "Max Drawdown",
+                "metric": "max_drawdown_pct",
+                "target": "<= 5%",
+                "review_frequency": "WEEKLY",
+            },
         ],
         "approval_rules": [
-            {"action": "LIVE_TRADE_ORDER", "condition": "lot_size > 1.0", "approver_role": "MANAGER", "risk_level": "HIGH"}
+            {
+                "action": "LIVE_TRADE_ORDER",
+                "condition": "lot_size > 1.0",
+                "approver_role": "MANAGER",
+                "risk_level": "HIGH",
+            }
         ],
         "escalation_rules": [
-            {"trigger": "Drawdown exceeds 3%", "route_to": "Chief Risk Officer Agent", "severity": "CRITICAL", "sla_minutes": 1}
+            {
+                "trigger": "Drawdown exceeds 3%",
+                "route_to": "Chief Risk Officer Agent",
+                "severity": "CRITICAL",
+                "sla_minutes": 1,
+            }
         ],
     },
-
     # -------------------------------------------------------------
     # 3. MARKETING AGENCY
     # -------------------------------------------------------------
@@ -357,15 +521,28 @@ SYSTEM_BLUEPRINTS = [
             },
         },
         "departments": [
-            {"name": "Strategy & SEO", "purpose": "Keyword research, competitor analysis, and organic traffic growth"},
-            {"name": "Creative & Content Studio", "purpose": "Ad copy, landing pages, email drip sequences, and blog posts"},
-            {"name": "Paid Acquisition", "purpose": "Ad spend optimization, A/B testing, and ROAS attribution"},
+            {
+                "name": "Strategy & SEO",
+                "purpose": "Keyword research, competitor analysis, and organic traffic growth",
+            },
+            {
+                "name": "Creative & Content Studio",
+                "purpose": "Ad copy, landing pages, email drip sequences, and blog posts",
+            },
+            {
+                "name": "Paid Acquisition",
+                "purpose": "Ad spend optimization, A/B testing, and ROAS attribution",
+            },
         ],
         "roles": [
             {
                 "department_name": "Strategy & SEO",
                 "title": "SEO Strategist",
-                "responsibilities": ["Identify high-intent search queries", "Audit technical on-page SEO", "Construct topical authority clusters"],
+                "responsibilities": [
+                    "Identify high-intent search queries",
+                    "Audit technical on-page SEO",
+                    "Construct topical authority clusters",
+                ],
                 "capabilities": ["keyword_clustering", "competitive_analysis", "seo_audit"],
                 "authority": "EXECUTE",
                 "autonomy_level": 4,
@@ -373,7 +550,10 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Creative & Content Studio",
                 "title": "Lead Copywriter",
-                "responsibilities": ["Draft high-converting ad copy", "Create long-form thought leadership articles"],
+                "responsibilities": [
+                    "Draft high-converting ad copy",
+                    "Create long-form thought leadership articles",
+                ],
                 "capabilities": ["creative_writing", "persuasive_copywriting", "hook_generation"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -381,7 +561,11 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Paid Acquisition",
                 "title": "Performance Marketer",
-                "responsibilities": ["Manage ad budgets", "Set up multi-variant creative tests", "Optimize cost per acquisition (CPA)"],
+                "responsibilities": [
+                    "Manage ad budgets",
+                    "Set up multi-variant creative tests",
+                    "Optimize cost per acquisition (CPA)",
+                ],
                 "capabilities": ["ad_campaign_management", "cpa_optimization", "roas_analysis"],
                 "authority": "MANAGE",
                 "autonomy_level": 2,
@@ -395,7 +579,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Identify search demand gaps. Produce structured content briefs with semantic entity keywords.",
                 "responsibilities": ["Generate keyword maps", "Analyze competitor search rankings"],
                 "capabilities": ["keyword_clustering", "seo_audit"],
-                "tools": [{"name": "serp_api_tool", "description": "Query Google search rankings", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "serp_api_tool",
+                        "description": "Query Google search rankings",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 4,
                 "intelligence_config": {"model": "gemini-1.5-flash", "temperature": 0.3},
                 "resource_limits": {"max_tokens_per_call": 8192, "max_daily_budget_usd": 10.0},
@@ -407,7 +597,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Craft compelling marketing copy adhering to brand voice and PAS (Problem-Agitate-Solve) frameworks.",
                 "responsibilities": ["Write landing pages, email copy, and social hooks"],
                 "capabilities": ["creative_writing", "persuasive_copywriting"],
-                "tools": [{"name": "readability_analyzer", "description": "Score reading grade level", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "readability_analyzer",
+                        "description": "Score reading grade level",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gpt-4o", "temperature": 0.7},
                 "resource_limits": {"max_tokens_per_call": 8192, "max_daily_budget_usd": 12.0},
@@ -419,7 +615,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Optimize PPC budgets. Allocate spend strictly to campaigns exceeding 2.5x ROAS targets.",
                 "responsibilities": ["Bid adjustments", "A/B test reporting"],
                 "capabilities": ["ad_campaign_management", "roas_analysis"],
-                "tools": [{"name": "ads_manager_api", "description": "Google/Meta Ads API", "risk_level": "HIGH"}],
+                "tools": [
+                    {
+                        "name": "ads_manager_api",
+                        "description": "Google/Meta Ads API",
+                        "risk_level": "HIGH",
+                    }
+                ],
                 "autonomy_level": 2,
                 "intelligence_config": {"model": "claude-3-5-sonnet", "temperature": 0.2},
                 "resource_limits": {"max_tokens_per_call": 6144, "max_daily_budget_usd": 15.0},
@@ -442,43 +644,92 @@ SYSTEM_BLUEPRINTS = [
                 "name": "Brand Safety Policy",
                 "description": "Never publish misleading claims or guarantees in customer-facing promotional copy.",
                 "scope": "COMPANY",
-                "rules": [{"condition": "contains_unverified_guarantee", "action": "REQUIRE_LEGAL_REVIEW"}],
+                "rules": [
+                    {"condition": "contains_unverified_guarantee", "action": "REQUIRE_LEGAL_REVIEW"}
+                ],
                 "enforcement_level": "HARD",
             }
         ],
         "constitution": {
             "mission": "Drive measurable growth while upholding strict advertising ethics and client trust.",
             "values": ["Data integrity", "Creative bravery", "Transparent attribution"],
-            "operating_principles": ["Every claim must be provable", "Never waste ad spend on unvalidated landing pages"],
-            "prohibited_actions": ["Deploying ad spend > $500 without client sign-off", "Purchasing deceptive bot followers or spam backlinks"],
-            "approval_requirements": ["Live client ad launch", "Budget increases > 20% week-over-week"],
+            "operating_principles": [
+                "Every claim must be provable",
+                "Never waste ad spend on unvalidated landing pages",
+            ],
+            "prohibited_actions": [
+                "Deploying ad spend > $500 without client sign-off",
+                "Purchasing deceptive bot followers or spam backlinks",
+            ],
+            "approval_requirements": [
+                "Live client ad launch",
+                "Budget increases > 20% week-over-week",
+            ],
             "security_rules": ["Client analytics data must remain anonymized and isolated"],
-            "financial_rules": ["Total monthly client ad commitments must not exceed approved retainer"],
+            "financial_rules": [
+                "Total monthly client ad commitments must not exceed approved retainer"
+            ],
             "data_rules": ["Adherence to GDPR and CCPA marketing consent directives"],
-            "autonomy_boundaries": {"creative_generation": "LEVEL_4", "ad_spend_execution": "LEVEL_2"},
-            "escalation_rules": ["Escalate campaign ROAS dropping below 1.5x to account manager immediately"],
+            "autonomy_boundaries": {
+                "creative_generation": "LEVEL_4",
+                "ad_spend_execution": "LEVEL_2",
+            },
+            "escalation_rules": [
+                "Escalate campaign ROAS dropping below 1.5x to account manager immediately"
+            ],
         },
         "recommended_tools": [
-            {"name": "google_analytics_bridge", "description": "GA4 metric pipeline", "risk_level": "LOW"},
-            {"name": "meta_ads_bridge", "description": "Meta Graph API connection", "risk_level": "HIGH"},
+            {
+                "name": "google_analytics_bridge",
+                "description": "GA4 metric pipeline",
+                "risk_level": "LOW",
+            },
+            {
+                "name": "meta_ads_bridge",
+                "description": "Meta Graph API connection",
+                "risk_level": "HIGH",
+            },
         ],
         "intelligence_requirements": {
-            "capabilities_required": ["creative_writing", "persuasive_copywriting", "fast_inference"],
+            "capabilities_required": [
+                "creative_writing",
+                "persuasive_copywriting",
+                "fast_inference",
+            ],
             "recommended_models": ["gpt-4o", "gemini-1.5-flash"],
         },
         "resource_policies": {"financial_budget_usd": 400.0, "execution_slots": 6},
         "kpis": [
-            {"name": "Client ROAS", "metric": "return_on_ad_spend", "target": ">= 3.0", "review_frequency": "WEEKLY"},
-            {"name": "Organic Traffic Growth", "metric": "monthly_unique_visitors", "target": "+15% MoM", "review_frequency": "MONTHLY"},
+            {
+                "name": "Client ROAS",
+                "metric": "return_on_ad_spend",
+                "target": ">= 3.0",
+                "review_frequency": "WEEKLY",
+            },
+            {
+                "name": "Organic Traffic Growth",
+                "metric": "monthly_unique_visitors",
+                "target": "+15% MoM",
+                "review_frequency": "MONTHLY",
+            },
         ],
         "approval_rules": [
-            {"action": "AD_BUDGET_INCREASE", "condition": "amount > 500", "approver_role": "MANAGER", "risk_level": "HIGH"}
+            {
+                "action": "AD_BUDGET_INCREASE",
+                "condition": "amount > 500",
+                "approver_role": "MANAGER",
+                "risk_level": "HIGH",
+            }
         ],
         "escalation_rules": [
-            {"trigger": "Client churn warning flag", "route_to": "Account Director", "severity": "HIGH", "sla_minutes": 30}
+            {
+                "trigger": "Client churn warning flag",
+                "route_to": "Account Director",
+                "severity": "HIGH",
+                "sla_minutes": 30,
+            }
         ],
     },
-
     # -------------------------------------------------------------
     # 4. SOCIAL MEDIA COMPANY
     # -------------------------------------------------------------
@@ -510,15 +761,28 @@ SYSTEM_BLUEPRINTS = [
             },
         },
         "departments": [
-            {"name": "Trend Intelligence", "purpose": "Monitoring real-time viral trends, memes, and cultural moments"},
-            {"name": "Content Studio", "purpose": "Drafting threads, carousel scripts, and short-form video hooks"},
-            {"name": "Community Care", "purpose": "Replying to comments, customer queries, and brand mentions"},
+            {
+                "name": "Trend Intelligence",
+                "purpose": "Monitoring real-time viral trends, memes, and cultural moments",
+            },
+            {
+                "name": "Content Studio",
+                "purpose": "Drafting threads, carousel scripts, and short-form video hooks",
+            },
+            {
+                "name": "Community Care",
+                "purpose": "Replying to comments, customer queries, and brand mentions",
+            },
         ],
         "roles": [
             {
                 "department_name": "Trend Intelligence",
                 "title": "Trend Scout",
-                "responsibilities": ["Monitor social feeds", "Score trending topic relevance", "Flag brand-aligned hashtags"],
+                "responsibilities": [
+                    "Monitor social feeds",
+                    "Score trending topic relevance",
+                    "Flag brand-aligned hashtags",
+                ],
                 "capabilities": ["social_listening", "trend_forecasting"],
                 "authority": "EXECUTE",
                 "autonomy_level": 4,
@@ -526,7 +790,11 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Content Studio",
                 "title": "Social Content Creator",
-                "responsibilities": ["Write viral hooks", "Draft daily posting schedules", "Repurpose long-form content into punchy posts"],
+                "responsibilities": [
+                    "Write viral hooks",
+                    "Draft daily posting schedules",
+                    "Repurpose long-form content into punchy posts",
+                ],
                 "capabilities": ["hook_crafting", "thread_writing", "visual_scripting"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -534,7 +802,11 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Community Care",
                 "title": "Community Moderator",
-                "responsibilities": ["Respond to inbound DMs and replies", "De-escalate negative sentiment", "Engage with industry leaders"],
+                "responsibilities": [
+                    "Respond to inbound DMs and replies",
+                    "De-escalate negative sentiment",
+                    "Engage with industry leaders",
+                ],
                 "capabilities": ["sentiment_analysis", "empathetic_messaging", "deescalation"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -548,7 +820,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Monitor Twitter/X and LinkedIn APIs for breakout conversations in tech, AI, and entrepreneurship.",
                 "responsibilities": ["Feed trending topics to Content Studio"],
                 "capabilities": ["social_listening"],
-                "tools": [{"name": "trend_tracker", "description": "Social API trend listener", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "trend_tracker",
+                        "description": "Social API trend listener",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 4,
                 "intelligence_config": {"model": "gemini-1.5-flash", "temperature": 0.4},
                 "resource_limits": {"max_tokens_per_call": 4096, "max_daily_budget_usd": 8.0},
@@ -560,7 +838,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Generate punchy, insightful social posts. Keep hooks under 100 characters. Avoid corporate jargon.",
                 "responsibilities": ["Daily post generation"],
                 "capabilities": ["hook_crafting", "thread_writing"],
-                "tools": [{"name": "post_scheduler", "description": "Buffer/Hootsuite staging API", "risk_level": "MEDIUM"}],
+                "tools": [
+                    {
+                        "name": "post_scheduler",
+                        "description": "Buffer/Hootsuite staging API",
+                        "risk_level": "MEDIUM",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gpt-4o", "temperature": 0.8},
                 "resource_limits": {"max_tokens_per_call": 6144, "max_daily_budget_usd": 10.0},
@@ -572,7 +856,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Respond warmly and helpfully. Escalate serious complaints or public relations risks immediately.",
                 "responsibilities": ["Reply to followers within 5 minutes"],
                 "capabilities": ["sentiment_analysis", "deescalation"],
-                "tools": [{"name": "reply_publisher", "description": "Publish reply to thread", "risk_level": "MEDIUM"}],
+                "tools": [
+                    {
+                        "name": "reply_publisher",
+                        "description": "Publish reply to thread",
+                        "risk_level": "MEDIUM",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gpt-4o-mini", "temperature": 0.3},
                 "resource_limits": {"max_tokens_per_call": 4096, "max_daily_budget_usd": 6.0},
@@ -602,18 +892,41 @@ SYSTEM_BLUEPRINTS = [
         "constitution": {
             "mission": "Ignite meaningful digital community interactions with relentless positivity and wit.",
             "values": ["Authenticity", "Responsiveness", "Cultural empathy"],
-            "operating_principles": ["Engage proactively", "Never argue with community members online"],
-            "prohibited_actions": ["Publishing unauthorized client customer names", "Using copyright-infringing media"],
-            "approval_requirements": ["Crisis communication statements", "Sponsored campaign activations"],
-            "security_rules": ["Two-factor authentication mandatory on all connected social handles"],
+            "operating_principles": [
+                "Engage proactively",
+                "Never argue with community members online",
+            ],
+            "prohibited_actions": [
+                "Publishing unauthorized client customer names",
+                "Using copyright-infringing media",
+            ],
+            "approval_requirements": [
+                "Crisis communication statements",
+                "Sponsored campaign activations",
+            ],
+            "security_rules": [
+                "Two-factor authentication mandatory on all connected social handles"
+            ],
             "financial_rules": ["Zero unapproved tool subscription purchases"],
-            "data_rules": ["Private DM contents must never be fed into public LLM training datasets"],
+            "data_rules": [
+                "Private DM contents must never be fed into public LLM training datasets"
+            ],
             "autonomy_boundaries": {"trend_identification": "LEVEL_5", "reply_posting": "LEVEL_3"},
-            "escalation_rules": ["Escalate negative sentiment spike > 30% in 1 hour to PR Director"],
+            "escalation_rules": [
+                "Escalate negative sentiment spike > 30% in 1 hour to PR Director"
+            ],
         },
         "recommended_tools": [
-            {"name": "social_scheduler_api", "description": "Posting engine", "risk_level": "MEDIUM"},
-            {"name": "sentiment_filter", "description": "Toxicity and sentiment classifier", "risk_level": "LOW"},
+            {
+                "name": "social_scheduler_api",
+                "description": "Posting engine",
+                "risk_level": "MEDIUM",
+            },
+            {
+                "name": "sentiment_filter",
+                "description": "Toxicity and sentiment classifier",
+                "risk_level": "LOW",
+            },
         ],
         "intelligence_requirements": {
             "capabilities_required": ["creative_writing", "fast_inference", "sentiment_analysis"],
@@ -621,17 +934,36 @@ SYSTEM_BLUEPRINTS = [
         },
         "resource_policies": {"financial_budget_usd": 300.0, "execution_slots": 5},
         "kpis": [
-            {"name": "Engagement Rate", "metric": "engagement_pct", "target": ">= 4.5%", "review_frequency": "WEEKLY"},
-            {"name": "Average Reply Time", "metric": "response_time_minutes", "target": "< 10", "review_frequency": "DAILY"},
+            {
+                "name": "Engagement Rate",
+                "metric": "engagement_pct",
+                "target": ">= 4.5%",
+                "review_frequency": "WEEKLY",
+            },
+            {
+                "name": "Average Reply Time",
+                "metric": "response_time_minutes",
+                "target": "< 10",
+                "review_frequency": "DAILY",
+            },
         ],
         "approval_rules": [
-            {"action": "CRISIS_PR_STATEMENT", "condition": "pr_risk == true", "approver_role": "ADMIN", "risk_level": "CRITICAL"}
+            {
+                "action": "CRISIS_PR_STATEMENT",
+                "condition": "pr_risk == true",
+                "approver_role": "ADMIN",
+                "risk_level": "CRITICAL",
+            }
         ],
         "escalation_rules": [
-            {"trigger": "Viral complaint post reaching 10k views", "route_to": "PR Communications Lead", "severity": "CRITICAL", "sla_minutes": 5}
+            {
+                "trigger": "Viral complaint post reaching 10k views",
+                "route_to": "PR Communications Lead",
+                "severity": "CRITICAL",
+                "sla_minutes": 5,
+            }
         ],
     },
-
     # -------------------------------------------------------------
     # 5. CYBERSECURITY COMPANY
     # -------------------------------------------------------------
@@ -663,15 +995,28 @@ SYSTEM_BLUEPRINTS = [
             },
         },
         "departments": [
-            {"name": "Threat Intelligence", "purpose": "Hunting zero-days, monitoring dark web leaks, and tracking APT campaigns"},
-            {"name": "Security Operations Center", "purpose": "SIEM log correlation, firewall rule validation, and alert triage"},
-            {"name": "Vulnerability Assessment", "purpose": "Static code analysis, dependency CVE scanning, and penetration probing"},
+            {
+                "name": "Threat Intelligence",
+                "purpose": "Hunting zero-days, monitoring dark web leaks, and tracking APT campaigns",
+            },
+            {
+                "name": "Security Operations Center",
+                "purpose": "SIEM log correlation, firewall rule validation, and alert triage",
+            },
+            {
+                "name": "Vulnerability Assessment",
+                "purpose": "Static code analysis, dependency CVE scanning, and penetration probing",
+            },
         ],
         "roles": [
             {
                 "department_name": "Threat Intelligence",
                 "title": "Threat Intel Hunter",
-                "responsibilities": ["Track CVE databases", "Extract IOCs (Indicators of Compromise)", "Map tactics to MITRE ATT&CK"],
+                "responsibilities": [
+                    "Track CVE databases",
+                    "Extract IOCs (Indicators of Compromise)",
+                    "Map tactics to MITRE ATT&CK",
+                ],
                 "capabilities": ["threat_intelligence", "ioc_extraction", "mitre_mapping"],
                 "authority": "EXECUTE",
                 "autonomy_level": 4,
@@ -679,7 +1024,11 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Security Operations Center",
                 "title": "SOC Tier 2 Analyst",
-                "responsibilities": ["Triage SIEM alerts", "Isolate suspicious host instances", "Correlate intrusion attempts"],
+                "responsibilities": [
+                    "Triage SIEM alerts",
+                    "Isolate suspicious host instances",
+                    "Correlate intrusion attempts",
+                ],
                 "capabilities": ["siem_correlation", "incident_triage", "forensics"],
                 "authority": "MANAGE",
                 "autonomy_level": 3,
@@ -687,7 +1036,11 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Vulnerability Assessment",
                 "title": "AppSec Auditor",
-                "responsibilities": ["Run SAST and DAST scans", "Enforce software supply chain integrity", "Verify patch deployments"],
+                "responsibilities": [
+                    "Run SAST and DAST scans",
+                    "Enforce software supply chain integrity",
+                    "Verify patch deployments",
+                ],
                 "capabilities": ["vulnerability_scanning", "sast_audit", "remediation_advisory"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -701,7 +1054,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Monitor NVD, CISA bulletins, and GitHub advisories. Alert on high-severity zero-day disclosures affecting stack.",
                 "responsibilities": ["Daily threat briefing generation"],
                 "capabilities": ["threat_intelligence", "ioc_extraction"],
-                "tools": [{"name": "cve_nvd_feed", "description": "National Vulnerability Database API", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "cve_nvd_feed",
+                        "description": "National Vulnerability Database API",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 4,
                 "intelligence_config": {"model": "claude-3-5-sonnet", "temperature": 0.0},
                 "resource_limits": {"max_tokens_per_call": 10000, "max_daily_budget_usd": 15.0},
@@ -713,7 +1072,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Analyze intrusion logs. When brute force or credential stuffing detected, immediately stage IP blocklist rule.",
                 "responsibilities": ["SIEM log analysis and alerting"],
                 "capabilities": ["siem_correlation", "incident_triage"],
-                "tools": [{"name": "waf_ip_blocker", "description": "Add IP to firewall blocklist", "risk_level": "HIGH"}],
+                "tools": [
+                    {
+                        "name": "waf_ip_blocker",
+                        "description": "Add IP to firewall blocklist",
+                        "risk_level": "HIGH",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gpt-4o", "temperature": 0.1},
                 "resource_limits": {"max_tokens_per_call": 8192, "max_daily_budget_usd": 18.0},
@@ -725,7 +1090,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Audit third-party dependencies. Fail builds containing CVEs with CVSS score >= 7.0.",
                 "responsibilities": ["Software supply chain verification"],
                 "capabilities": ["vulnerability_scanning", "sast_audit"],
-                "tools": [{"name": "dependency_checker", "description": "Scan package lockfiles", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "dependency_checker",
+                        "description": "Scan package lockfiles",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gemini-1.5-pro", "temperature": 0.0},
                 "resource_limits": {"max_tokens_per_call": 8192, "max_daily_budget_usd": 12.0},
@@ -739,7 +1110,10 @@ SYSTEM_BLUEPRINTS = [
                 "steps": [
                     {"step_name": "Threat Ingestion", "agent": "Threat Hunter Agent"},
                     {"step_name": "SOC Log Correlation", "agent": "SOC Analyst Agent"},
-                    {"step_name": "Remediation Verification", "agent": "Vulnerability Auditor Agent"},
+                    {
+                        "step_name": "Remediation Verification",
+                        "agent": "Vulnerability Auditor Agent",
+                    },
                 ],
             }
         ],
@@ -755,18 +1129,40 @@ SYSTEM_BLUEPRINTS = [
         "constitution": {
             "mission": "Protect enterprise sovereignty and digital resilience against all cyber threat actors.",
             "values": ["Uncompromising integrity", "Vigilant paranoia", "Responsible disclosure"],
-            "operating_principles": ["Assume every environment is breached until proven clean", "Encrypt everywhere"],
-            "prohibited_actions": ["Executing unapproved penetration tests against third-party non-authorized targets", "Storing plain-text private keys"],
-            "approval_requirements": ["Emergency host network isolation", "Modifying core perimeter firewall routing"],
+            "operating_principles": [
+                "Assume every environment is breached until proven clean",
+                "Encrypt everywhere",
+            ],
+            "prohibited_actions": [
+                "Executing unapproved penetration tests against third-party non-authorized targets",
+                "Storing plain-text private keys",
+            ],
+            "approval_requirements": [
+                "Emergency host network isolation",
+                "Modifying core perimeter firewall routing",
+            ],
             "security_rules": ["Zero-trust mutual TLS required for all agent RPC communications"],
-            "financial_rules": ["Security bug bounty payout limits capped at $5,000 without board sign-off"],
+            "financial_rules": [
+                "Security bug bounty payout limits capped at $5,000 without board sign-off"
+            ],
             "data_rules": ["Forensic evidence disk images encrypted with client public key"],
-            "autonomy_boundaries": {"threat_research": "LEVEL_4", "firewall_rule_changes": "LEVEL_2"},
+            "autonomy_boundaries": {
+                "threat_research": "LEVEL_4",
+                "firewall_rule_changes": "LEVEL_2",
+            },
             "escalation_rules": ["Escalate confirmed breach attempt to CISO within 3 minutes"],
         },
         "recommended_tools": [
-            {"name": "siem_collector", "description": "Elastic / Splunk log collector", "risk_level": "LOW"},
-            {"name": "firewall_api", "description": "Cloudflare / AWS WAF rule updater", "risk_level": "HIGH"},
+            {
+                "name": "siem_collector",
+                "description": "Elastic / Splunk log collector",
+                "risk_level": "LOW",
+            },
+            {
+                "name": "firewall_api",
+                "description": "Cloudflare / AWS WAF rule updater",
+                "risk_level": "HIGH",
+            },
         ],
         "intelligence_requirements": {
             "capabilities_required": ["threat_intelligence", "incident_remediation", "deep_coding"],
@@ -774,17 +1170,36 @@ SYSTEM_BLUEPRINTS = [
         },
         "resource_policies": {"financial_budget_usd": 800.0, "execution_slots": 8},
         "kpis": [
-            {"name": "Mean Time to Detect (MTTD)", "metric": "mttd_minutes", "target": "< 5", "review_frequency": "WEEKLY"},
-            {"name": "Mean Time to Contain (MTTC)", "metric": "mttc_minutes", "target": "< 15", "review_frequency": "WEEKLY"},
+            {
+                "name": "Mean Time to Detect (MTTD)",
+                "metric": "mttd_minutes",
+                "target": "< 5",
+                "review_frequency": "WEEKLY",
+            },
+            {
+                "name": "Mean Time to Contain (MTTC)",
+                "metric": "mttc_minutes",
+                "target": "< 15",
+                "review_frequency": "WEEKLY",
+            },
         ],
         "approval_rules": [
-            {"action": "ISOLATE_PRODUCTION_CLUSTER", "condition": "scope == 'production'", "approver_role": "ADMIN", "risk_level": "CRITICAL"}
+            {
+                "action": "ISOLATE_PRODUCTION_CLUSTER",
+                "condition": "scope == 'production'",
+                "approver_role": "ADMIN",
+                "risk_level": "CRITICAL",
+            }
         ],
         "escalation_rules": [
-            {"trigger": "Ransomware signature detected", "route_to": "Incident Commander", "severity": "CRITICAL", "sla_minutes": 1}
+            {
+                "trigger": "Ransomware signature detected",
+                "route_to": "Incident Commander",
+                "severity": "CRITICAL",
+                "sla_minutes": 1,
+            }
         ],
     },
-
     # -------------------------------------------------------------
     # 6. RESEARCH ORGANIZATION
     # -------------------------------------------------------------
@@ -798,7 +1213,13 @@ SYSTEM_BLUEPRINTS = [
         "is_system_template": True,
         "default_autonomy": 3,
         "estimated_monthly_cost_usd": 320.0,
-        "metadata_tags": ["research", "academia", "scientific", "literature-review", "deep-analysis"],
+        "metadata_tags": [
+            "research",
+            "academia",
+            "scientific",
+            "literature-review",
+            "deep-analysis",
+        ],
         "company_definition": {
             "name": "Synthetica Institute of Advanced Research",
             "mission": "Accelerate scientific discovery and evidence-based innovation through rigorous AI-driven synthesis and reproducible research methodologies.",
@@ -816,15 +1237,28 @@ SYSTEM_BLUEPRINTS = [
             },
         },
         "departments": [
-            {"name": "Literature & Meta-Analysis", "purpose": "Ingesting ArXiv, PubMed, and patent libraries to identify state of the art"},
-            {"name": "Hypothesis & Experimental Design", "purpose": "Formulating falsifiable hypotheses and designing statistical tests"},
-            {"name": "Publications & Peer Review", "purpose": "Drafting manuscripts, citation verification, and methodological critique"},
+            {
+                "name": "Literature & Meta-Analysis",
+                "purpose": "Ingesting ArXiv, PubMed, and patent libraries to identify state of the art",
+            },
+            {
+                "name": "Hypothesis & Experimental Design",
+                "purpose": "Formulating falsifiable hypotheses and designing statistical tests",
+            },
+            {
+                "name": "Publications & Peer Review",
+                "purpose": "Drafting manuscripts, citation verification, and methodological critique",
+            },
         ],
         "roles": [
             {
                 "department_name": "Literature & Meta-Analysis",
                 "title": "Principal Literature Scientist",
-                "responsibilities": ["Conduct systematic domain meta-analyses", "Synthesize consensus findings", "Track citation networks"],
+                "responsibilities": [
+                    "Conduct systematic domain meta-analyses",
+                    "Synthesize consensus findings",
+                    "Track citation networks",
+                ],
                 "capabilities": ["literature_synthesis", "citation_graph_analysis"],
                 "authority": "MANAGE",
                 "autonomy_level": 4,
@@ -832,15 +1266,27 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Hypothesis & Experimental Design",
                 "title": "Quantitative Methodologist",
-                "responsibilities": ["Formulate null hypotheses", "Compute statistical power calculations", "Design control experiments"],
-                "capabilities": ["statistical_modeling", "experimental_design", "p_value_validation"],
+                "responsibilities": [
+                    "Formulate null hypotheses",
+                    "Compute statistical power calculations",
+                    "Design control experiments",
+                ],
+                "capabilities": [
+                    "statistical_modeling",
+                    "experimental_design",
+                    "p_value_validation",
+                ],
                 "authority": "EXECUTE",
                 "autonomy_level": 4,
             },
             {
                 "department_name": "Publications & Peer Review",
                 "title": "Scientific Editor & Reviewer",
-                "responsibilities": ["Audit manuscript rigor", "Verify source integrity", "Produce peer-review assessments"],
+                "responsibilities": [
+                    "Audit manuscript rigor",
+                    "Verify source integrity",
+                    "Produce peer-review assessments",
+                ],
                 "capabilities": ["peer_review", "academic_writing", "hallucination_detection"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -854,7 +1300,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Read academic papers. Synthesize claims, methodology, and limitations with exact DOI attribution.",
                 "responsibilities": ["Literature summaries and state-of-the-art reports"],
                 "capabilities": ["literature_synthesis"],
-                "tools": [{"name": "arxiv_scholar_api", "description": "Query academic repositories", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "arxiv_scholar_api",
+                        "description": "Query academic repositories",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 4,
                 "intelligence_config": {"model": "claude-3-5-sonnet", "temperature": 0.2},
                 "resource_limits": {"max_tokens_per_call": 32768, "max_daily_budget_usd": 18.0},
@@ -866,7 +1318,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Formulate mathematically sound hypotheses. Define measurable independent and dependent variables.",
                 "responsibilities": ["Experiment protocol design"],
                 "capabilities": ["statistical_modeling", "experimental_design"],
-                "tools": [{"name": "math_symbolic_solver", "description": "SymPy / NumPy calculation engine", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "math_symbolic_solver",
+                        "description": "SymPy / NumPy calculation engine",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 4,
                 "intelligence_config": {"model": "gpt-4o", "temperature": 0.1},
                 "resource_limits": {"max_tokens_per_call": 16384, "max_daily_budget_usd": 14.0},
@@ -878,7 +1336,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Rigorously challenge proposed conclusions. Detect circular reasoning and unproven leaps of logic.",
                 "responsibilities": ["Peer review assessments"],
                 "capabilities": ["peer_review", "hallucination_detection"],
-                "tools": [{"name": "citation_verifier", "description": "Cross-reference claimed DOI references", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "citation_verifier",
+                        "description": "Cross-reference claimed DOI references",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gemini-1.5-pro", "temperature": 0.1},
                 "resource_limits": {"max_tokens_per_call": 16384, "max_daily_budget_usd": 12.0},
@@ -901,25 +1365,48 @@ SYSTEM_BLUEPRINTS = [
                 "name": "Citation Verifiability Policy",
                 "description": "Every scientific assertion must cite an active, verifiable primary source with DOI.",
                 "scope": "COMPANY",
-                "rules": [{"condition": "contains_unverified_citation", "action": "BLOCK_PUBLICATION"}],
+                "rules": [
+                    {"condition": "contains_unverified_citation", "action": "BLOCK_PUBLICATION"}
+                ],
                 "enforcement_level": "HARD",
             }
         ],
         "constitution": {
             "mission": "Expand human knowledge through transparent, verifiable, and reproducible intellectual inquiry.",
             "values": ["Intellectual honesty", "Reproducibility", "Methodological transparency"],
-            "operating_principles": ["State margins of error honestly", "Never cherry-pick favorable data points"],
-            "prohibited_actions": ["Fabricating experimental data", "Publishing unverified claims as settled science"],
+            "operating_principles": [
+                "State margins of error honestly",
+                "Never cherry-pick favorable data points",
+            ],
+            "prohibited_actions": [
+                "Fabricating experimental data",
+                "Publishing unverified claims as settled science",
+            ],
             "approval_requirements": ["Public dissemination of whitepapers under company name"],
-            "security_rules": ["Proprietary research and patent drafts kept in encrypted air-gapped repositories"],
+            "security_rules": [
+                "Proprietary research and patent drafts kept in encrypted air-gapped repositories"
+            ],
             "financial_rules": ["Research computing spend allocated per grant milestone"],
             "data_rules": ["Raw datasets published under Open Science Foundation guidelines"],
-            "autonomy_boundaries": {"literature_analysis": "LEVEL_5", "whitepaper_publication": "LEVEL_2"},
-            "escalation_rules": ["Flag potential research fraud or non-reproducible methodology immediately to Research Board"],
+            "autonomy_boundaries": {
+                "literature_analysis": "LEVEL_5",
+                "whitepaper_publication": "LEVEL_2",
+            },
+            "escalation_rules": [
+                "Flag potential research fraud or non-reproducible methodology immediately to Research Board"
+            ],
         },
         "recommended_tools": [
-            {"name": "semantic_scholar_connector", "description": "Access to 200M+ research papers", "risk_level": "LOW"},
-            {"name": "latex_typesetter", "description": "Compile academic PDFs", "risk_level": "LOW"}
+            {
+                "name": "semantic_scholar_connector",
+                "description": "Access to 200M+ research papers",
+                "risk_level": "LOW",
+            },
+            {
+                "name": "latex_typesetter",
+                "description": "Compile academic PDFs",
+                "risk_level": "LOW",
+            },
         ],
         "intelligence_requirements": {
             "capabilities_required": ["deep_reasoning", "large_context", "academic_writing"],
@@ -927,17 +1414,36 @@ SYSTEM_BLUEPRINTS = [
         },
         "resource_policies": {"financial_budget_usd": 500.0, "execution_slots": 6},
         "kpis": [
-            {"name": "Research Rigor Score", "metric": "peer_review_acceptance_rate", "target": ">= 90%", "review_frequency": "QUARTERLY"},
-            {"name": "Verified Citations", "metric": "citation_accuracy_pct", "target": "100%", "review_frequency": "MONTHLY"},
+            {
+                "name": "Research Rigor Score",
+                "metric": "peer_review_acceptance_rate",
+                "target": ">= 90%",
+                "review_frequency": "QUARTERLY",
+            },
+            {
+                "name": "Verified Citations",
+                "metric": "citation_accuracy_pct",
+                "target": "100%",
+                "review_frequency": "MONTHLY",
+            },
         ],
         "approval_rules": [
-            {"action": "PUBLISH_WHITEPAPER", "condition": "target == 'public'", "approver_role": "ADMIN", "risk_level": "HIGH"}
+            {
+                "action": "PUBLISH_WHITEPAPER",
+                "condition": "target == 'public'",
+                "approver_role": "ADMIN",
+                "risk_level": "HIGH",
+            }
         ],
         "escalation_rules": [
-            {"trigger": "Hallucinated citation detected in manuscript", "route_to": "Lead Research Director", "severity": "HIGH", "sla_minutes": 60}
+            {
+                "trigger": "Hallucinated citation detected in manuscript",
+                "route_to": "Lead Research Director",
+                "severity": "HIGH",
+                "sla_minutes": 60,
+            }
         ],
     },
-
     # -------------------------------------------------------------
     # 7. E-COMMERCE COMPANY
     # -------------------------------------------------------------
@@ -969,15 +1475,28 @@ SYSTEM_BLUEPRINTS = [
             },
         },
         "departments": [
-            {"name": "Merchandising & Catalog", "purpose": "Product descriptions, categorization, and pricing optimization"},
-            {"name": "Supply Chain & Fulfillment", "purpose": "Stock level monitoring, supplier PO tracking, and courier logistics"},
-            {"name": "Customer Experience", "purpose": "Order tracking, returns processing, and customer ticket resolution"},
+            {
+                "name": "Merchandising & Catalog",
+                "purpose": "Product descriptions, categorization, and pricing optimization",
+            },
+            {
+                "name": "Supply Chain & Fulfillment",
+                "purpose": "Stock level monitoring, supplier PO tracking, and courier logistics",
+            },
+            {
+                "name": "Customer Experience",
+                "purpose": "Order tracking, returns processing, and customer ticket resolution",
+            },
         ],
         "roles": [
             {
                 "department_name": "Merchandising & Catalog",
                 "title": "Digital Merchandiser",
-                "responsibilities": ["Optimize product titles and descriptions", "Set pricing rules", "Manage discount coupons"],
+                "responsibilities": [
+                    "Optimize product titles and descriptions",
+                    "Set pricing rules",
+                    "Manage discount coupons",
+                ],
                 "capabilities": ["catalog_management", "dynamic_pricing", "seo_copywriting"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -985,7 +1504,11 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Supply Chain & Fulfillment",
                 "title": "Inventory Controller",
-                "responsibilities": ["Forecast stock depletion", "Generate supplier reorder recommendations", "Track logistics delays"],
+                "responsibilities": [
+                    "Forecast stock depletion",
+                    "Generate supplier reorder recommendations",
+                    "Track logistics delays",
+                ],
                 "capabilities": ["inventory_forecasting", "logistics_tracking"],
                 "authority": "MANAGE",
                 "autonomy_level": 3,
@@ -993,7 +1516,10 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Customer Experience",
                 "title": "Customer Success Specialist",
-                "responsibilities": ["Resolve shipping status inquiries", "Authorize return merchandise authorizations (RMA)"],
+                "responsibilities": [
+                    "Resolve shipping status inquiries",
+                    "Authorize return merchandise authorizations (RMA)",
+                ],
                 "capabilities": ["order_lookup", "ticket_resolution", "customer_deescalation"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -1007,7 +1533,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Craft appealing, benefit-driven product copy with SEO keywords and structured JSON-LD specifications.",
                 "responsibilities": ["Product description generation"],
                 "capabilities": ["catalog_management", "seo_copywriting"],
-                "tools": [{"name": "shopify_catalog_tool", "description": "Shopify product API", "risk_level": "MEDIUM"}],
+                "tools": [
+                    {
+                        "name": "shopify_catalog_tool",
+                        "description": "Shopify product API",
+                        "risk_level": "MEDIUM",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gpt-4o", "temperature": 0.7},
                 "resource_limits": {"max_tokens_per_call": 6144, "max_daily_budget_usd": 10.0},
@@ -1019,7 +1551,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Monitor warehouse SKU counts. When inventory drops below 14 days of run-rate, alert operations.",
                 "responsibilities": ["Reorder trigger alerts"],
                 "capabilities": ["inventory_forecasting"],
-                "tools": [{"name": "warehouse_erp_tool", "description": "ERP stock query", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "warehouse_erp_tool",
+                        "description": "ERP stock query",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gemini-1.5-flash", "temperature": 0.1},
                 "resource_limits": {"max_tokens_per_call": 4096, "max_daily_budget_usd": 8.0},
@@ -1031,7 +1569,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Provide instant, empathetic order support. Process standard returns if within 30-day policy window.",
                 "responsibilities": ["24/7 customer support inbox"],
                 "capabilities": ["ticket_resolution", "customer_deescalation"],
-                "tools": [{"name": "order_lookup_tool", "description": "Retrieve order tracking status", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "order_lookup_tool",
+                        "description": "Retrieve order tracking status",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gpt-4o-mini", "temperature": 0.2},
                 "resource_limits": {"max_tokens_per_call": 4096, "max_daily_budget_usd": 8.0},
@@ -1060,18 +1604,38 @@ SYSTEM_BLUEPRINTS = [
         "constitution": {
             "mission": "Delight customers globally with high quality products and rapid, transparent customer care.",
             "values": ["Customer respect", "Fulfillment reliability", "Fair pricing"],
-            "operating_principles": ["Fix delivery problems promptly without bureaucratic friction"],
-            "prohibited_actions": ["Selling out-of-stock items without backorder notification", "Misrepresenting shipping transit times"],
-            "approval_requirements": ["Bulk supplier payments > $2,000", "Discount codes exceeding 30%"],
-            "security_rules": ["Payment tokenization via PCI-DSS certified gateway (never handle raw cards)"],
+            "operating_principles": [
+                "Fix delivery problems promptly without bureaucratic friction"
+            ],
+            "prohibited_actions": [
+                "Selling out-of-stock items without backorder notification",
+                "Misrepresenting shipping transit times",
+            ],
+            "approval_requirements": [
+                "Bulk supplier payments > $2,000",
+                "Discount codes exceeding 30%",
+            ],
+            "security_rules": [
+                "Payment tokenization via PCI-DSS certified gateway (never handle raw cards)"
+            ],
             "financial_rules": ["Minimum gross product margin of 45% enforced across all sales"],
-            "data_rules": ["Customer addresses purged from temporary cache after shipping label generation"],
+            "data_rules": [
+                "Customer addresses purged from temporary cache after shipping label generation"
+            ],
             "autonomy_boundaries": {"customer_support": "LEVEL_3", "supplier_reorders": "LEVEL_2"},
             "escalation_rules": ["Escalate angry customer threats or chargebacks to Support Lead"],
         },
         "recommended_tools": [
-            {"name": "shopify_admin_bridge", "description": "Storefront integration", "risk_level": "MEDIUM"},
-            {"name": "shipstation_bridge", "description": "Courier dispatch API", "risk_level": "LOW"},
+            {
+                "name": "shopify_admin_bridge",
+                "description": "Storefront integration",
+                "risk_level": "MEDIUM",
+            },
+            {
+                "name": "shipstation_bridge",
+                "description": "Courier dispatch API",
+                "risk_level": "LOW",
+            },
         ],
         "intelligence_requirements": {
             "capabilities_required": ["fast_inference", "creative_writing", "empathetic_messaging"],
@@ -1079,17 +1643,36 @@ SYSTEM_BLUEPRINTS = [
         },
         "resource_policies": {"financial_budget_usd": 350.0, "execution_slots": 5},
         "kpis": [
-            {"name": "First Contact Resolution", "metric": "fcr_pct", "target": ">= 80%", "review_frequency": "WEEKLY"},
-            {"name": "Stockout Rate", "metric": "stockout_sku_pct", "target": "< 2%", "review_frequency": "MONTHLY"},
+            {
+                "name": "First Contact Resolution",
+                "metric": "fcr_pct",
+                "target": ">= 80%",
+                "review_frequency": "WEEKLY",
+            },
+            {
+                "name": "Stockout Rate",
+                "metric": "stockout_sku_pct",
+                "target": "< 2%",
+                "review_frequency": "MONTHLY",
+            },
         ],
         "approval_rules": [
-            {"action": "ISSUE_REFUND", "condition": "amount > 75", "approver_role": "MANAGER", "risk_level": "MEDIUM"}
+            {
+                "action": "ISSUE_REFUND",
+                "condition": "amount > 75",
+                "approver_role": "MANAGER",
+                "risk_level": "MEDIUM",
+            }
         ],
         "escalation_rules": [
-            {"trigger": "Courier delivery delay affecting > 50 orders", "route_to": "Head of Logistics", "severity": "HIGH", "sla_minutes": 20}
+            {
+                "trigger": "Courier delivery delay affecting > 50 orders",
+                "route_to": "Head of Logistics",
+                "severity": "HIGH",
+                "sla_minutes": 20,
+            }
         ],
     },
-
     # -------------------------------------------------------------
     # 8. GAME STUDIO
     # -------------------------------------------------------------
@@ -1103,7 +1686,15 @@ SYSTEM_BLUEPRINTS = [
         "is_system_template": True,
         "default_autonomy": 3,
         "estimated_monthly_cost_usd": 380.0,
-        "metadata_tags": ["gaming", "game-dev", "worldbuilding", "narrative", "playtesting", "unity", "unreal"],
+        "metadata_tags": [
+            "gaming",
+            "game-dev",
+            "worldbuilding",
+            "narrative",
+            "playtesting",
+            "unity",
+            "unreal",
+        ],
         "company_definition": {
             "name": "IronMyth Interactive Studios",
             "mission": "Forge unforgettable interactive entertainment worlds uniting rich systemic gameplay with deeply emotional narratives.",
@@ -1121,15 +1712,28 @@ SYSTEM_BLUEPRINTS = [
             },
         },
         "departments": [
-            {"name": "Game Design & Systems", "purpose": "Combat math, skill progression trees, and economy balancing"},
-            {"name": "Narrative & Worldbuilding", "purpose": "Faction lore, NPC dialogue trees, quest scripts, and environmental story"},
-            {"name": "Engineering & QA Playtesting", "purpose": "Core mechanics scripting, shader pipelines, and automated bot playtesting"},
+            {
+                "name": "Game Design & Systems",
+                "purpose": "Combat math, skill progression trees, and economy balancing",
+            },
+            {
+                "name": "Narrative & Worldbuilding",
+                "purpose": "Faction lore, NPC dialogue trees, quest scripts, and environmental story",
+            },
+            {
+                "name": "Engineering & QA Playtesting",
+                "purpose": "Core mechanics scripting, shader pipelines, and automated bot playtesting",
+            },
         ],
         "roles": [
             {
                 "department_name": "Game Design & Systems",
                 "title": "Lead Systems Designer",
-                "responsibilities": ["Balance combat equations", "Tune loot drop probability curves", "Design boss mechanics"],
+                "responsibilities": [
+                    "Balance combat equations",
+                    "Tune loot drop probability curves",
+                    "Design boss mechanics",
+                ],
                 "capabilities": ["game_mechanics_balancing", "economy_tuning", "progression_math"],
                 "authority": "MANAGE",
                 "autonomy_level": 4,
@@ -1137,7 +1741,11 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Narrative & Worldbuilding",
                 "title": "Principal Lore Architect",
-                "responsibilities": ["Write branching NPC dialogues", "Develop world history codex", "Script dynamic quest lines"],
+                "responsibilities": [
+                    "Write branching NPC dialogues",
+                    "Develop world history codex",
+                    "Script dynamic quest lines",
+                ],
                 "capabilities": ["narrative_design", "branching_dialogue", "worldbuilding"],
                 "authority": "EXECUTE",
                 "autonomy_level": 4,
@@ -1145,7 +1753,11 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Engineering & QA Playtesting",
                 "title": "Playtest Automation Engineer",
-                "responsibilities": ["Script playtest bots", "Identify soft-locks and progression bugs", "Measure player drop-off"],
+                "responsibilities": [
+                    "Script playtest bots",
+                    "Identify soft-locks and progression bugs",
+                    "Measure player drop-off",
+                ],
                 "capabilities": ["game_playtesting", "bug_reporting", "telemetry_logging"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -1159,7 +1771,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Balance RPG damage formulas and economy sinks. Prevent dominant strategies that render other builds obsolete.",
                 "responsibilities": ["Combat and economy balance simulations"],
                 "capabilities": ["game_mechanics_balancing", "economy_tuning"],
-                "tools": [{"name": "monte_carlo_simulator", "description": "Loot table Monte Carlo simulator", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "monte_carlo_simulator",
+                        "description": "Loot table Monte Carlo simulator",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 4,
                 "intelligence_config": {"model": "gpt-4o", "temperature": 0.2},
                 "resource_limits": {"max_tokens_per_call": 12000, "max_daily_budget_usd": 15.0},
@@ -1171,7 +1789,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Write compelling character dialogues with distinct voices, subtext, and branching player choices.",
                 "responsibilities": ["Quest and dialogue generation"],
                 "capabilities": ["narrative_design", "worldbuilding"],
-                "tools": [{"name": "dialogue_tree_exporter", "description": "Export Ink / Yarn Spinner format", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "dialogue_tree_exporter",
+                        "description": "Export Ink / Yarn Spinner format",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 4,
                 "intelligence_config": {"model": "claude-3-5-sonnet", "temperature": 0.8},
                 "resource_limits": {"max_tokens_per_call": 16384, "max_daily_budget_usd": 18.0},
@@ -1183,7 +1807,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Execute automated game playthroughs across different player playstyles (aggressive, stealth, completionist).",
                 "responsibilities": ["Soft-lock and physics bug detection"],
                 "capabilities": ["game_playtesting", "bug_reporting"],
-                "tools": [{"name": "game_telemetry_probe", "description": "Inspect player coordinate and health state", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "game_telemetry_probe",
+                        "description": "Inspect player coordinate and health state",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gemini-1.5-flash", "temperature": 0.1},
                 "resource_limits": {"max_tokens_per_call": 6144, "max_daily_budget_usd": 10.0},
@@ -1213,36 +1843,87 @@ SYSTEM_BLUEPRINTS = [
         "constitution": {
             "mission": "Create deeply engaging interactive art that respects player time and fosters genuine community.",
             "values": ["Player respect", "Creative fearlessness", "Systemic depth"],
-            "operating_principles": ["Fun over friction", "Reward player curiosity through environmental detail"],
-            "prohibited_actions": ["Implementing predatory dark patterns in monetization", "Plagiarizing existing game lore or assets"],
-            "approval_requirements": ["Master release build gold master sign-off", "IP licensing contracts"],
-            "security_rules": ["Game build source code and unwrapped assets watermarked and encrypted"],
-            "financial_rules": ["Outsourced voice acting or soundtrack budget allocations require producer review"],
-            "data_rules": ["In-game player analytics anonymized without personally identifiable tracking"],
-            "autonomy_boundaries": {"worldbuilding": "LEVEL_4", "monetization_structure": "LEVEL_2"},
-            "escalation_rules": ["Escalate game-breaking blocker in vertical slice build immediately to Creative Director"],
+            "operating_principles": [
+                "Fun over friction",
+                "Reward player curiosity through environmental detail",
+            ],
+            "prohibited_actions": [
+                "Implementing predatory dark patterns in monetization",
+                "Plagiarizing existing game lore or assets",
+            ],
+            "approval_requirements": [
+                "Master release build gold master sign-off",
+                "IP licensing contracts",
+            ],
+            "security_rules": [
+                "Game build source code and unwrapped assets watermarked and encrypted"
+            ],
+            "financial_rules": [
+                "Outsourced voice acting or soundtrack budget allocations require producer review"
+            ],
+            "data_rules": [
+                "In-game player analytics anonymized without personally identifiable tracking"
+            ],
+            "autonomy_boundaries": {
+                "worldbuilding": "LEVEL_4",
+                "monetization_structure": "LEVEL_2",
+            },
+            "escalation_rules": [
+                "Escalate game-breaking blocker in vertical slice build immediately to Creative Director"
+            ],
         },
         "recommended_tools": [
-            {"name": "unity_editor_bridge", "description": "Scene hierarchy and asset manager", "risk_level": "MEDIUM"},
-            {"name": "yarn_spinner_tool", "description": "Dialogue compilation", "risk_level": "LOW"},
+            {
+                "name": "unity_editor_bridge",
+                "description": "Scene hierarchy and asset manager",
+                "risk_level": "MEDIUM",
+            },
+            {
+                "name": "yarn_spinner_tool",
+                "description": "Dialogue compilation",
+                "risk_level": "LOW",
+            },
         ],
         "intelligence_requirements": {
-            "capabilities_required": ["creative_writing", "game_mechanics_balancing", "deep_reasoning"],
+            "capabilities_required": [
+                "creative_writing",
+                "game_mechanics_balancing",
+                "deep_reasoning",
+            ],
             "recommended_models": ["claude-3-5-sonnet", "gpt-4o"],
         },
         "resource_policies": {"financial_budget_usd": 600.0, "execution_slots": 6},
         "kpis": [
-            {"name": "Playtest Bug Discovery", "metric": "bugs_logged_per_build", "target": ">= 10", "review_frequency": "WEEKLY"},
-            {"name": "Player Retention Target", "metric": "day_7_retention", "target": ">= 45%", "review_frequency": "MONTHLY"},
+            {
+                "name": "Playtest Bug Discovery",
+                "metric": "bugs_logged_per_build",
+                "target": ">= 10",
+                "review_frequency": "WEEKLY",
+            },
+            {
+                "name": "Player Retention Target",
+                "metric": "day_7_retention",
+                "target": ">= 45%",
+                "review_frequency": "MONTHLY",
+            },
         ],
         "approval_rules": [
-            {"action": "GOLD_MASTER_RELEASE", "condition": "version_type == 'release'", "approver_role": "ADMIN", "risk_level": "CRITICAL"}
+            {
+                "action": "GOLD_MASTER_RELEASE",
+                "condition": "version_type == 'release'",
+                "approver_role": "ADMIN",
+                "risk_level": "CRITICAL",
+            }
         ],
         "escalation_rules": [
-            {"trigger": "Soft-lock detected in primary main quest campaign", "route_to": "Lead Game Designer", "severity": "HIGH", "sla_minutes": 30}
+            {
+                "trigger": "Soft-lock detected in primary main quest campaign",
+                "route_to": "Lead Game Designer",
+                "severity": "HIGH",
+                "sla_minutes": 30,
+            }
         ],
     },
-
     # -------------------------------------------------------------
     # 9. IT SERVICES COMPANY
     # -------------------------------------------------------------
@@ -1274,15 +1955,28 @@ SYSTEM_BLUEPRINTS = [
             },
         },
         "departments": [
-            {"name": "Service Desk & Support", "purpose": "Tier 1-3 helpdesk, password resets, hardware provisioning, and SaaS permissions"},
-            {"name": "Cloud & Infrastructure Operations", "purpose": "AWS/Azure cloud instances, Kubernetes clusters, and networking"},
-            {"name": "Compliance & Disaster Recovery", "purpose": "Daily backup verification, SOC 2 controls, and business continuity"},
+            {
+                "name": "Service Desk & Support",
+                "purpose": "Tier 1-3 helpdesk, password resets, hardware provisioning, and SaaS permissions",
+            },
+            {
+                "name": "Cloud & Infrastructure Operations",
+                "purpose": "AWS/Azure cloud instances, Kubernetes clusters, and networking",
+            },
+            {
+                "name": "Compliance & Disaster Recovery",
+                "purpose": "Daily backup verification, SOC 2 controls, and business continuity",
+            },
         ],
         "roles": [
             {
                 "department_name": "Service Desk & Support",
                 "title": "Service Desk Engineer",
-                "responsibilities": ["Triage employee support tickets", "Diagnose software errors", "Grant role-based SaaS access"],
+                "responsibilities": [
+                    "Triage employee support tickets",
+                    "Diagnose software errors",
+                    "Grant role-based SaaS access",
+                ],
                 "capabilities": ["helpdesk_triage", "troubleshooting", "iam_administration"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -1290,15 +1984,27 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Cloud & Infrastructure Operations",
                 "title": "Cloud Systems Administrator",
-                "responsibilities": ["Manage Terraform state files", "Monitor VM CPU/memory thresholds", "Execute OS patch cycles"],
-                "capabilities": ["cloud_administration", "terraform_orchestration", "patch_management"],
+                "responsibilities": [
+                    "Manage Terraform state files",
+                    "Monitor VM CPU/memory thresholds",
+                    "Execute OS patch cycles",
+                ],
+                "capabilities": [
+                    "cloud_administration",
+                    "terraform_orchestration",
+                    "patch_management",
+                ],
                 "authority": "MANAGE",
                 "autonomy_level": 2,
             },
             {
                 "department_name": "Compliance & Disaster Recovery",
                 "title": "Business Continuity Auditor",
-                "responsibilities": ["Verify daily database snapshots", "Conduct mock restore drills", "Audit SOC 2 evidence"],
+                "responsibilities": [
+                    "Verify daily database snapshots",
+                    "Conduct mock restore drills",
+                    "Audit SOC 2 evidence",
+                ],
                 "capabilities": ["backup_verification", "compliance_audit"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -1312,7 +2018,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Resolve user IT tickets quickly. Verify employee identity before executing password resets or permission changes.",
                 "responsibilities": ["Automated helpdesk ticket resolution"],
                 "capabilities": ["helpdesk_triage", "troubleshooting"],
-                "tools": [{"name": "ticket_system_bridge", "description": "ServiceNow / Jira Service Desk API", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "ticket_system_bridge",
+                        "description": "ServiceNow / Jira Service Desk API",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gpt-4o-mini", "temperature": 0.2},
                 "resource_limits": {"max_tokens_per_call": 4096, "max_daily_budget_usd": 8.0},
@@ -1324,7 +2036,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Inspect cloud infrastructure health. Stage patch updates in staging. Require human sign-off for production changes.",
                 "responsibilities": ["Cloud instance scaling and patching"],
                 "capabilities": ["cloud_administration", "terraform_orchestration"],
-                "tools": [{"name": "cloud_cli_tool", "description": "AWS / Azure control bridge", "risk_level": "HIGH"}],
+                "tools": [
+                    {
+                        "name": "cloud_cli_tool",
+                        "description": "AWS / Azure control bridge",
+                        "risk_level": "HIGH",
+                    }
+                ],
                 "autonomy_level": 2,
                 "intelligence_config": {"model": "claude-3-5-sonnet", "temperature": 0.0},
                 "resource_limits": {"max_tokens_per_call": 8192, "max_daily_budget_usd": 14.0},
@@ -1336,7 +2054,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Verify all client databases have completed automated snapshots within the past 24 hours. Alert on failures.",
                 "responsibilities": ["Disaster recovery readiness audits"],
                 "capabilities": ["backup_verification"],
-                "tools": [{"name": "snapshot_auditor", "description": "Cloud backup validator", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "snapshot_auditor",
+                        "description": "Cloud backup validator",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gemini-1.5-flash", "temperature": 0.0},
                 "resource_limits": {"max_tokens_per_call": 4096, "max_daily_budget_usd": 6.0},
@@ -1366,18 +2090,38 @@ SYSTEM_BLUEPRINTS = [
         "constitution": {
             "mission": "Ensure unbroken business operations and bulletproof IT reliability across all managed enterprise environments.",
             "values": ["Reliability", "Zero data loss", "Customer security"],
-            "operating_principles": ["Test all backups periodically", "Never bypass change management tickets"],
-            "prohibited_actions": ["Deleting client infrastructure without multi-party approval", "Sharing administrative credentials in plain text"],
-            "approval_requirements": ["Production server termination", "Major cloud network routing changes"],
+            "operating_principles": [
+                "Test all backups periodically",
+                "Never bypass change management tickets",
+            ],
+            "prohibited_actions": [
+                "Deleting client infrastructure without multi-party approval",
+                "Sharing administrative credentials in plain text",
+            ],
+            "approval_requirements": [
+                "Production server termination",
+                "Major cloud network routing changes",
+            ],
             "security_rules": ["MFA mandatory for all accounts; least-privilege role assignment"],
-            "financial_rules": ["Cloud resource provisioning exceeding $200/month requires client sign-off"],
+            "financial_rules": [
+                "Cloud resource provisioning exceeding $200/month requires client sign-off"
+            ],
             "data_rules": ["Strict adherence to enterprise client data protection agreements"],
-            "autonomy_boundaries": {"helpdesk_troubleshooting": "LEVEL_3", "cloud_provisioning": "LEVEL_2"},
-            "escalation_rules": ["Escalate unrecoverable backup failure to VP of Infrastructure within 15 minutes"],
+            "autonomy_boundaries": {
+                "helpdesk_troubleshooting": "LEVEL_3",
+                "cloud_provisioning": "LEVEL_2",
+            },
+            "escalation_rules": [
+                "Escalate unrecoverable backup failure to VP of Infrastructure within 15 minutes"
+            ],
         },
         "recommended_tools": [
             {"name": "aws_management_api", "description": "Cloud API bridge", "risk_level": "HIGH"},
-            {"name": "jira_service_desk", "description": "Ticketing integration", "risk_level": "LOW"},
+            {
+                "name": "jira_service_desk",
+                "description": "Ticketing integration",
+                "risk_level": "LOW",
+            },
         ],
         "intelligence_requirements": {
             "capabilities_required": ["cloud_administration", "troubleshooting", "fast_inference"],
@@ -1385,17 +2129,36 @@ SYSTEM_BLUEPRINTS = [
         },
         "resource_policies": {"financial_budget_usd": 400.0, "execution_slots": 6},
         "kpis": [
-            {"name": "Ticket Resolution SLA", "metric": "sla_compliance_pct", "target": ">= 98%", "review_frequency": "WEEKLY"},
-            {"name": "Backup Success Rate", "metric": "backup_completion_pct", "target": "100%", "review_frequency": "DAILY"},
+            {
+                "name": "Ticket Resolution SLA",
+                "metric": "sla_compliance_pct",
+                "target": ">= 98%",
+                "review_frequency": "WEEKLY",
+            },
+            {
+                "name": "Backup Success Rate",
+                "metric": "backup_completion_pct",
+                "target": "100%",
+                "review_frequency": "DAILY",
+            },
         ],
         "approval_rules": [
-            {"action": "TERMINATE_CLOUD_INSTANCE", "condition": "environment == 'production'", "approver_role": "ADMIN", "risk_level": "CRITICAL"}
+            {
+                "action": "TERMINATE_CLOUD_INSTANCE",
+                "condition": "environment == 'production'",
+                "approver_role": "ADMIN",
+                "risk_level": "CRITICAL",
+            }
         ],
         "escalation_rules": [
-            {"trigger": "Major server outage impacting > 100 users", "route_to": "Incident Commander", "severity": "CRITICAL", "sla_minutes": 5}
+            {
+                "trigger": "Major server outage impacting > 100 users",
+                "route_to": "Incident Commander",
+                "severity": "CRITICAL",
+                "sla_minutes": 5,
+            }
         ],
     },
-
     # -------------------------------------------------------------
     # 10. EDUCATION ORGANIZATION
     # -------------------------------------------------------------
@@ -1427,15 +2190,28 @@ SYSTEM_BLUEPRINTS = [
             },
         },
         "departments": [
-            {"name": "Curriculum & Pedagogy", "purpose": "Designing course syllabi, learning outcomes, and practical project exercises"},
-            {"name": "Adaptive Tutoring", "purpose": "Providing 1-on-1 Socratic feedback, explaining difficult concepts, and answering questions"},
-            {"name": "Assessment & Evaluation", "purpose": "Grading student assignment submissions against standardized rubrics"},
+            {
+                "name": "Curriculum & Pedagogy",
+                "purpose": "Designing course syllabi, learning outcomes, and practical project exercises",
+            },
+            {
+                "name": "Adaptive Tutoring",
+                "purpose": "Providing 1-on-1 Socratic feedback, explaining difficult concepts, and answering questions",
+            },
+            {
+                "name": "Assessment & Evaluation",
+                "purpose": "Grading student assignment submissions against standardized rubrics",
+            },
         ],
         "roles": [
             {
                 "department_name": "Curriculum & Pedagogy",
                 "title": "Master Instructional Designer",
-                "responsibilities": ["Construct progressive module roadmaps", "Author engaging problem sets", "Verify prerequisite alignment"],
+                "responsibilities": [
+                    "Construct progressive module roadmaps",
+                    "Author engaging problem sets",
+                    "Verify prerequisite alignment",
+                ],
                 "capabilities": ["curriculum_design", "pedagogical_structuring", "bloom_taxonomy"],
                 "authority": "MANAGE",
                 "autonomy_level": 4,
@@ -1443,15 +2219,26 @@ SYSTEM_BLUEPRINTS = [
             {
                 "department_name": "Adaptive Tutoring",
                 "title": "Socratic Mentor",
-                "responsibilities": ["Guide students to answers without giving the solution directly", "Provide constructive encouragement"],
-                "capabilities": ["socratic_dialogue", "concept_simplification", "empathetic_tutoring"],
+                "responsibilities": [
+                    "Guide students to answers without giving the solution directly",
+                    "Provide constructive encouragement",
+                ],
+                "capabilities": [
+                    "socratic_dialogue",
+                    "concept_simplification",
+                    "empathetic_tutoring",
+                ],
                 "authority": "EXECUTE",
                 "autonomy_level": 4,
             },
             {
                 "department_name": "Assessment & Evaluation",
                 "title": "Academic Assessment Evaluator",
-                "responsibilities": ["Grade submitted project code", "Provide granular constructive feedback", "Check for academic honesty"],
+                "responsibilities": [
+                    "Grade submitted project code",
+                    "Provide granular constructive feedback",
+                    "Check for academic honesty",
+                ],
                 "capabilities": ["rubric_grading", "code_review_pedagogy", "plagiarism_detection"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -1465,7 +2252,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Build comprehensive course syllabi with progressive difficulty, clear learning outcomes, and real-world milestones.",
                 "responsibilities": ["Course design and exercise authoring"],
                 "capabilities": ["curriculum_design", "pedagogical_structuring"],
-                "tools": [{"name": "curriculum_exporter", "description": "Markdown / LMS exporter", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "curriculum_exporter",
+                        "description": "Markdown / LMS exporter",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 4,
                 "intelligence_config": {"model": "claude-3-5-sonnet", "temperature": 0.4},
                 "resource_limits": {"max_tokens_per_call": 16384, "max_daily_budget_usd": 12.0},
@@ -1477,7 +2270,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Use Socratic questioning to guide learners. Explain complex computer science ideas using intuitive analogies.",
                 "responsibilities": ["1-on-1 personalized tutoring"],
                 "capabilities": ["socratic_dialogue", "concept_simplification"],
-                "tools": [{"name": "code_sandbox_runner", "description": "Execute Python snippet safely", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "code_sandbox_runner",
+                        "description": "Execute Python snippet safely",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 4,
                 "intelligence_config": {"model": "gpt-4o", "temperature": 0.6},
                 "resource_limits": {"max_tokens_per_call": 8192, "max_daily_budget_usd": 14.0},
@@ -1489,7 +2288,13 @@ SYSTEM_BLUEPRINTS = [
                 "system_instructions": "Evaluate submitted projects against the rubric. Highlight strengths before giving actionable correction steps.",
                 "responsibilities": ["Project grading and feedback"],
                 "capabilities": ["rubric_grading", "plagiarism_detection"],
-                "tools": [{"name": "rubric_scorer", "description": "Structured grade score generator", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "rubric_scorer",
+                        "description": "Structured grade score generator",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gpt-4o", "temperature": 0.1},
                 "resource_limits": {"max_tokens_per_call": 8192, "max_daily_budget_usd": 10.0},
@@ -1511,40 +2316,95 @@ SYSTEM_BLUEPRINTS = [
                 "name": "Academic Rigor & Anti-Cheating Policy",
                 "description": "Assessments must test deep conceptual understanding and synthesis rather than rote memorization.",
                 "scope": "COMPANY",
-                "rules": [{"condition": "contains_unattributed_plagiarism", "action": "FLAG_ACADEMIC_INTEGRITY"}],
+                "rules": [
+                    {
+                        "condition": "contains_unattributed_plagiarism",
+                        "action": "FLAG_ACADEMIC_INTEGRITY",
+                    }
+                ],
                 "enforcement_level": "HARD",
             }
         ],
         "constitution": {
             "mission": "Empower learners of all backgrounds through compassionate, rigorous, and individualized educational mentorship.",
             "values": ["Intellectual growth", "Patience", "Accessibility"],
-            "operating_principles": ["Celebrate effort and growth mindset", "Every student can master the material with the right scaffolding"],
-            "prohibited_actions": ["Belittling student efforts", "Providing complete homework answers directly without fostering inquiry"],
-            "approval_requirements": ["Official certificate issuance", "Changing graduation requirements"],
-            "security_rules": ["Student grade books and personal learning records protected under FERPA guidelines"],
+            "operating_principles": [
+                "Celebrate effort and growth mindset",
+                "Every student can master the material with the right scaffolding",
+            ],
+            "prohibited_actions": [
+                "Belittling student efforts",
+                "Providing complete homework answers directly without fostering inquiry",
+            ],
+            "approval_requirements": [
+                "Official certificate issuance",
+                "Changing graduation requirements",
+            ],
+            "security_rules": [
+                "Student grade books and personal learning records protected under FERPA guidelines"
+            ],
             "financial_rules": ["Scholarship and fee waiver allocations audited semesterly"],
-            "data_rules": ["Student conversation transcripts anonymized before model quality evaluations"],
-            "autonomy_boundaries": {"tutoring_interactions": "LEVEL_4", "credential_issuance": "LEVEL_2"},
-            "escalation_rules": ["Escalate reports of student distress or severe learning blockers to Academic Dean"],
+            "data_rules": [
+                "Student conversation transcripts anonymized before model quality evaluations"
+            ],
+            "autonomy_boundaries": {
+                "tutoring_interactions": "LEVEL_4",
+                "credential_issuance": "LEVEL_2",
+            },
+            "escalation_rules": [
+                "Escalate reports of student distress or severe learning blockers to Academic Dean"
+            ],
         },
         "recommended_tools": [
-            {"name": "canvas_lms_bridge", "description": "LMS gradebook connector", "risk_level": "LOW"},
-            {"name": "python_sandbox", "description": "Safe code evaluation environment", "risk_level": "LOW"},
+            {
+                "name": "canvas_lms_bridge",
+                "description": "LMS gradebook connector",
+                "risk_level": "LOW",
+            },
+            {
+                "name": "python_sandbox",
+                "description": "Safe code evaluation environment",
+                "risk_level": "LOW",
+            },
         ],
         "intelligence_requirements": {
-            "capabilities_required": ["empathetic_messaging", "concept_simplification", "deep_coding"],
+            "capabilities_required": [
+                "empathetic_messaging",
+                "concept_simplification",
+                "deep_coding",
+            ],
             "recommended_models": ["gpt-4o", "claude-3-5-sonnet", "gemini-1.5-flash"],
         },
         "resource_policies": {"financial_budget_usd": 350.0, "execution_slots": 6},
         "kpis": [
-            {"name": "Course Completion Rate", "metric": "completion_pct", "target": ">= 75%", "review_frequency": "MONTHLY"},
-            {"name": "Student Satisfaction", "metric": "csat_score", "target": ">= 4.8 / 5.0", "review_frequency": "WEEKLY"},
+            {
+                "name": "Course Completion Rate",
+                "metric": "completion_pct",
+                "target": ">= 75%",
+                "review_frequency": "MONTHLY",
+            },
+            {
+                "name": "Student Satisfaction",
+                "metric": "csat_score",
+                "target": ">= 4.8 / 5.0",
+                "review_frequency": "WEEKLY",
+            },
         ],
         "approval_rules": [
-            {"action": "ISSUE_COMPLETION_CERTIFICATE", "condition": "type == 'graduation'", "approver_role": "ADMIN", "risk_level": "HIGH"}
+            {
+                "action": "ISSUE_COMPLETION_CERTIFICATE",
+                "condition": "type == 'graduation'",
+                "approver_role": "ADMIN",
+                "risk_level": "HIGH",
+            }
         ],
         "escalation_rules": [
-            {"trigger": "Student fails 3 consecutive milestone submissions", "route_to": "Academic Success Counselor", "severity": "MEDIUM", "sla_minutes": 120}
+            {
+                "trigger": "Student fails 3 consecutive milestone submissions",
+                "route_to": "Academic Success Counselor",
+                "severity": "MEDIUM",
+                "sla_minutes": 120,
+            }
         ],
     },
 ]

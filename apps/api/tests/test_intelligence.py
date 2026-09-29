@@ -1,4 +1,5 @@
 """Tests for the NEXORA Intelligence Exchange."""
+
 import pytest
 from httpx import AsyncClient
 
@@ -6,9 +7,13 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestIntelligenceExchange:
-    async def test_list_providers(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_list_providers(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
-        resp = await client.get(f"/api/v1/companies/{company_id}/intelligence/providers", headers=auth_headers)
+        resp = await client.get(
+            f"/api/v1/companies/{company_id}/intelligence/providers", headers=auth_headers
+        )
         assert resp.status_code == 200
         providers = resp.json()
         assert len(providers) >= 4
@@ -19,9 +24,13 @@ class TestIntelligenceExchange:
         assert "google_gemini" in names
         assert "local" in names
 
-    async def test_list_models(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_list_models(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
-        resp = await client.get(f"/api/v1/companies/{company_id}/intelligence/models", headers=auth_headers)
+        resp = await client.get(
+            f"/api/v1/companies/{company_id}/intelligence/models", headers=auth_headers
+        )
         assert resp.status_code == 200
         models = resp.json()
         assert len(models) >= 4
@@ -32,7 +41,9 @@ class TestIntelligenceExchange:
         assert "gemini-1.5-pro" in idents
         assert "local-deepseek-r1" in idents
 
-    async def test_capability_based_routing(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_capability_based_routing(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
         # Agent requests "large_context" capability -> router picks gemini-1.5-pro
         resp = await client.post(
@@ -51,7 +62,9 @@ class TestIntelligenceExchange:
         assert data["prompt_tokens"] > 0
         assert data["estimated_cost_usd"] > 0
 
-    async def test_privacy_aware_routing(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_privacy_aware_routing(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
         # Agent requests on-premise zero retention -> routes to local-deepseek-r1
         resp = await client.post(
@@ -68,7 +81,9 @@ class TestIntelligenceExchange:
         assert data["model_used"] == "local-deepseek-r1"
         assert data["estimated_cost_usd"] == 0.0  # Zero API cost
 
-    async def test_user_explicit_override(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_user_explicit_override(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
         # Explicit override overrides capability routing defaults
         resp = await client.post(
@@ -84,7 +99,9 @@ class TestIntelligenceExchange:
         assert data["model_used"] == "claude-3-5-sonnet"
         assert data["provider_used"] == "anthropic"
 
-    async def test_dashboard_analytics(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_dashboard_analytics(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
         # Generate at least one request
         await client.post(
@@ -93,7 +110,9 @@ class TestIntelligenceExchange:
             headers=auth_headers,
         )
 
-        dash_resp = await client.get(f"/api/v1/companies/{company_id}/intelligence/dashboard", headers=auth_headers)
+        dash_resp = await client.get(
+            f"/api/v1/companies/{company_id}/intelligence/dashboard", headers=auth_headers
+        )
         assert dash_resp.status_code == 200
         dash = dash_resp.json()
         assert dash["total_requests"] >= 1

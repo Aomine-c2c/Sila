@@ -1,12 +1,13 @@
 """Workflow service."""
+
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from nexora.core.enums import WorkflowStatus
 from nexora.domains.workflows.models import Workflow
 from nexora.domains.workflows.repository import WorkflowRepository
 from nexora.exceptions import BusinessRuleError, NotFoundError
-from nexora.core.enums import WorkflowStatus
 
 
 class WorkflowService:
@@ -58,6 +59,7 @@ class WorkflowService:
     ):
         from nexora.domains.workflows.engine import WorkflowExecutionEngine
         from nexora.domains.workflows.repository import WorkflowExecutionRepository
+
         engine = WorkflowExecutionEngine(self.db)
         execution = await engine.trigger_workflow(
             workflow_id=workflow_id,
@@ -74,6 +76,7 @@ class WorkflowService:
 
     async def get_execution(self, execution_id: uuid.UUID, company_id: uuid.UUID):
         from nexora.domains.workflows.repository import WorkflowExecutionRepository
+
         repo = WorkflowExecutionRepository(self.db)
         execution = await repo.get_execution(execution_id, company_id)
         if not execution:
@@ -89,6 +92,7 @@ class WorkflowService:
         offset: int = 0,
     ):
         from nexora.domains.workflows.repository import WorkflowExecutionRepository
+
         repo = WorkflowExecutionRepository(self.db)
         return await repo.list_executions(
             company_id=company_id,
@@ -101,6 +105,7 @@ class WorkflowService:
     async def resume_execution(self, execution_id: uuid.UUID, company_id: uuid.UUID):
         from nexora.domains.workflows.engine import WorkflowExecutionEngine
         from nexora.domains.workflows.repository import WorkflowExecutionRepository
+
         execution = await self.get_execution(execution_id, company_id)
         engine = WorkflowExecutionEngine(self.db)
         await engine.resume_or_run_execution(execution)
@@ -110,10 +115,9 @@ class WorkflowService:
     async def cancel_execution(self, execution_id: uuid.UUID, company_id: uuid.UUID):
         from nexora.core.enums import WorkflowExecutionStatus
         from nexora.domains.workflows.repository import WorkflowExecutionRepository
+
         execution = await self.get_execution(execution_id, company_id)
         execution.status = WorkflowExecutionStatus.CANCELLED
         await self.db.flush()
         repo = WorkflowExecutionRepository(self.db)
         return await repo.get_execution(execution_id, company_id)
-
-

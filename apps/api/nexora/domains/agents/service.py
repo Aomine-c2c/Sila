@@ -7,10 +7,10 @@ Agent Service — Full multi-agent employee business logic:
 - Traceable audit trails
 - Rich employee profile view
 """
+
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,7 +19,6 @@ from nexora.core.enums import (
     AgentStatus,
     AuditAction,
     ExecutionStatus,
-    TaskStatus,
 )
 from nexora.domains.agents.execution import AgentExecutionEngine
 from nexora.domains.agents.models import Agent, AgentCommunication, AgentExecutionAudit, AgentMemory
@@ -34,7 +33,7 @@ from nexora.domains.agents.schemas import (
     TaskExecutionResult,
 )
 from nexora.domains.projects.repository import TaskRepository
-from nexora.exceptions import BusinessRuleError, ForbiddenError, NotFoundError
+from nexora.exceptions import BusinessRuleError, NotFoundError
 
 
 class AgentService:
@@ -42,7 +41,12 @@ class AgentService:
     VALID_TRANSITIONS = {
         AgentStatus.CREATED: {AgentStatus.CONFIGURED, AgentStatus.RETIRED},
         AgentStatus.CONFIGURED: {AgentStatus.AVAILABLE, AgentStatus.PAUSED, AgentStatus.RETIRED},
-        AgentStatus.AVAILABLE: {AgentStatus.WORKING, AgentStatus.PAUSED, AgentStatus.BLOCKED, AgentStatus.RETIRED},
+        AgentStatus.AVAILABLE: {
+            AgentStatus.WORKING,
+            AgentStatus.PAUSED,
+            AgentStatus.BLOCKED,
+            AgentStatus.RETIRED,
+        },
         AgentStatus.WORKING: {AgentStatus.AVAILABLE, AgentStatus.BLOCKED, AgentStatus.PAUSED},
         AgentStatus.BLOCKED: {AgentStatus.AVAILABLE, AgentStatus.PAUSED, AgentStatus.RETIRED},
         AgentStatus.PAUSED: {AgentStatus.AVAILABLE, AgentStatus.CONFIGURED, AgentStatus.RETIRED},
@@ -62,7 +66,11 @@ class AgentService:
         """Create a new agent employee starting in CREATED lifecycle state."""
         # Initial status is CONFIGURED if capabilities/tools/instructions provided, else CREATED
         if "status" not in kwargs:
-            if kwargs.get("capabilities") or kwargs.get("tools") or kwargs.get("system_instructions"):
+            if (
+                kwargs.get("capabilities")
+                or kwargs.get("tools")
+                or kwargs.get("system_instructions")
+            ):
                 kwargs["status"] = AgentStatus.CONFIGURED
             else:
                 kwargs["status"] = AgentStatus.CREATED
@@ -101,7 +109,9 @@ class AgentService:
 
         # If configuring a CREATED agent, auto transition to CONFIGURED
         if agent.status == AgentStatus.CREATED and (
-            kwargs.get("system_instructions") or kwargs.get("capabilities") or kwargs.get("intelligence_config")
+            kwargs.get("system_instructions")
+            or kwargs.get("capabilities")
+            or kwargs.get("intelligence_config")
         ):
             if "status" not in kwargs:
                 kwargs["status"] = AgentStatus.CONFIGURED
@@ -109,7 +119,11 @@ class AgentService:
         return await self.repo.update(agent, **kwargs)
 
     async def transition_status(
-        self, agent_id: uuid.UUID, company_id: uuid.UUID, new_status: AgentStatus, reason: str | None = None
+        self,
+        agent_id: uuid.UUID,
+        company_id: uuid.UUID,
+        new_status: AgentStatus,
+        reason: str | None = None,
     ) -> Agent:
         """Enforces the 7-stage agent lifecycle state machine."""
         agent = await self.get(agent_id, company_id)
@@ -130,7 +144,11 @@ class AgentService:
             execution_id=uuid.uuid4(),
             action=AuditAction.STATUS_TRANSITION,
             status=ExecutionStatus.SUCCESS,
-            details={"previous_status": current.value, "new_status": new_status.value, "reason": reason},
+            details={
+                "previous_status": current.value,
+                "new_status": new_status.value,
+                "reason": reason,
+            },
         )
         return updated
 
@@ -236,7 +254,7 @@ class AgentService:
             to_agent_id=reviewer.id,
             task_id=task_id,
             message_type=AgentMessageType.REVIEW,
-            subject=f"Review Requested for Task deliverable",
+            subject="Review Requested for Task deliverable",
             body=deliverable,
             payload={"task_id": str(task_id), "status": "PENDING_REVIEW"},
         )
@@ -315,13 +333,17 @@ class AgentService:
             override_model=override_model,
         )
 
-    async def list_audits(self, agent_id: uuid.UUID, company_id: uuid.UUID) -> list[AgentExecutionAudit]:
+    async def list_audits(
+        self, agent_id: uuid.UUID, company_id: uuid.UUID
+    ) -> list[AgentExecutionAudit]:
         await self.get(agent_id, company_id)
         return await self.audit_repo.list_for_agent(agent_id)
 
     # ── Rich Employee Profile Inspection ───────────────────────────────────────
 
-    async def get_agent_profile(self, agent_id: uuid.UUID, company_id: uuid.UUID) -> AgentProfileResponse:
+    async def get_agent_profile(
+        self, agent_id: uuid.UUID, company_id: uuid.UUID
+    ) -> AgentProfileResponse:
         """
         Assembles comprehensive employee profile:
         identity, role, department, manager, tools, permissions, resource usage,
@@ -333,6 +355,7 @@ class AgentService:
         role_title = None
         if agent.role_id:
             from nexora.domains.organizations.repository import OrgRoleRepository
+
             r = await OrgRoleRepository(self.db).get_by_id(agent.role_id)
             if r:
                 role_title = r.title
@@ -340,6 +363,7 @@ class AgentService:
         dept_name = None
         if agent.department_id:
             from nexora.domains.organizations.repository import DepartmentRepository
+
             d = await DepartmentRepository(self.db).get_by_id(agent.department_id)
             if d:
                 dept_name = d.name
@@ -351,7 +375,11 @@ class AgentService:
                 manager_name = mgr.name
 
         # Find current active task
-        active_tasks = await self.task_repo.list_by_project(agent.id) if hasattr(self.task_repo, "list_by_agent") else []
+        active_tasks = (
+            await self.task_repo.list_by_project(agent.id)
+            if hasattr(self.task_repo, "list_by_agent")
+            else []
+        )
         current_task_dict = None
 
         # Fetch recent communications, audits, and memories

@@ -1,11 +1,18 @@
 """Workflow model — orchestrated multi-step processes."""
+
 import uuid
 
-from sqlalchemy import JSON, Enum as SAEnum, ForeignKey, String, Text
+from sqlalchemy import JSON, ForeignKey, String, Text
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from nexora.core.base import NexoraBase
-from nexora.core.enums import WorkflowExecutionStatus, WorkflowStatus, WorkflowStepType, WorkflowTriggerType
+from nexora.core.enums import (
+    WorkflowExecutionStatus,
+    WorkflowStatus,
+    WorkflowStepType,
+    WorkflowTriggerType,
+)
 
 
 class Workflow(NexoraBase):
@@ -13,6 +20,7 @@ class Workflow(NexoraBase):
     A reusable process definition: a sequence of steps, agents, and tools
     that can be triggered manually, on a schedule, or by events.
     """
+
     __tablename__ = "workflows"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -27,22 +35,50 @@ class Workflow(NexoraBase):
         default=WorkflowTriggerType.MANUAL,
         nullable=False,
     )
-    trigger_config: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False,
-        comment="Trigger-specific config: cron expression, webhook URL, event name, etc.")
+    trigger_config: Mapped[dict] = mapped_column(
+        JSON,
+        default=dict,
+        nullable=False,
+        comment="Trigger-specific config: cron expression, webhook URL, event name, etc.",
+    )
 
     # Workflow definition
-    steps: Mapped[list] = mapped_column(JSON, default=list, nullable=False,
-        comment="Ordered list of step objects: {id, type, name, config, next_step_id}")
-    agents: Mapped[list] = mapped_column(JSON, default=list, nullable=False,
-        comment="List of agent IDs participating in this workflow")
-    tools: Mapped[list] = mapped_column(JSON, default=list, nullable=False,
-        comment="Tool configurations available during workflow execution")
-    conditions: Mapped[list] = mapped_column(JSON, default=list, nullable=False,
-        comment="Branching conditions: {id, expression, true_step, false_step}")
-    approvals: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False,
-        comment="Approval gate config: {required_role, timeout_hours, on_timeout}")
-    completion_criteria: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False,
-        comment="What constitutes a successful workflow completion")
+    steps: Mapped[list] = mapped_column(
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Ordered list of step objects: {id, type, name, config, next_step_id}",
+    )
+    agents: Mapped[list] = mapped_column(
+        JSON,
+        default=list,
+        nullable=False,
+        comment="List of agent IDs participating in this workflow",
+    )
+    tools: Mapped[list] = mapped_column(
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Tool configurations available during workflow execution",
+    )
+    conditions: Mapped[list] = mapped_column(
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Branching conditions: {id, expression, true_step, false_step}",
+    )
+    approvals: Mapped[dict] = mapped_column(
+        JSON,
+        default=dict,
+        nullable=False,
+        comment="Approval gate config: {required_role, timeout_hours, on_timeout}",
+    )
+    completion_criteria: Mapped[dict] = mapped_column(
+        JSON,
+        default=dict,
+        nullable=False,
+        comment="What constitutes a successful workflow completion",
+    )
 
     status: Mapped[WorkflowStatus] = mapped_column(
         SAEnum(WorkflowStatus, name="workflow_status"),
@@ -52,7 +88,9 @@ class Workflow(NexoraBase):
 
     # Relationships
     company: Mapped["Company"] = relationship("Company", back_populates="workflows")  # noqa: F821
-    executions: Mapped[list["WorkflowExecution"]] = relationship("WorkflowExecution", back_populates="workflow", cascade="all, delete-orphan")
+    executions: Mapped[list["WorkflowExecution"]] = relationship(
+        "WorkflowExecution", back_populates="workflow", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Workflow id={self.id} name={self.name}>"
@@ -64,6 +102,7 @@ class WorkflowExecution(NexoraBase):
     Persists current step, state payload, history, resource usage, and observable telemetry.
     Never relies solely on LLM context window memory.
     """
+
     __tablename__ = "workflow_executions"
 
     workflow_id: Mapped[uuid.UUID] = mapped_column(
@@ -96,8 +135,7 @@ class WorkflowExecution(NexoraBase):
     # State Data Payloads
     input_payload: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     state_payload: Mapped[dict] = mapped_column(
-        JSON, default=dict, nullable=False,
-        comment="Persistent shared state passed between steps"
+        JSON, default=dict, nullable=False, comment="Persistent shared state passed between steps"
     )
     output_payload: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -119,7 +157,10 @@ class WorkflowExecution(NexoraBase):
     # Relationships
     workflow: Mapped["Workflow"] = relationship("Workflow", back_populates="executions")
     step_records: Mapped[list["WorkflowExecutionStep"]] = relationship(
-        "WorkflowExecutionStep", back_populates="execution", cascade="all, delete-orphan", order_by="WorkflowExecutionStep.step_index"
+        "WorkflowExecutionStep",
+        back_populates="execution",
+        cascade="all, delete-orphan",
+        order_by="WorkflowExecutionStep.step_index",
     )
 
 
@@ -128,6 +169,7 @@ class WorkflowExecutionStep(NexoraBase):
     Detailed audit log for every step execution within a WorkflowExecution.
     Records agent involved, tools executed, decisions made, approval gates, retries, and errors.
     """
+
     __tablename__ = "workflow_execution_steps"
 
     execution_id: Mapped[uuid.UUID] = mapped_column(
@@ -159,4 +201,6 @@ class WorkflowExecutionStep(NexoraBase):
     retries_attempted: Mapped[int] = mapped_column(nullable=False, default=0)
     duration_ms: Mapped[float] = mapped_column(nullable=False, default=0.0)
 
-    execution: Mapped["WorkflowExecution"] = relationship("WorkflowExecution", back_populates="step_records")
+    execution: Mapped["WorkflowExecution"] = relationship(
+        "WorkflowExecution", back_populates="step_records"
+    )

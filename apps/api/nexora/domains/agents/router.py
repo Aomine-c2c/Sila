@@ -1,4 +1,5 @@
 """Agent API router with full multi-agent employee capabilities."""
+
 import uuid
 from typing import Annotated
 
@@ -7,8 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.core.permissions import require_manager, require_member, require_viewer
 from nexora.database import get_db
-from nexora.domains.auth.models import User
-from nexora.domains.auth.router import get_current_user
 from nexora.domains.agents.schemas import (
     AgentCreate,
     AgentProfileResponse,
@@ -24,6 +23,8 @@ from nexora.domains.agents.schemas import (
     TaskExecutionResult,
 )
 from nexora.domains.agents.service import AgentService
+from nexora.domains.auth.models import User
+from nexora.domains.auth.router import get_current_user
 
 router = APIRouter(prefix="/companies/{company_id}/agents", tags=["Agents"])
 
@@ -157,7 +158,9 @@ async def list_agent_audits(
 # ── Long-term Memory ────────────────────────────────────────────────────────
 
 
-@router.post("/{agent_id}/memories", response_model=MemoryResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{agent_id}/memories", response_model=MemoryResponse, status_code=status.HTTP_201_CREATED
+)
 async def add_agent_memory(
     company_id: uuid.UUID,
     agent_id: uuid.UUID,
@@ -194,7 +197,9 @@ async def list_agent_memories(
 # ── Agent Communication & Hierarchy ─────────────────────────────────────────
 
 
-@router.post("/{agent_id}/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{agent_id}/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED
+)
 async def send_agent_message(
     company_id: uuid.UUID,
     agent_id: uuid.UUID,

@@ -8,6 +8,7 @@ Covers:
 - Resource Usage Records (OBSERVED vs ESTIMATED real telemetry)
 - Resource Control Center Analytics & Bottleneck insights
 """
+
 import uuid
 from datetime import datetime
 from typing import Any
@@ -15,17 +16,16 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from nexora.core.enums import (
-    AllocationStatus,
     MetricState,
     ResourceCategory,
     ResourceEvaluationDecision,
     ResourcePriority,
 )
 
-
 # ==========================================
 # RESOURCE POOL SCHEMAS
 # ==========================================
+
 
 class ResourcePoolCreate(BaseModel):
     name: str = Field(..., max_length=150)
@@ -63,6 +63,7 @@ class ResourcePoolResponse(BaseModel):
 # ==========================================
 # RESOURCE BUDGET SCHEMAS
 # ==========================================
+
 
 class ResourceBudgetCreate(BaseModel):
     name: str = Field(..., max_length=150)
@@ -106,6 +107,7 @@ class ResourceBudgetResponse(BaseModel):
 # RESOURCE REQUEST & EVALUATION SCHEMAS
 # ==========================================
 
+
 class RequestedComputeSpec(BaseModel):
     cpu_cores: float = Field(default=1.0, ge=0.0)
     ram_gb: float = Field(default=2.0, ge=0.0)
@@ -135,9 +137,15 @@ class ResourceRequestCreate(BaseModel):
     priority: ResourcePriority = ResourcePriority.NORMAL
     justification: str = Field(..., min_length=5, description="Business justification for request")
     requested_compute: RequestedComputeSpec = Field(default_factory=RequestedComputeSpec)
-    requested_intelligence: RequestedIntelligenceSpec = Field(default_factory=RequestedIntelligenceSpec)
-    requested_operational: RequestedOperationalSpec = Field(default_factory=RequestedOperationalSpec)
-    expected_value_score: float = Field(default=5.0, ge=1.0, le=10.0, description="Expected organizational ROI (1-10)")
+    requested_intelligence: RequestedIntelligenceSpec = Field(
+        default_factory=RequestedIntelligenceSpec
+    )
+    requested_operational: RequestedOperationalSpec = Field(
+        default_factory=RequestedOperationalSpec
+    )
+    expected_value_score: float = Field(
+        default=5.0, ge=1.0, le=10.0, description="Expected organizational ROI (1-10)"
+    )
 
 
 class ResourceEvaluationResult(BaseModel):
@@ -174,6 +182,7 @@ class ResourceRequestResponse(BaseModel):
 # RESOURCE ALLOCATION SCHEMAS
 # ==========================================
 
+
 class ResourceAllocationResponse(BaseModel):
     id: uuid.UUID
     company_id: uuid.UUID
@@ -198,12 +207,15 @@ class ResourceReleaseRequest(BaseModel):
 # RESOURCE USAGE RECORD (TELEMETRY) SCHEMAS
 # ==========================================
 
+
 class ResourceUsageRecordCreate(BaseModel):
     allocation_id: uuid.UUID
     agent_id: uuid.UUID | None = None
     task_id: uuid.UUID | None = None
     metric_state: MetricState = MetricState.OBSERVED
-    resource_type: str = Field(..., description="cpu_cores | memory_mb | tokens | cost_usd | duration_seconds")
+    resource_type: str = Field(
+        ..., description="cpu_cores | memory_mb | tokens | cost_usd | duration_seconds"
+    )
     amount: float = Field(..., ge=0.0)
     unit: str = Field(..., max_length=50)
     details: dict[str, Any] = Field(default_factory=dict)
@@ -228,6 +240,7 @@ class ResourceUsageRecordResponse(BaseModel):
 # ==========================================
 # RESOURCE CONTROL CENTER / ANALYTICS SCHEMAS
 # ==========================================
+
 
 class CapacityOverviewItem(BaseModel):
     category: str

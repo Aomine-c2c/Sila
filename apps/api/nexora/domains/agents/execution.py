@@ -15,6 +15,7 @@ TASK_RECEIVED
 Every action is traceable and logged to AgentExecutionAudit.
 Permission checks and resource limits are rigorously enforced.
 """
+
 import time
 import uuid
 from datetime import UTC, datetime
@@ -28,7 +29,6 @@ from nexora.core.enums import (
     ExecutionStep,
     TaskStatus,
 )
-from nexora.domains.agents.models import Agent
 from nexora.domains.agents.repository import (
     AgentAuditRepository,
     AgentMemoryRepository,
@@ -93,14 +93,20 @@ class AgentExecutionEngine:
                 action=AuditAction.EXECUTION_STEP,
                 step=ExecutionStep.TASK_RECEIVED,
                 status=ExecutionStatus.SUCCESS,
-                details={"title": task.title, "priority": task.priority, "input_data": input_data or {}},
+                details={
+                    "title": task.title,
+                    "priority": task.priority,
+                    "input_data": input_data or {},
+                },
             )
-            step_records.append(ExecutionStepRecord(
-                step=ExecutionStep.TASK_RECEIVED,
-                status=ExecutionStatus.SUCCESS,
-                details={"message": f"Task '{task.title}' accepted."},
-                duration_ms=(time.perf_counter() - t0) * 1000,
-            ))
+            step_records.append(
+                ExecutionStepRecord(
+                    step=ExecutionStep.TASK_RECEIVED,
+                    status=ExecutionStatus.SUCCESS,
+                    details={"message": f"Task '{task.title}' accepted."},
+                    duration_ms=(time.perf_counter() - t0) * 1000,
+                )
+            )
 
             # ── 2. CONTEXT ASSEMBLY ────────────────────────────────────────────
             t0 = time.perf_counter()
@@ -122,12 +128,14 @@ class AgentExecutionEngine:
                 status=ExecutionStatus.SUCCESS,
                 details=context_payload,
             )
-            step_records.append(ExecutionStepRecord(
-                step=ExecutionStep.CONTEXT_ASSEMBLY,
-                status=ExecutionStatus.SUCCESS,
-                details={"memories_retrieved": len(relevant_memories)},
-                duration_ms=(time.perf_counter() - t0) * 1000,
-            ))
+            step_records.append(
+                ExecutionStepRecord(
+                    step=ExecutionStep.CONTEXT_ASSEMBLY,
+                    status=ExecutionStatus.SUCCESS,
+                    details={"memories_retrieved": len(relevant_memories)},
+                    duration_ms=(time.perf_counter() - t0) * 1000,
+                )
+            )
 
             # ── 3. PLAN ────────────────────────────────────────────────────────
             t0 = time.perf_counter()
@@ -137,8 +145,8 @@ class AgentExecutionEngine:
                 "Execute synthesis and generate expected outcome",
             ]
             # Governance evaluation & constitutional check
-            from nexora.domains.governance.service import GovernanceService
             from nexora.domains.governance.schemas import GovernanceActionEvaluationRequest
+            from nexora.domains.governance.service import GovernanceService
 
             gov_service = GovernanceService(self.db)
             gov_eval = await gov_service.evaluate_action(
@@ -157,7 +165,9 @@ class AgentExecutionEngine:
                 ),
             )
             if gov_eval.is_prohibited:
-                raise ForbiddenError(f"Action blocked by Company Constitution: {gov_eval.matched_constitution_clause}")
+                raise ForbiddenError(
+                    f"Action blocked by Company Constitution: {gov_eval.matched_constitution_clause}"
+                )
 
             await self.audit_repo.record_audit(
                 agent_id=agent.id,
@@ -174,12 +184,18 @@ class AgentExecutionEngine:
                     "requires_approval": gov_eval.requires_approval,
                 },
             )
-            step_records.append(ExecutionStepRecord(
-                step=ExecutionStep.PLAN,
-                status=ExecutionStatus.SUCCESS,
-                details={"steps_count": len(plan_steps), "plan": plan_steps, "autonomy": gov_eval.effective_autonomy_label},
-                duration_ms=(time.perf_counter() - t0) * 1000,
-            ))
+            step_records.append(
+                ExecutionStepRecord(
+                    step=ExecutionStep.PLAN,
+                    status=ExecutionStatus.SUCCESS,
+                    details={
+                        "steps_count": len(plan_steps),
+                        "plan": plan_steps,
+                        "autonomy": gov_eval.effective_autonomy_label,
+                    },
+                    duration_ms=(time.perf_counter() - t0) * 1000,
+                )
+            )
 
             # ── 4. RESOURCE CHECK ──────────────────────────────────────────────
             t0 = time.perf_counter()
@@ -189,7 +205,9 @@ class AgentExecutionEngine:
             current_cost = usage.get("total_cost_usd", 0.0)
 
             if current_cost >= max_daily_budget:
-                raise ForbiddenError(f"Agent exceeded daily budget limit (${max_daily_budget:.2f}).")
+                raise ForbiddenError(
+                    f"Agent exceeded daily budget limit (${max_daily_budget:.2f})."
+                )
 
             await self.audit_repo.record_audit(
                 agent_id=agent.id,
@@ -201,17 +219,19 @@ class AgentExecutionEngine:
                 status=ExecutionStatus.SUCCESS,
                 details={"budget_remaining": max_daily_budget - current_cost},
             )
-            step_records.append(ExecutionStepRecord(
-                step=ExecutionStep.RESOURCE_CHECK,
-                status=ExecutionStatus.SUCCESS,
-                details={"resource_cleared": True},
-                duration_ms=(time.perf_counter() - t0) * 1000,
-            ))
+            step_records.append(
+                ExecutionStepRecord(
+                    step=ExecutionStep.RESOURCE_CHECK,
+                    status=ExecutionStatus.SUCCESS,
+                    details={"resource_cleared": True},
+                    duration_ms=(time.perf_counter() - t0) * 1000,
+                )
+            )
 
             # ── 5. INTELLIGENCE SELECTION ──────────────────────────────────────
             t0 = time.perf_counter()
-            from nexora.domains.intelligence.service import IntelligenceService
             from nexora.domains.intelligence.schemas import ModelRequest
+            from nexora.domains.intelligence.service import IntelligenceService
 
             intel_service = IntelligenceService(self.db)
             await intel_service.seed_default_providers_if_empty()
@@ -229,7 +249,9 @@ class AgentExecutionEngine:
             # Route model through exchange
             policy = await intel_service.router.get_or_create_default_policy(company_id)
             candidates = await intel_service.router.resolve_candidate_models(intel_req, policy)
-            selected_model = preferred_model or (candidates[0].model_identifier if candidates else "gpt-4o")
+            selected_model = preferred_model or (
+                candidates[0].model_identifier if candidates else "gpt-4o"
+            )
             selected_provider = candidates[0].provider_id if candidates else "openai"
 
             await self.audit_repo.record_audit(
@@ -242,19 +264,23 @@ class AgentExecutionEngine:
                 status=ExecutionStatus.SUCCESS,
                 details={"model": selected_model, "capabilities": required_caps},
             )
-            step_records.append(ExecutionStepRecord(
-                step=ExecutionStep.INTELLIGENCE_SELECTION,
-                status=ExecutionStatus.SUCCESS,
-                details={"model": selected_model, "capabilities": required_caps},
-                duration_ms=(time.perf_counter() - t0) * 1000,
-            ))
+            step_records.append(
+                ExecutionStepRecord(
+                    step=ExecutionStep.INTELLIGENCE_SELECTION,
+                    status=ExecutionStatus.SUCCESS,
+                    details={"model": selected_model, "capabilities": required_caps},
+                    duration_ms=(time.perf_counter() - t0) * 1000,
+                )
+            )
 
             # ── 6. TOOL EXECUTION ──────────────────────────────────────────────
             t0 = time.perf_counter()
             # Enforce capability-based permission verification
-            allowed_tools = agent.permissions.get("allowed_tools", ["analysis_tool", "reporting_tool", "unit_test"])
+            allowed_tools = agent.permissions.get(
+                "allowed_tools", ["analysis_tool", "reporting_tool", "unit_test"]
+            )
             executed_tools = []
-            for tool in (agent.tools or []):
+            for tool in agent.tools or []:
                 t_name = tool.get("name") if isinstance(tool, dict) else str(tool)
                 if t_name in allowed_tools:
                     executed_tools.append(t_name)
@@ -269,12 +295,14 @@ class AgentExecutionEngine:
                         details={"tool": t_name, "authorized": True},
                     )
 
-            step_records.append(ExecutionStepRecord(
-                step=ExecutionStep.TOOL_EXECUTION,
-                status=ExecutionStatus.SUCCESS,
-                details={"executed_tools": executed_tools},
-                duration_ms=(time.perf_counter() - t0) * 1000,
-            ))
+            step_records.append(
+                ExecutionStepRecord(
+                    step=ExecutionStep.TOOL_EXECUTION,
+                    status=ExecutionStatus.SUCCESS,
+                    details={"executed_tools": executed_tools},
+                    duration_ms=(time.perf_counter() - t0) * 1000,
+                )
+            )
 
             # ── 7. RESULT ──────────────────────────────────────────────────────
             t0 = time.perf_counter()
@@ -289,7 +317,8 @@ class AgentExecutionEngine:
             output_result = {
                 "task_title": task.title,
                 "summary": gen_resp.text,
-                "outcome_achieved": task.expected_outcome or "Task requirements satisfied successfully.",
+                "outcome_achieved": task.expected_outcome
+                or "Task requirements satisfied successfully.",
                 "tools_utilized": executed_tools,
                 "model_used": gen_resp.model_used,
                 "provider_used": gen_resp.provider_used,
@@ -309,12 +338,14 @@ class AgentExecutionEngine:
                 tokens_consumed=tokens_consumed,
                 cost_usd=cost_usd,
             )
-            step_records.append(ExecutionStepRecord(
-                step=ExecutionStep.RESULT,
-                status=ExecutionStatus.SUCCESS,
-                details=output_result,
-                duration_ms=(time.perf_counter() - t0) * 1000,
-            ))
+            step_records.append(
+                ExecutionStepRecord(
+                    step=ExecutionStep.RESULT,
+                    status=ExecutionStatus.SUCCESS,
+                    details=output_result,
+                    duration_ms=(time.perf_counter() - t0) * 1000,
+                )
+            )
 
             # ── 8. VALIDATION ──────────────────────────────────────────────────
             t0 = time.perf_counter()
@@ -330,12 +361,14 @@ class AgentExecutionEngine:
                 status=ExecutionStatus.SUCCESS if validation_passed else ExecutionStatus.FAILED,
                 details={"validation_passed": validation_passed},
             )
-            step_records.append(ExecutionStepRecord(
-                step=ExecutionStep.VALIDATION,
-                status=ExecutionStatus.SUCCESS if validation_passed else ExecutionStatus.FAILED,
-                details={"validated": validation_passed},
-                duration_ms=(time.perf_counter() - t0) * 1000,
-            ))
+            step_records.append(
+                ExecutionStepRecord(
+                    step=ExecutionStep.VALIDATION,
+                    status=ExecutionStatus.SUCCESS if validation_passed else ExecutionStatus.FAILED,
+                    details={"validated": validation_passed},
+                    duration_ms=(time.perf_counter() - t0) * 1000,
+                )
+            )
 
             # ── 9. REPORT ──────────────────────────────────────────────────────
             t0 = time.perf_counter()
@@ -356,12 +389,14 @@ class AgentExecutionEngine:
                 status=ExecutionStatus.SUCCESS,
                 details=report_data,
             )
-            step_records.append(ExecutionStepRecord(
-                step=ExecutionStep.REPORT,
-                status=ExecutionStatus.SUCCESS,
-                details=report_data,
-                duration_ms=(time.perf_counter() - t0) * 1000,
-            ))
+            step_records.append(
+                ExecutionStepRecord(
+                    step=ExecutionStep.REPORT,
+                    status=ExecutionStatus.SUCCESS,
+                    details=report_data,
+                    duration_ms=(time.perf_counter() - t0) * 1000,
+                )
+            )
 
             # ── 10. MEMORY UPDATE ──────────────────────────────────────────────
             t0 = time.perf_counter()
@@ -384,12 +419,14 @@ class AgentExecutionEngine:
                 status=ExecutionStatus.SUCCESS,
                 details={"memory_key": f"task:{task.id}"},
             )
-            step_records.append(ExecutionStepRecord(
-                step=ExecutionStep.MEMORY_UPDATE,
-                status=ExecutionStatus.SUCCESS,
-                details={"memory_stored": True},
-                duration_ms=(time.perf_counter() - t0) * 1000,
-            ))
+            step_records.append(
+                ExecutionStepRecord(
+                    step=ExecutionStep.MEMORY_UPDATE,
+                    status=ExecutionStatus.SUCCESS,
+                    details={"memory_stored": True},
+                    duration_ms=(time.perf_counter() - t0) * 1000,
+                )
+            )
 
             # Finalize Task and Agent state
             await self.task_repo.update(task, status=TaskStatus.COMPLETED)
@@ -399,7 +436,9 @@ class AgentExecutionEngine:
             updated_usage = dict(agent.resource_usage or {})
             updated_usage["total_tokens"] = updated_usage.get("total_tokens", 0) + tokens_consumed
             updated_usage["total_cost_usd"] = updated_usage.get("total_cost_usd", 0.0) + cost_usd
-            updated_usage["total_tool_calls"] = updated_usage.get("total_tool_calls", 0) + len(executed_tools)
+            updated_usage["total_tool_calls"] = updated_usage.get("total_tool_calls", 0) + len(
+                executed_tools
+            )
 
             updated_perf = dict(agent.performance_metadata or {})
             completed = updated_perf.get("tasks_completed", 0) + 1

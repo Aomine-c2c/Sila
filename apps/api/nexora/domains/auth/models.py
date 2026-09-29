@@ -1,10 +1,9 @@
 """User model — the identity anchor for all NEXORA interactions."""
-import uuid
 
 from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from nexora.core.base import UUIDBase, TimestampMixin
+from nexora.core.base import TimestampMixin, UUIDBase
 
 
 class User(UUIDBase, TimestampMixin):
@@ -12,6 +11,7 @@ class User(UUIDBase, TimestampMixin):
     Platform-level user identity.
     Users belong to one or more companies via CompanyMember.
     """
+
     __tablename__ = "users"
 
     email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False, index=True)

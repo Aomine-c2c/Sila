@@ -1,9 +1,9 @@
 """Auth service — JWT tokens, password hashing, user management."""
+
 import uuid
 from datetime import UTC, datetime, timedelta
 
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.config import get_settings
@@ -14,6 +14,7 @@ from nexora.exceptions import ConflictError, UnauthorizedError
 
 settings = get_settings()
 import bcrypt
+
 
 def hash_password(plain: str) -> str:
     # Truncate to 72 bytes as per bcrypt specification

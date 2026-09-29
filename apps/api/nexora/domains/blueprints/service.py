@@ -7,6 +7,7 @@ Service layer for NEXORA Company Blueprints:
 - Saving an existing running company as a reusable template
 - 'Build My Company': Natural language organizational synthesis with risk analysis, capability gaps, and cost projections
 """
+
 import copy
 import re
 import uuid
@@ -16,8 +17,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.core.enums import (
     AgentStatus,
-    ApprovalStatus,
-    GovernanceAutonomyLevel,
     GovernanceRiskLevel,
     MembershipRole,
     PolicyScope,
@@ -26,11 +25,9 @@ from nexora.core.enums import (
 )
 from nexora.domains.agents.repository import AgentRepository
 from nexora.domains.auth.models import User
-from nexora.domains.blueprints.catalog import SYSTEM_BLUEPRINTS
 from nexora.domains.blueprints.models import BlueprintGenerationProposal, CompanyBlueprint
 from nexora.domains.blueprints.repository import BlueprintRepository
 from nexora.domains.blueprints.schemas import (
-    BuildMyCompanyProposalResponse,
     BuildMyCompanyRequest,
     CompanyBlueprintCreate,
     CompanyBlueprintUpdate,
@@ -39,7 +36,7 @@ from nexora.domains.blueprints.schemas import (
     SaveAsTemplateRequest,
 )
 from nexora.domains.governance.repository import GovernanceRepository
-from nexora.domains.organizations.models import Company, Department, OrganizationalDNA, OrgRole
+from nexora.domains.organizations.models import Department, OrgRole
 from nexora.domains.organizations.repository import (
     CompanyMemberRepository,
     CompanyRepository,
@@ -83,7 +80,9 @@ class BlueprintService:
             raise NotFoundError(f"Blueprint '{blueprint_id_or_key}' not found.")
         return bp
 
-    async def create_blueprint(self, data: CompanyBlueprintCreate, user_id: uuid.UUID | None = None) -> CompanyBlueprint:
+    async def create_blueprint(
+        self, data: CompanyBlueprintCreate, user_id: uuid.UUID | None = None
+    ) -> CompanyBlueprint:
         existing = await self.repo.get_by_key(data.key)
         if existing:
             raise ConflictError(f"Blueprint with key '{data.key}' already exists.")
@@ -115,13 +114,17 @@ class BlueprintService:
             metadata_tags=data.metadata_tags,
         )
 
-    async def update_blueprint(self, blueprint_id: uuid.UUID, data: CompanyBlueprintUpdate) -> CompanyBlueprint:
+    async def update_blueprint(
+        self, blueprint_id: uuid.UUID, data: CompanyBlueprintUpdate
+    ) -> CompanyBlueprint:
         bp = await self.repo.get_by_id(blueprint_id)
         if not bp:
             raise NotFoundError("Blueprint not found.")
         return await self.repo.update_blueprint(bp, **data.model_dump(exclude_unset=True))
 
-    async def duplicate_blueprint(self, blueprint_id: uuid.UUID, user_id: uuid.UUID | None = None) -> CompanyBlueprint:
+    async def duplicate_blueprint(
+        self, blueprint_id: uuid.UUID, user_id: uuid.UUID | None = None
+    ) -> CompanyBlueprint:
         original = await self.repo.get_by_id(blueprint_id)
         if not original:
             raise NotFoundError("Blueprint not found.")
@@ -184,7 +187,9 @@ class BlueprintService:
             "metadata_tags": bp.metadata_tags,
         }
 
-    async def import_blueprint_json(self, data: dict[str, Any], user_id: uuid.UUID | None = None) -> CompanyBlueprint:
+    async def import_blueprint_json(
+        self, data: dict[str, Any], user_id: uuid.UUID | None = None
+    ) -> CompanyBlueprint:
         key = data.get("key", f"imported-{uuid.uuid4().hex[:8]}")
         counter = 1
         original_key = key
@@ -277,7 +282,9 @@ class BlueprintService:
         dna_data = comp_def.get("dna", {})
         await self.dna_repo.upsert(
             company_id=company.id,
-            operating_philosophy=dna_data.get("operating_philosophy", "Excellence, autonomy, and rigorous verification"),
+            operating_philosophy=dna_data.get(
+                "operating_philosophy", "Excellence, autonomy, and rigorous verification"
+            ),
             innovation_level=dna_data.get("innovation_level", "PROGRESSIVE"),
             autonomy_level=dna_data.get("autonomy_level", "DELEGATED"),
             risk_tolerance=dna_data.get("risk_tolerance", "MODERATE"),
@@ -312,7 +319,9 @@ class BlueprintService:
             if not dept:
                 continue
             num_level = r.get("autonomy_level", 3)
-            str_level = autonomy_map.get(num_level, "BALANCED") if isinstance(num_level, int) else num_level
+            str_level = (
+                autonomy_map.get(num_level, "BALANCED") if isinstance(num_level, int) else num_level
+            )
 
             role = await self.role_repo.create(
                 department_id=dept.id,
@@ -340,10 +349,18 @@ class BlueprintService:
                 responsibilities=a.get("responsibilities", []),
                 capabilities=a.get("capabilities", []),
                 tools=a.get("tools", []),
-                permissions={"allowed_tools": [t.get("name") if isinstance(t, dict) else str(t) for t in a.get("tools", [])]},
+                permissions={
+                    "allowed_tools": [
+                        t.get("name") if isinstance(t, dict) else str(t) for t in a.get("tools", [])
+                    ]
+                },
                 status=AgentStatus.AVAILABLE,
-                intelligence_config=a.get("intelligence_config", {"model": "gpt-4o", "temperature": 0.2}),
-                resource_limits=a.get("resource_limits", {"max_tokens_per_call": 8192, "max_daily_budget_usd": 15.0}),
+                intelligence_config=a.get(
+                    "intelligence_config", {"model": "gpt-4o", "temperature": 0.2}
+                ),
+                resource_limits=a.get(
+                    "resource_limits", {"max_tokens_per_call": 8192, "max_daily_budget_usd": 15.0}
+                ),
             )
             created_agents.append(agent)
 
@@ -378,15 +395,27 @@ class BlueprintService:
         const_data = bp.constitution or {}
         await self.gov_repo.create_constitution(
             company_id=company.id,
-            mission=const_data.get("mission", comp_def.get("mission", "Autonomous high-performance organization")),
+            mission=const_data.get(
+                "mission", comp_def.get("mission", "Autonomous high-performance organization")
+            ),
             values=const_data.get("values", ["Integrity", "Execution speed", "Security"]),
-            operating_principles=const_data.get("operating_principles", ["Continuous verification", "Accountability"]),
-            prohibited_actions=const_data.get("prohibited_actions", ["Unauthorized data exfiltration"]),
-            approval_requirements=const_data.get("approval_requirements", ["Production destructive actions"]),
-            security_rules=const_data.get("security_rules", ["TLS encryption required", "Zero plain-text secret storage"]),
+            operating_principles=const_data.get(
+                "operating_principles", ["Continuous verification", "Accountability"]
+            ),
+            prohibited_actions=const_data.get(
+                "prohibited_actions", ["Unauthorized data exfiltration"]
+            ),
+            approval_requirements=const_data.get(
+                "approval_requirements", ["Production destructive actions"]
+            ),
+            security_rules=const_data.get(
+                "security_rules", ["TLS encryption required", "Zero plain-text secret storage"]
+            ),
             financial_rules=const_data.get("financial_rules", ["Inference ceilings enforced"]),
             data_rules=const_data.get("data_rules", ["Customer PII sanitization"]),
-            autonomy_boundaries=const_data.get("autonomy_boundaries", {"general": f"LEVEL_{bp.default_autonomy}"}),
+            autonomy_boundaries=const_data.get(
+                "autonomy_boundaries", {"general": f"LEVEL_{bp.default_autonomy}"}
+            ),
             escalation_rules=const_data.get("escalation_rules", []),
             established_by=user.id,
         )
@@ -419,7 +448,9 @@ class BlueprintService:
     # -------------------------------------------------------------
     # SAVE AS TEMPLATE
     # -------------------------------------------------------------
-    async def save_company_as_template(self, req: SaveAsTemplateRequest, user: User) -> CompanyBlueprint:
+    async def save_company_as_template(
+        self, req: SaveAsTemplateRequest, user: User
+    ) -> CompanyBlueprint:
         company = await self.company_repo.get_by_id(req.company_id)
         if not company:
             raise NotFoundError("Company not found.")
@@ -439,7 +470,9 @@ class BlueprintService:
                 "title": r.title,
                 "responsibilities": r.responsibilities or [],
                 "capabilities": r.capabilities or [],
-                "authority": r.authority.value if hasattr(r.authority, "value") else str(r.authority),
+                "authority": r.authority.value
+                if hasattr(r.authority, "value")
+                else str(r.authority),
                 "autonomy_level": r.autonomy_level,
             }
             for r in roles
@@ -547,9 +580,18 @@ class BlueprintService:
             name = f"Apex {prompt.split()[0].capitalize()} Organization"
 
         departments = [
-            {"name": "Executive Strategy & Governance", "purpose": "Strategic oversight, capital planning, and compliance"},
-            {"name": "Core Domain Operations", "purpose": f"Executing core business activities for {industry}"},
-            {"name": "Intelligence & Client Success", "purpose": "Client communication, service delivery, and telemetry"},
+            {
+                "name": "Executive Strategy & Governance",
+                "purpose": "Strategic oversight, capital planning, and compliance",
+            },
+            {
+                "name": "Core Domain Operations",
+                "purpose": f"Executing core business activities for {industry}",
+            },
+            {
+                "name": "Intelligence & Client Success",
+                "purpose": "Client communication, service delivery, and telemetry",
+            },
         ]
 
         roles = [
@@ -572,7 +614,11 @@ class BlueprintService:
             {
                 "department_name": "Intelligence & Client Success",
                 "title": "Client Success & Intelligence Analyst",
-                "responsibilities": ["Client deliverables", "Feedback synthesis", "Telemetry reporting"],
+                "responsibilities": [
+                    "Client deliverables",
+                    "Feedback synthesis",
+                    "Telemetry reporting",
+                ],
                 "capabilities": ["client_communication", "data_synthesis"],
                 "authority": "EXECUTE",
                 "autonomy_level": 3,
@@ -587,7 +633,13 @@ class BlueprintService:
                 "system_instructions": f"Guide the strategic growth of {name}. Prioritize unit economics and strict policy adherence.",
                 "responsibilities": ["Review high-risk actions", "Audit performance telemetry"],
                 "capabilities": ["strategic_planning"],
-                "tools": [{"name": "org_kpi_dashboard", "description": "Inspect organization metrics", "risk_level": "LOW"}],
+                "tools": [
+                    {
+                        "name": "org_kpi_dashboard",
+                        "description": "Inspect organization metrics",
+                        "risk_level": "LOW",
+                    }
+                ],
                 "autonomy_level": 4,
                 "intelligence_config": {"model": "claude-3-5-sonnet", "temperature": 0.2},
                 "resource_limits": {"max_tokens_per_call": 16384, "max_daily_budget_usd": 15.0},
@@ -599,7 +651,13 @@ class BlueprintService:
                 "system_instructions": f"Deliver core operational outputs for {industry}. Verify results before reporting.",
                 "responsibilities": ["Daily operations workflow execution"],
                 "capabilities": ["domain_analysis"],
-                "tools": [{"name": "operations_toolkit", "description": "Core workflow executor", "risk_level": "MEDIUM"}],
+                "tools": [
+                    {
+                        "name": "operations_toolkit",
+                        "description": "Core workflow executor",
+                        "risk_level": "MEDIUM",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gpt-4o", "temperature": 0.2},
                 "resource_limits": {"max_tokens_per_call": 8192, "max_daily_budget_usd": 12.0},
@@ -611,7 +669,13 @@ class BlueprintService:
                 "system_instructions": "Ensure exceptional client experience. Respond quickly, clearly, and proactively.",
                 "responsibilities": ["Client engagement and reporting"],
                 "capabilities": ["client_communication"],
-                "tools": [{"name": "notification_dispatcher", "description": "Send external client emails", "risk_level": "MEDIUM"}],
+                "tools": [
+                    {
+                        "name": "notification_dispatcher",
+                        "description": "Send external client emails",
+                        "risk_level": "MEDIUM",
+                    }
+                ],
                 "autonomy_level": 3,
                 "intelligence_config": {"model": "gemini-1.5-flash", "temperature": 0.3},
                 "resource_limits": {"max_tokens_per_call": 4096, "max_daily_budget_usd": 8.0},
@@ -644,9 +708,18 @@ class BlueprintService:
         constitution = {
             "mission": f"Execute ethical, high-quality operations in {industry} with autonomous rigor.",
             "values": ["Client value", "Operational transparency", "Frugal resource usage"],
-            "operating_principles": ["Automate repetitive tasks", "Human sign-off on consequential commitments"],
-            "prohibited_actions": ["Unapproved external financial expenditures", "Data leakage outside authorized boundaries"],
-            "approval_requirements": ["Contracts exceeding $1,000", "Production system deployments"],
+            "operating_principles": [
+                "Automate repetitive tasks",
+                "Human sign-off on consequential commitments",
+            ],
+            "prohibited_actions": [
+                "Unapproved external financial expenditures",
+                "Data leakage outside authorized boundaries",
+            ],
+            "approval_requirements": [
+                "Contracts exceeding $1,000",
+                "Production system deployments",
+            ],
             "security_rules": ["Strict API token compartmentalization"],
             "financial_rules": ["Monthly model inference ceiling enforced"],
             "data_rules": ["Zero external storage of raw customer secrets"],
@@ -679,7 +752,10 @@ class BlueprintService:
             {
                 "capability": "Specialized External API Integration",
                 "reason": f"Specific third-party tool adapters for {industry} need to be connected via custom plugins.",
-                "suggested_tools_or_integrations": ["Custom Webhook Gateway", "Enterprise CRM Connector"],
+                "suggested_tools_or_integrations": [
+                    "Custom Webhook Gateway",
+                    "Enterprise CRM Connector",
+                ],
             }
         ]
 
@@ -701,13 +777,45 @@ class BlueprintService:
             "workflows": workflows,
             "policies": policies,
             "constitution": constitution,
-            "recommended_tools": [{"name": "webhook_bridge", "description": "Custom API connector", "risk_level": "LOW"}],
-            "intelligence_requirements": {"recommended_models": ["claude-3-5-sonnet", "gpt-4o", "gemini-1.5-flash"]},
-            "resource_policies": {"financial_budget_usd": req.target_budget_monthly_usd or 300.0, "execution_slots": 5},
-            "kpis": [{"name": "Operational Velocity", "metric": "tasks_completed", "target": ">= 50/week", "review_frequency": "WEEKLY"}],
-            "approval_rules": [{"action": "OUTBOUND_CONTRACT", "condition": "amount > 1000", "approver_role": "ADMIN", "risk_level": "HIGH"}],
+            "recommended_tools": [
+                {
+                    "name": "webhook_bridge",
+                    "description": "Custom API connector",
+                    "risk_level": "LOW",
+                }
+            ],
+            "intelligence_requirements": {
+                "recommended_models": ["claude-3-5-sonnet", "gpt-4o", "gemini-1.5-flash"]
+            },
+            "resource_policies": {
+                "financial_budget_usd": req.target_budget_monthly_usd or 300.0,
+                "execution_slots": 5,
+            },
+            "kpis": [
+                {
+                    "name": "Operational Velocity",
+                    "metric": "tasks_completed",
+                    "target": ">= 50/week",
+                    "review_frequency": "WEEKLY",
+                }
+            ],
+            "approval_rules": [
+                {
+                    "action": "OUTBOUND_CONTRACT",
+                    "condition": "amount > 1000",
+                    "approver_role": "ADMIN",
+                    "risk_level": "HIGH",
+                }
+            ],
             "default_autonomy": req.preferred_autonomy_level or 3,
-            "escalation_rules": [{"trigger": "Policy violation attempt", "route_to": "Strategy Director Agent", "severity": "HIGH", "sla_minutes": 15}],
+            "escalation_rules": [
+                {
+                    "trigger": "Policy violation attempt",
+                    "route_to": "Strategy Director Agent",
+                    "severity": "HIGH",
+                    "sla_minutes": 15,
+                }
+            ],
             "estimated_monthly_cost_usd": req.target_budget_monthly_usd or 280.0,
             "metadata_tags": ["synthesized", "build-my-company", industry.lower()],
         }
@@ -727,7 +835,9 @@ class BlueprintService:
             raise NotFoundError("Proposal not found.")
         return proposal
 
-    async def instantiate_proposal(self, proposal_id: uuid.UUID, user: User) -> InstantiateBlueprintResponse:
+    async def instantiate_proposal(
+        self, proposal_id: uuid.UUID, user: User
+    ) -> InstantiateBlueprintResponse:
         proposal = await self.get_proposal(proposal_id)
         if proposal.status == "INSTANTIATED":
             raise BusinessRuleError("This proposed blueprint has already been instantiated.")

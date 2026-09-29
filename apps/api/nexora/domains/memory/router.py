@@ -6,13 +6,14 @@ Endpoints for:
 - Context Assembly Engine (Task -> Authorized -> Relevant -> Minimal prompt)
 - Decision Records (deliberation, options, evidence, outcomes, lessons learned)
 """
+
 import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from nexora.core.permissions import require_admin, require_member, require_viewer
+from nexora.core.permissions import require_member
 from nexora.database import get_db
 from nexora.domains.auth.models import User
 from nexora.domains.auth.router import get_current_user
@@ -24,7 +25,6 @@ from nexora.domains.memory.schemas import (
     DecisionRecordResponse,
     MemoryItemCreate,
     MemoryItemResponse,
-    MemorySearchQuery,
 )
 from nexora.domains.memory.service import MemoryService
 
@@ -39,8 +39,13 @@ async def list_memories(
     company_id: uuid.UUID,
     current_user: CurrentUser,
     db: DB,
-    domain: str | None = Query(None, description="COMPANY | DEPARTMENT | AGENT | PROJECT | CUSTOMER | DECISION | POLICY | EXPERIMENT | FAILURE | KNOWLEDGE_BASE"),
-    scope: str | None = Query(None, description="PUBLIC | INTERNAL | CONFIDENTIAL | RESTRICTED | PRIVATE"),
+    domain: str | None = Query(
+        None,
+        description="COMPANY | DEPARTMENT | AGENT | PROJECT | CUSTOMER | DECISION | POLICY | EXPERIMENT | FAILURE | KNOWLEDGE_BASE",
+    ),
+    scope: str | None = Query(
+        None, description="PUBLIC | INTERNAL | CONFIDENTIAL | RESTRICTED | PRIVATE"
+    ),
     department_id: uuid.UUID | None = None,
     agent_id: uuid.UUID | None = None,
     project_id: uuid.UUID | None = None,
@@ -98,7 +103,9 @@ async def search_knowledge_base(
     Searchable organizational knowledge base interface across all 10 memory domains.
     """
     service = MemoryService(db)
-    return await service.search_memories(company_id, query=q, domain=domain, scope=scope, limit=limit)
+    return await service.search_memories(
+        company_id, query=q, domain=domain, scope=scope, limit=limit
+    )
 
 
 @router.post("/assemble-context", response_model=ContextAssemblyResponse)
@@ -122,6 +129,7 @@ async def assemble_context(
 # DECISION RECORDS
 # ==========================================
 
+
 @router.get("/decisions", response_model=list[DecisionRecordResponse])
 async def list_decision_records(
     company_id: uuid.UUID,
@@ -134,7 +142,9 @@ async def list_decision_records(
     return await service.list_decision_records(company_id, limit=limit)
 
 
-@router.post("/decisions", response_model=DecisionRecordResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/decisions", response_model=DecisionRecordResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_decision_record(
     company_id: uuid.UUID,
     data: DecisionRecordCreate,

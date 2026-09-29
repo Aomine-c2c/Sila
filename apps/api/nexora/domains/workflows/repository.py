@@ -1,11 +1,12 @@
 """Workflow repository."""
+
 import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from nexora.domains.workflows.models import Workflow
 from nexora.core.enums import WorkflowStatus
+from nexora.domains.workflows.models import Workflow
 
 
 class WorkflowRepository:
@@ -20,9 +21,9 @@ class WorkflowRepository:
 
     async def list_by_company(self, company_id: uuid.UUID) -> list[Workflow]:
         result = await self.db.execute(
-            select(Workflow).where(
-                Workflow.company_id == company_id, Workflow.is_deleted.is_(False)
-            ).order_by(Workflow.name)
+            select(Workflow)
+            .where(Workflow.company_id == company_id, Workflow.is_deleted.is_(False))
+            .order_by(Workflow.name)
         )
         return list(result.scalars().all())
 
@@ -32,7 +33,9 @@ class WorkflowRepository:
             if hasattr(value, "model_dump"):
                 kwargs[key] = value.model_dump()
             elif isinstance(value, list) and value and hasattr(value[0], "model_dump"):
-                kwargs[key] = [v.model_dump() if hasattr(v, "model_dump") else str(v) for v in value]
+                kwargs[key] = [
+                    v.model_dump() if hasattr(v, "model_dump") else str(v) for v in value
+                ]
             elif isinstance(value, list):
                 kwargs[key] = [str(v) if isinstance(v, uuid.UUID) else v for v in value]
         return kwargs
@@ -56,6 +59,7 @@ class WorkflowRepository:
 
     async def soft_delete(self, workflow: Workflow) -> None:
         from datetime import UTC, datetime
+
         workflow.is_deleted = True
         workflow.deleted_at = datetime.now(UTC)
         workflow.status = WorkflowStatus.ARCHIVED
@@ -102,14 +106,22 @@ class WorkflowExecutionRepository:
         await self.db.refresh(execution)
         return execution
 
-    async def get_execution(self, execution_id: uuid.UUID, company_id: uuid.UUID) -> "WorkflowExecution | None":
+    async def get_execution(
+        self, execution_id: uuid.UUID, company_id: uuid.UUID
+    ) -> "WorkflowExecution | None":
         from sqlalchemy.orm import selectinload
+
         from nexora.domains.workflows.models import WorkflowExecution
 
-        stmt = select(WorkflowExecution).where(
-            WorkflowExecution.id == execution_id,
-            WorkflowExecution.company_id == company_id,
-        ).options(selectinload(WorkflowExecution.step_records)).execution_options(populate_existing=True)
+        stmt = (
+            select(WorkflowExecution)
+            .where(
+                WorkflowExecution.id == execution_id,
+                WorkflowExecution.company_id == company_id,
+            )
+            .options(selectinload(WorkflowExecution.step_records))
+            .execution_options(populate_existing=True)
+        )
         result = await self.db.execute(stmt)
         return result.scalars().first()
 
@@ -122,6 +134,7 @@ class WorkflowExecutionRepository:
         offset: int = 0,
     ) -> list["WorkflowExecution"]:
         from sqlalchemy.orm import selectinload
+
         from nexora.domains.workflows.models import WorkflowExecution
 
         stmt = select(WorkflowExecution).where(WorkflowExecution.company_id == company_id)
@@ -137,7 +150,6 @@ class WorkflowExecutionRepository:
         )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
-
 
     async def record_step(
         self,

@@ -1,6 +1,7 @@
 """
 Council & Deliberation Service.
 """
+
 import uuid
 from typing import Any
 
@@ -68,12 +69,13 @@ class CouncilService:
             await self.engine.run_full_deliberation(council, delib)
         return await self.get_deliberation(delib.id, company_id)
 
-    async def get_deliberation(self, deliberation_id: uuid.UUID, company_id: uuid.UUID) -> CouncilDeliberation:
+    async def get_deliberation(
+        self, deliberation_id: uuid.UUID, company_id: uuid.UUID
+    ) -> CouncilDeliberation:
         delib = await self.repo.get_deliberation(deliberation_id, company_id)
         if not delib:
             raise NotFoundError(f"Deliberation {deliberation_id} not found.")
         return delib
-
 
     async def list_deliberations(
         self,

@@ -6,6 +6,7 @@ Covers:
 - Decision Records (deliberation, evidence, outcomes, lessons learned)
 - Searchable Knowledge Base query & filter parameters
 """
+
 import uuid
 from datetime import datetime
 from typing import Any
@@ -19,10 +20,10 @@ from nexora.core.enums import (
     RetentionPolicy,
 )
 
-
 # ==========================================
 # MEMORY ITEM SCHEMAS
 # ==========================================
+
 
 class MemoryItemCreate(BaseModel):
     domain: MemoryDomain
@@ -94,12 +95,14 @@ class MemoryItemResponse(BaseModel):
 # CONTEXT ASSEMBLY SCHEMAS
 # ==========================================
 
+
 class ContextAssemblyRequest(BaseModel):
     """
     Requested context for a Task or Agent execution.
     Specifies task objective, required domains, and caller credentials
     so the system retrieves ONLY authorized, ranked, minimal necessary context.
     """
+
     task_objective: str = Field(..., min_length=3, description="Task purpose to match relevance")
     task_id: uuid.UUID | None = None
     agent_id: uuid.UUID | None = None
@@ -110,8 +113,7 @@ class ContextAssemblyRequest(BaseModel):
         None, description="Subset of domains needed. Defaults to task-inferred domains."
     )
     caller_permissions: list[str] = Field(
-        default_factory=list,
-        description="e.g. ['role:ADMIN', 'dept:engineering', 'agent:42']"
+        default_factory=list, description="e.g. ['role:ADMIN', 'dept:engineering', 'agent:42']"
     )
     caller_role: str = "MEMBER"  # OWNER, ADMIN, MANAGER, MEMBER, VIEWER
     max_context_tokens: int = Field(default=4000, ge=100, le=32000)
@@ -133,6 +135,7 @@ class ContextAssemblyResponse(BaseModel):
     Sanitized, minimal, authorized context assembled for prompt injection.
     Prevents leaking unauthorized or redundant company memory to external model providers.
     """
+
     task_objective: str
     total_memories_evaluated: int
     authorized_memories_selected: int
@@ -145,6 +148,7 @@ class ContextAssemblyResponse(BaseModel):
 # ==========================================
 # DECISION RECORD SCHEMAS
 # ==========================================
+
 
 class OptionConsidered(BaseModel):
     id: str = Field(default_factory=lambda: uuid.uuid4().hex[:8])
@@ -214,6 +218,7 @@ class DecisionRecordResponse(BaseModel):
 # ==========================================
 # SEARCH & KNOWLEDGE BASE QUERY SCHEMAS
 # ==========================================
+
 
 class MemorySearchQuery(BaseModel):
     query: str = Field(..., min_length=1, description="Keywords or search query")

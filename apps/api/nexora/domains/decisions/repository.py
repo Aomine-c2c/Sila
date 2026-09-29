@@ -1,11 +1,11 @@
 """Decision repository."""
+
 import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.domains.decisions.models import Decision
-from nexora.core.enums import DecisionStatus
 
 
 class DecisionRepository:
@@ -20,9 +20,9 @@ class DecisionRepository:
 
     async def list_by_company(self, company_id: uuid.UUID) -> list[Decision]:
         result = await self.db.execute(
-            select(Decision).where(
-                Decision.company_id == company_id, Decision.is_deleted.is_(False)
-            ).order_by(Decision.created_at.desc())
+            select(Decision)
+            .where(Decision.company_id == company_id, Decision.is_deleted.is_(False))
+            .order_by(Decision.created_at.desc())
         )
         return list(result.scalars().all())
 
@@ -51,6 +51,7 @@ class DecisionRepository:
 
     async def soft_delete(self, decision: Decision) -> None:
         from datetime import UTC, datetime
+
         decision.is_deleted = True
         decision.deleted_at = datetime.now(UTC)
         await self.db.flush()

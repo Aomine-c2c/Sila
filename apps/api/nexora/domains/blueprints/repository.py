@@ -1,4 +1,5 @@
 """Repository layer for NEXORA Company Blueprints."""
+
 import uuid
 
 from sqlalchemy import select
@@ -32,7 +33,9 @@ class BlueprintRepository:
             stmt = stmt.where(CompanyBlueprint.category == category)
         if not include_custom:
             stmt = stmt.where(CompanyBlueprint.is_system_template == True)  # noqa: E712
-        stmt = stmt.order_by(CompanyBlueprint.is_system_template.desc(), CompanyBlueprint.name.asc())
+        stmt = stmt.order_by(
+            CompanyBlueprint.is_system_template.desc(), CompanyBlueprint.name.asc()
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
@@ -122,11 +125,15 @@ class BlueprintRepository:
         return proposal
 
     async def get_proposal(self, proposal_id: uuid.UUID) -> BlueprintGenerationProposal | None:
-        stmt = select(BlueprintGenerationProposal).where(BlueprintGenerationProposal.id == proposal_id)
+        stmt = select(BlueprintGenerationProposal).where(
+            BlueprintGenerationProposal.id == proposal_id
+        )
         result = await self.db.execute(stmt)
         return result.scalars().first()
 
-    async def update_proposal(self, proposal: BlueprintGenerationProposal, **kwargs) -> BlueprintGenerationProposal:
+    async def update_proposal(
+        self, proposal: BlueprintGenerationProposal, **kwargs
+    ) -> BlueprintGenerationProposal:
         for k, v in kwargs.items():
             if hasattr(proposal, k):
                 setattr(proposal, k, v)

@@ -1,22 +1,29 @@
 """
 Pydantic Schemas for Agent Councils and Organizational Deliberation.
 """
+
 import uuid
 from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
 
-from nexora.core.enums import CouncilType, DeliberationStage, DeliberationStatus
+from nexora.core.enums import CouncilType
 
 
 class CouncilMemberConfig(BaseModel):
     agent_id: uuid.UUID | None = None
     agent_name: str
     role_title: str
-    perspective: str = Field(description="Evaluation angle or lens, e.g. 'Security & Threat Vector'")
-    model_provider: str | None = Field(default=None, description="e.g. 'anthropic', 'google', 'openai', 'local'")
-    model_identifier: str | None = Field(default=None, description="e.g. 'claude-3-7-sonnet', 'gemini-2.5-pro'")
+    perspective: str = Field(
+        description="Evaluation angle or lens, e.g. 'Security & Threat Vector'"
+    )
+    model_provider: str | None = Field(
+        default=None, description="e.g. 'anthropic', 'google', 'openai', 'local'"
+    )
+    model_identifier: str | None = Field(
+        default=None, description="e.g. 'claude-3-7-sonnet', 'gemini-2.5-pro'"
+    )
 
 
 class AgentCouncilCreate(BaseModel):
@@ -61,11 +68,21 @@ class ParticipantReview(BaseModel):
     intelligence_provider: str | None = None
     model_identifier: str | None = None
     proposal: str = Field(description="Perspective proposal or response to the core problem")
-    evidence: list[str] = Field(default_factory=list, description="Supporting empirical or logical evidence")
-    risks: list[str] = Field(default_factory=list, description="Identified technical/business risks")
-    assumptions: list[str] = Field(default_factory=list, description="Explicit operating assumptions")
-    confidence: float = Field(ge=0.0, le=1.0, description="Self-assessed confidence score (0.0 - 1.0)")
-    objections: list[str] = Field(default_factory=list, description="Objections or reservations regarding competing views")
+    evidence: list[str] = Field(
+        default_factory=list, description="Supporting empirical or logical evidence"
+    )
+    risks: list[str] = Field(
+        default_factory=list, description="Identified technical/business risks"
+    )
+    assumptions: list[str] = Field(
+        default_factory=list, description="Explicit operating assumptions"
+    )
+    confidence: float = Field(
+        ge=0.0, le=1.0, description="Self-assessed confidence score (0.0 - 1.0)"
+    )
+    objections: list[str] = Field(
+        default_factory=list, description="Objections or reservations regarding competing views"
+    )
 
 
 class DisagreementRecord(BaseModel):
@@ -82,7 +99,9 @@ class DeliberationCreate(BaseModel):
     problem_statement: str = Field(min_length=10)
     context_data: dict[str, Any] = Field(default_factory=dict)
     initial_proposals: list[dict[str, Any]] = Field(default_factory=list)
-    auto_execute_deliberation: bool = Field(default=True, description="Automatically orchestrate deliberation lifecycle")
+    auto_execute_deliberation: bool = Field(
+        default=True, description="Automatically orchestrate deliberation lifecycle"
+    )
 
 
 class DeliberationDecisionRequest(BaseModel):

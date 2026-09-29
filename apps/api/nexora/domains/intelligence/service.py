@@ -2,8 +2,8 @@
 Intelligence Service & Repository.
 Manages providers, models, routing policies, seed data, and dashboard aggregation.
 """
+
 import uuid
-from datetime import UTC, datetime
 
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +12,6 @@ from nexora.domains.intelligence.models import (
     Model,
     ModelProvider,
     ModelRequestLog,
-    ModelRoutingPolicy,
 )
 from nexora.domains.intelligence.router_service import IntelligenceRouter
 from nexora.domains.intelligence.schemas import (
@@ -23,7 +22,6 @@ from nexora.domains.intelligence.schemas import (
     ModelRequest,
     ModelResponse,
     ModelResponsePayload,
-    ModelRoutingPolicyCreate,
 )
 from nexora.exceptions import NotFoundError
 
@@ -78,7 +76,13 @@ class IntelligenceService:
             provider_id=p_anthropic.id,
             model_identifier="claude-3-5-sonnet",
             display_name="Claude 3.5 Sonnet",
-            capabilities=["reasoning", "architectural_reasoning", "code_generation", "analysis", "text"],
+            capabilities=[
+                "reasoning",
+                "architectural_reasoning",
+                "code_generation",
+                "analysis",
+                "text",
+            ],
             context_capacity=200000,
             input_cost_per_million=3.00,
             output_cost_per_million=15.00,
@@ -140,7 +144,9 @@ class IntelligenceService:
 
     async def list_providers(self) -> list[ModelProvider]:
         await self.seed_default_providers_if_empty()
-        result = await self.db.execute(select(ModelProvider).where(ModelProvider.is_active.is_(True)))
+        result = await self.db.execute(
+            select(ModelProvider).where(ModelProvider.is_active.is_(True))
+        )
         return list(result.scalars().all())
 
     async def list_models(self) -> list[Model]:

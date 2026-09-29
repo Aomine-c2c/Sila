@@ -8,6 +8,7 @@ Endpoints for:
 - Escalation Tracking
 - Consequential Action Audit Viewer (Understand why every action happened)
 """
+
 import uuid
 from typing import Annotated
 
@@ -45,6 +46,7 @@ router = APIRouter(prefix="/companies/{company_id}/governance", tags=["Governanc
 # COMPANY CONSTITUTION
 # ==========================================
 
+
 @router.get("/constitution", response_model=CompanyConstitutionResponse)
 async def get_constitution(
     company_id: uuid.UUID,
@@ -74,6 +76,7 @@ async def update_constitution(
 # AUTONOMY CONFIGURATION MATRIX (LEVELS 0 - 5)
 # ==========================================
 
+
 @router.get("/autonomy-configs", response_model=list[AutonomyConfigResponse])
 async def list_autonomy_configs(
     company_id: uuid.UUID,
@@ -86,7 +89,9 @@ async def list_autonomy_configs(
     return await service.list_autonomy_configs(company_id)
 
 
-@router.post("/autonomy-configs", response_model=AutonomyConfigResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/autonomy-configs", response_model=AutonomyConfigResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_autonomy_config(
     company_id: uuid.UUID,
     data: AutonomyConfigCreate,
@@ -102,6 +107,7 @@ async def create_autonomy_config(
 # ==========================================
 # GOVERNANCE EVALUATION PIPELINE
 # ==========================================
+
 
 @router.post("/evaluate-action", response_model=GovernanceActionEvaluationResponse)
 async def evaluate_action(
@@ -122,6 +128,7 @@ async def evaluate_action(
 # ==========================================
 # APPROVALS & HUMAN-IN-THE-LOOP
 # ==========================================
+
 
 @router.get("/approvals", response_model=list[ApprovalRequestResponse])
 async def list_approvals(
@@ -154,6 +161,7 @@ async def decide_approval(
 # ESCALATIONS
 # ==========================================
 
+
 @router.get("/escalations", response_model=list[EscalationRecordResponse])
 async def list_escalations(
     company_id: uuid.UUID,
@@ -167,7 +175,9 @@ async def list_escalations(
     return await service.list_escalations(company_id, status=status_filter)
 
 
-@router.post("/escalations", response_model=EscalationRecordResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/escalations", response_model=EscalationRecordResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_escalation(
     company_id: uuid.UUID,
     data: EscalationRecordCreate,
@@ -198,6 +208,7 @@ async def resolve_escalation(
 # AUDIT LOGS & AUDIT VIEWER
 # ==========================================
 
+
 @router.get("/audits", response_model=list[GovernanceAuditLogResponse])
 async def query_audits(
     company_id: uuid.UUID,
@@ -225,7 +236,9 @@ async def query_audits(
     )
 
 
-@router.post("/audits", response_model=GovernanceAuditLogResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/audits", response_model=GovernanceAuditLogResponse, status_code=status.HTTP_201_CREATED
+)
 async def record_audit(
     company_id: uuid.UUID,
     data: GovernanceAuditLogCreate,

@@ -1,6 +1,7 @@
 """
 Repository for Agent Councils and Deliberations.
 """
+
 import uuid
 from typing import Any
 
@@ -40,7 +41,9 @@ class CouncilRepository:
         await self.db.refresh(council)
         return council
 
-    async def get_council(self, council_id: uuid.UUID, company_id: uuid.UUID) -> AgentCouncil | None:
+    async def get_council(
+        self, council_id: uuid.UUID, company_id: uuid.UUID
+    ) -> AgentCouncil | None:
         stmt = (
             select(AgentCouncil)
             .where(AgentCouncil.id == council_id, AgentCouncil.company_id == company_id)
@@ -89,10 +92,15 @@ class CouncilRepository:
         await self.db.refresh(delib)
         return delib
 
-    async def get_deliberation(self, deliberation_id: uuid.UUID, company_id: uuid.UUID) -> CouncilDeliberation | None:
+    async def get_deliberation(
+        self, deliberation_id: uuid.UUID, company_id: uuid.UUID
+    ) -> CouncilDeliberation | None:
         stmt = (
             select(CouncilDeliberation)
-            .where(CouncilDeliberation.id == deliberation_id, CouncilDeliberation.company_id == company_id)
+            .where(
+                CouncilDeliberation.id == deliberation_id,
+                CouncilDeliberation.company_id == company_id,
+            )
             .execution_options(populate_existing=True)
         )
         result = await self.db.execute(stmt)

@@ -1,4 +1,5 @@
 """Decision service."""
+
 import uuid
 from datetime import UTC, datetime
 
@@ -28,7 +29,11 @@ class DecisionService:
 
     async def update(self, decision_id: uuid.UUID, company_id: uuid.UUID, **kwargs) -> Decision:
         d = await self.get(decision_id, company_id)
-        if d.status in (DecisionStatus.DECIDED, DecisionStatus.IMPLEMENTED, DecisionStatus.EVALUATED):
+        if d.status in (
+            DecisionStatus.DECIDED,
+            DecisionStatus.IMPLEMENTED,
+            DecisionStatus.EVALUATED,
+        ):
             raise BusinessRuleError("Cannot update a closed decision. Record an outcome instead.")
         return await self.repo.update(d, **kwargs)
 
@@ -60,7 +65,9 @@ class DecisionService:
         d = await self.get(decision_id, company_id)
         if d.status not in (DecisionStatus.DECIDED, DecisionStatus.IMPLEMENTED):
             raise BusinessRuleError("Can only record outcome for DECIDED or IMPLEMENTED decisions.")
-        return await self.repo.update(d, actual_outcome=actual_outcome, status=DecisionStatus.EVALUATED)
+        return await self.repo.update(
+            d, actual_outcome=actual_outcome, status=DecisionStatus.EVALUATED
+        )
 
     async def delete(self, decision_id: uuid.UUID, company_id: uuid.UUID) -> None:
         d = await self.get(decision_id, company_id)

@@ -1,4 +1,5 @@
 """Async database engine and session factory."""
+
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -32,6 +33,7 @@ AsyncSessionLocal = async_sessionmaker(
 
 class Base(DeclarativeBase):
     """SQLAlchemy declarative base for all models."""
+
     pass
 
 

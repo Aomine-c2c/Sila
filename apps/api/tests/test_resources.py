@@ -9,26 +9,22 @@ Covers:
 - Usage recording distinguishing OBSERVED vs ESTIMATED real telemetry
 - Resource Control Center aggregation and non-faked host OS telemetry
 """
-import uuid
+
 import pytest
 from httpx import AsyncClient
-
-from nexora.core.enums import (
-    AllocationStatus,
-    MetricState,
-    ResourceCategory,
-    ResourceEvaluationDecision,
-    ResourcePriority,
-)
 
 
 class TestResourceEngine:
     @pytest.mark.asyncio
-    async def test_auto_seed_and_list_pools(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_auto_seed_and_list_pools(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
 
         # Initial list triggers default seeder
-        res = await client.get(f"/api/v1/companies/{company_id}/resources/pools", headers=auth_headers)
+        res = await client.get(
+            f"/api/v1/companies/{company_id}/resources/pools", headers=auth_headers
+        )
         assert res.status_code == 200
         pools = res.json()
         assert len(pools) >= 5
@@ -39,7 +35,9 @@ class TestResourceEngine:
         assert "OPERATIONAL" in categories
 
     @pytest.mark.asyncio
-    async def test_create_and_manage_budget(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_create_and_manage_budget(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
 
         budget_payload = {
@@ -62,7 +60,9 @@ class TestResourceEngine:
         assert data["is_exhausted"] is False
 
     @pytest.mark.asyncio
-    async def test_resource_request_approval_flow(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_resource_request_approval_flow(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         """Standard valid request within limits must be APPROVED with allocations committed."""
         company_id = company_via_api["id"]
 
@@ -107,7 +107,9 @@ class TestResourceEngine:
         assert len(allocations) > 0
 
     @pytest.mark.asyncio
-    async def test_resource_request_reduction_under_load(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_resource_request_reduction_under_load(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         """High priority request under constrained compute capacity gets REDUCED."""
         company_id = company_via_api["id"]
 
@@ -141,7 +143,9 @@ class TestResourceEngine:
         assert result["evaluation"]["adjusted_compute"]["cpu_cores"] == 32.0
 
     @pytest.mark.asyncio
-    async def test_resource_request_defer_or_queue_for_low_priority(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_resource_request_defer_or_queue_for_low_priority(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         """Low/Background request under contention gets QUEUED or DENIED."""
         company_id = company_via_api["id"]
 
@@ -173,7 +177,9 @@ class TestResourceEngine:
         assert result["evaluation"]["decision"] == "DENY"
 
     @pytest.mark.asyncio
-    async def test_release_allocation(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_release_allocation(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         """Releasing an allocation frees capacity in the pool."""
         company_id = company_via_api["id"]
 
@@ -209,7 +215,9 @@ class TestResourceEngine:
         assert rel_res.json()["status"] == "RELEASED"
 
     @pytest.mark.asyncio
-    async def test_record_observed_telemetry_usage(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_record_observed_telemetry_usage(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         """Track observed telemetry vs estimated telemetry."""
         company_id = company_via_api["id"]
 
@@ -251,7 +259,9 @@ class TestResourceEngine:
         assert data["amount"] == 0.85
 
     @pytest.mark.asyncio
-    async def test_resource_control_center_overview(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_resource_control_center_overview(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         """Control Center returns capacity, bottlenecks, host telemetry and budgets."""
         company_id = company_via_api["id"]
 

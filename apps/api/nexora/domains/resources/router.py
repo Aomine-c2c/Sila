@@ -8,22 +8,20 @@ Endpoints for:
 - Telemetry & Usage Records
 - Resource Control Center Analytics
 """
+
 import uuid
-from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from nexora.core.permissions import require_admin, require_member, require_viewer
+from nexora.core.permissions import require_member
 from nexora.database import get_db
 from nexora.domains.auth.models import User
-from nexora.domains.auth.router import get_current_user
 from nexora.domains.resources.schemas import (
     ResourceAllocationResponse,
     ResourceBudgetCreate,
     ResourceBudgetResponse,
     ResourceControlCenterResponse,
-    ResourceEvaluationResult,
     ResourcePoolCreate,
     ResourcePoolResponse,
     ResourceReleaseRequest,
@@ -40,7 +38,9 @@ router = APIRouter(prefix="/companies/{company_id}/resources", tags=["Resources"
 @router.get("/pools", response_model=list[ResourcePoolResponse])
 async def list_pools(
     company_id: uuid.UUID,
-    category: str | None = Query(None, description="COMPUTE | INTELLIGENCE | FINANCIAL | OPERATIONAL"),
+    category: str | None = Query(
+        None, description="COMPUTE | INTELLIGENCE | FINANCIAL | OPERATIONAL"
+    ),
     db: AsyncSession = Depends(get_db),
     _user: User = Depends(require_member),
 ):
@@ -135,7 +135,9 @@ async def release_allocation(
     return await service.release_allocation(company_id, allocation_id)
 
 
-@router.post("/usage", response_model=ResourceUsageRecordResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/usage", response_model=ResourceUsageRecordResponse, status_code=status.HTTP_201_CREATED
+)
 async def record_usage_metric(
     company_id: uuid.UUID,
     data: ResourceUsageRecordCreate,

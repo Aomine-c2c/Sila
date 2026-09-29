@@ -9,20 +9,26 @@ Covers:
 - Escalation Tracking and Resolution
 - Prohibited action enforcement (blocking violating actions)
 """
+
 import uuid
+
 import pytest
 from httpx import AsyncClient
 
-from nexora.core.enums import GovernanceAutonomyLevel, GovernanceRiskLevel, ApprovalStatus
+from nexora.core.enums import GovernanceAutonomyLevel
 
 
 class TestOrganizationalGovernance:
     @pytest.mark.asyncio
-    async def test_get_and_seed_company_constitution(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_get_and_seed_company_constitution(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
 
         # View constitution - automatically creates baseline charter
-        res = await client.get(f"/api/v1/companies/{company_id}/governance/constitution", headers=auth_headers)
+        res = await client.get(
+            f"/api/v1/companies/{company_id}/governance/constitution", headers=auth_headers
+        )
         assert res.status_code == 200
         const = res.json()
         assert const["mission"]
@@ -37,7 +43,9 @@ class TestOrganizationalGovernance:
         assert len(const["escalation_rules"]) >= 1
 
     @pytest.mark.asyncio
-    async def test_autonomy_matrix_and_action_evaluation_levels(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_autonomy_matrix_and_action_evaluation_levels(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
 
         # 1. Evaluate normal allowed action (LEVEL 3 default within policy)
@@ -103,7 +111,9 @@ class TestOrganizationalGovernance:
         assert "prohibited" in prob_data["reason"].lower()
 
     @pytest.mark.asyncio
-    async def test_approval_request_lifecycle_and_decision(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_approval_request_lifecycle_and_decision(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
 
         # Trigger high risk payment action requiring approval
@@ -146,7 +156,9 @@ class TestOrganizationalGovernance:
         assert decided["resolved_at"] is not None
 
     @pytest.mark.asyncio
-    async def test_consequential_action_audit_viewer(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_consequential_action_audit_viewer(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         """
         Verify that every consequential action records:
         actor, authority, timestamp, action, target, reason, result, and autonomy_level.
@@ -193,7 +205,9 @@ class TestOrganizationalGovernance:
         assert any(r["target"] == "k8s-cluster/prod-workloads" for r in records)
 
     @pytest.mark.asyncio
-    async def test_escalation_protocol(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_escalation_protocol(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
 
         # Agent files escalation

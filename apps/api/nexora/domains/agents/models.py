@@ -5,13 +5,15 @@ Agent domain models:
 - AgentCommunication (Structured agent-to-agent protocol: delegation, review, escalation, etc.)
 - AgentExecutionAudit (Traceable execution records with 10-step lifecycle provenance)
 """
+
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, Enum as SAEnum, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from nexora.core.base import NexoraBase, UUIDBase, TimestampMixin
+from nexora.core.base import NexoraBase, TimestampMixin, UUIDBase
 from nexora.core.enums import (
     AgentAutonomy,
     AgentMessageType,
@@ -37,6 +39,7 @@ class Agent(NexoraBase):
     - Full 7-stage organizational lifecycle
     - Traceable audit history
     """
+
     __tablename__ = "agents"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -55,36 +58,41 @@ class Agent(NexoraBase):
     # Identity
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     identity: Mapped[dict] = mapped_column(
-        JSON, default=dict, nullable=False,
-        comment="Persona: tone, style, expertise_areas, avatar_url, bio"
+        JSON,
+        default=dict,
+        nullable=False,
+        comment="Persona: tone, style, expertise_areas, avatar_url, bio",
     )
     system_instructions: Mapped[str | None] = mapped_column(
-        Text, nullable=True,
-        comment="Base organizational instructions and operational constraints"
+        Text, nullable=True, comment="Base organizational instructions and operational constraints"
     )
 
     # Organizational responsibilities and goals
     responsibilities: Mapped[list] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Explicit employee job responsibilities"
+        JSON, default=list, nullable=False, comment="Explicit employee job responsibilities"
     )
     goals: Mapped[list] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Current objectives and key results (OKRs)"
+        JSON, default=list, nullable=False, comment="Current objectives and key results (OKRs)"
     )
 
     # Capabilities and Tool Access Control
     capabilities: Mapped[list] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="List of capability strings (e.g. data_analysis, code_review, db_query)"
+        JSON,
+        default=list,
+        nullable=False,
+        comment="List of capability strings (e.g. data_analysis, code_review, db_query)",
     )
     permissions: Mapped[dict] = mapped_column(
-        JSON, default=dict, nullable=False,
-        comment="Granular permission grants: {allowed_tools: [...], denied_tools: [...], max_actions_per_task: 10}"
+        JSON,
+        default=dict,
+        nullable=False,
+        comment="Granular permission grants: {allowed_tools: [...], denied_tools: [...], max_actions_per_task: 10}",
     )
     tools: Mapped[list] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Registered tools available to this agent: [{name, description, parameters, risk_level}]"
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Registered tools available to this agent: [{name, description, parameters, risk_level}]",
     )
 
     # Autonomy and Lifecycle
@@ -102,8 +110,10 @@ class Agent(NexoraBase):
 
     # Intelligence Provider (Decoupled abstraction)
     intelligence_config: Mapped[dict] = mapped_column(
-        JSON, default=dict, nullable=False,
-        comment="Provider specs: provider, model, temperature, max_tokens, reasoning_effort"
+        JSON,
+        default=dict,
+        nullable=False,
+        comment="Provider specs: provider, model, temperature, max_tokens, reasoning_effort",
     )
 
     # Resource Limits & Quotas
@@ -117,7 +127,7 @@ class Agent(NexoraBase):
             "max_tool_invocations": 15,
         },
         nullable=False,
-        comment="Enforced organizational resource constraints"
+        comment="Enforced organizational resource constraints",
     )
     resource_usage: Mapped[dict] = mapped_column(
         JSON,
@@ -128,7 +138,7 @@ class Agent(NexoraBase):
             "current_active_tasks": 0,
         },
         nullable=False,
-        comment="Aggregated resource consumption metrics"
+        comment="Aggregated resource consumption metrics",
     )
 
     # Performance History & Metrics
@@ -143,23 +153,43 @@ class Agent(NexoraBase):
             "last_active_at": None,
         },
         nullable=False,
-        comment="Historical performance indicators and evaluations"
+        comment="Historical performance indicators and evaluations",
     )
 
     # Relationships
     company: Mapped["Company"] = relationship("Company", back_populates="agents")  # noqa: F821
     role: Mapped["OrgRole | None"] = relationship("OrgRole", back_populates="agents", lazy="select")  # noqa: F821
     department: Mapped["Department | None"] = relationship("Department", lazy="select")  # noqa: F821
-    manager: Mapped["Agent | None"] = relationship("Agent", remote_side="Agent.id", backref="direct_reports", lazy="select")
-    tasks: Mapped[list["Task"]] = relationship("Task", back_populates="assigned_agent", lazy="select")  # noqa: F821
+    manager: Mapped["Agent | None"] = relationship(
+        "Agent", remote_side="Agent.id", backref="direct_reports", lazy="select"
+    )
+    tasks: Mapped[list["Task"]] = relationship(
+        "Task", back_populates="assigned_agent", lazy="select"
+    )  # noqa: F821
 
-    memories: Mapped[list["AgentMemory"]] = relationship("AgentMemory", back_populates="agent", cascade="all, delete-orphan", lazy="select")
-    sent_messages: Mapped[list["AgentCommunication"]] = relationship("AgentCommunication", foreign_keys="AgentCommunication.from_agent_id", back_populates="from_agent", lazy="select")
-    received_messages: Mapped[list["AgentCommunication"]] = relationship("AgentCommunication", foreign_keys="AgentCommunication.to_agent_id", back_populates="to_agent", lazy="select")
-    audit_logs: Mapped[list["AgentExecutionAudit"]] = relationship("AgentExecutionAudit", back_populates="agent", cascade="all, delete-orphan", lazy="select")
+    memories: Mapped[list["AgentMemory"]] = relationship(
+        "AgentMemory", back_populates="agent", cascade="all, delete-orphan", lazy="select"
+    )
+    sent_messages: Mapped[list["AgentCommunication"]] = relationship(
+        "AgentCommunication",
+        foreign_keys="AgentCommunication.from_agent_id",
+        back_populates="from_agent",
+        lazy="select",
+    )
+    received_messages: Mapped[list["AgentCommunication"]] = relationship(
+        "AgentCommunication",
+        foreign_keys="AgentCommunication.to_agent_id",
+        back_populates="to_agent",
+        lazy="select",
+    )
+    audit_logs: Mapped[list["AgentExecutionAudit"]] = relationship(
+        "AgentExecutionAudit", back_populates="agent", cascade="all, delete-orphan", lazy="select"
+    )
 
     def __repr__(self) -> str:
-        return f"<Agent id={self.id} name={self.name} status={self.status} autonomy={self.autonomy}>"
+        return (
+            f"<Agent id={self.id} name={self.name} status={self.status} autonomy={self.autonomy}>"
+        )
 
 
 class AgentMemory(NexoraBase):
@@ -169,6 +199,7 @@ class AgentMemory(NexoraBase):
     semantic memories (learned facts, company knowledge), and
     procedural memories (how to execute specific workflows).
     """
+
     __tablename__ = "agent_memories"
 
     agent_id: Mapped[uuid.UUID] = mapped_column(
@@ -179,15 +210,19 @@ class AgentMemory(NexoraBase):
     )
 
     memory_type: Mapped[str] = mapped_column(
-        String(50), default="episodic", nullable=False,
-        comment="episodic | semantic | procedural | reflection"
+        String(50),
+        default="episodic",
+        nullable=False,
+        comment="episodic | semantic | procedural | reflection",
     )
     key: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     metadata_: Mapped[dict] = mapped_column("metadata", JSON, default=dict, nullable=False)
     importance: Mapped[float] = mapped_column(Float, default=1.0, nullable=False)
     access_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    last_accessed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_accessed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     agent: Mapped["Agent"] = relationship("Agent", back_populates="memories")
 
@@ -198,6 +233,7 @@ class AgentCommunication(NexoraBase):
     Supports requests, responses, task delegations, escalations to managers,
     peer reviews, and notifications.
     """
+
     __tablename__ = "agent_communications"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -219,14 +255,20 @@ class AgentCommunication(NexoraBase):
     subject: Mapped[str] = mapped_column(String(255), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     payload: Mapped[dict] = mapped_column(
-        JSON, default=dict, nullable=False,
-        comment="Structured payload: inputs, arguments, delegation params, review feedback"
+        JSON,
+        default=dict,
+        nullable=False,
+        comment="Structured payload: inputs, arguments, delegation params, review feedback",
     )
     is_read: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     resolved: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    from_agent: Mapped["Agent"] = relationship("Agent", foreign_keys=[from_agent_id], back_populates="sent_messages")
-    to_agent: Mapped["Agent | None"] = relationship("Agent", foreign_keys=[to_agent_id], back_populates="received_messages")
+    from_agent: Mapped["Agent"] = relationship(
+        "Agent", foreign_keys=[from_agent_id], back_populates="sent_messages"
+    )
+    to_agent: Mapped["Agent | None"] = relationship(
+        "Agent", foreign_keys=[to_agent_id], back_populates="received_messages"
+    )
 
 
 class AgentExecutionAudit(UUIDBase, TimestampMixin):
@@ -237,6 +279,7 @@ class AgentExecutionAudit(UUIDBase, TimestampMixin):
     INTELLIGENCE_SELECTION -> TOOL_EXECUTION -> RESULT -> VALIDATION ->
     REPORT -> MEMORY_UPDATE.
     """
+
     __tablename__ = "agent_execution_audits"
 
     agent_id: Mapped[uuid.UUID] = mapped_column(
@@ -249,8 +292,10 @@ class AgentExecutionAudit(UUIDBase, TimestampMixin):
         ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True, index=True
     )
     execution_id: Mapped[uuid.UUID] = mapped_column(
-        default=uuid.uuid4, nullable=False, index=True,
-        comment="Correlates all 10 steps of a single task execution run"
+        default=uuid.uuid4,
+        nullable=False,
+        index=True,
+        comment="Correlates all 10 steps of a single task execution run",
     )
 
     action: Mapped[AuditAction] = mapped_column(
@@ -266,8 +311,10 @@ class AgentExecutionAudit(UUIDBase, TimestampMixin):
     )
 
     details: Mapped[dict] = mapped_column(
-        JSON, default=dict, nullable=False,
-        comment="Detailed telemetry, tool parameters, model inputs/outputs, error logs"
+        JSON,
+        default=dict,
+        nullable=False,
+        comment="Detailed telemetry, tool parameters, model inputs/outputs, error logs",
     )
     tokens_consumed: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     cost_usd: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)

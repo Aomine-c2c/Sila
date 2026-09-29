@@ -1,4 +1,5 @@
 """Auth API endpoints: register, login, me."""
+
 from fastapi import APIRouter, Depends, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession

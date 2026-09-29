@@ -1,14 +1,15 @@
 """Organization API routers: Company, DNA, Department, OrgRole, Membership."""
+
 import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from nexora.core.enums import MembershipRole
+from nexora.core.permissions import require_admin, require_manager, require_viewer
 from nexora.database import get_db
-from nexora.domains.auth.router import get_current_user
 from nexora.domains.auth.models import User
+from nexora.domains.auth.router import get_current_user
 from nexora.domains.organizations.schemas import (
     CompanyCreate,
     CompanyDetail,
@@ -28,7 +29,6 @@ from nexora.domains.organizations.schemas import (
     OrgRoleUpdate,
 )
 from nexora.domains.organizations.service import CompanyService, DepartmentService, OrgRoleService
-from nexora.core.permissions import require_admin, require_manager, require_member, require_viewer
 
 router = APIRouter(tags=["Organizations"])
 
@@ -296,6 +296,7 @@ async def list_members(
     _: None = Depends(require_viewer()),
 ):
     from nexora.domains.organizations.repository import CompanyMemberRepository
+
     repo = CompanyMemberRepository(db)
     return await repo.list_by_company(company_id)
 

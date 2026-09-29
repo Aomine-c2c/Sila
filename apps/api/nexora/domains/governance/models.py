@@ -6,18 +6,21 @@ Governance domain models:
 - EscalationRecord (Formal escalation of policy violations, blockers, or security alerts)
 - GovernanceAuditLog (Consequential action log: actor, authority, timestamp, action, target, reason, result, autonomy_level)
 """
+
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import (
     JSON,
     Boolean,
     DateTime,
-    Enum as SAEnum,
     ForeignKey,
     Integer,
     String,
     Text,
+)
+from sqlalchemy import (
+    Enum as SAEnum,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -35,6 +38,7 @@ class CompanyConstitution(NexoraBase):
     The fundamental legal and operational charter for a Company in NEXORA.
     Governs all agents, workflows, and automated decisions.
     """
+
     __tablename__ = "company_constitutions"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -46,46 +50,58 @@ class CompanyConstitution(NexoraBase):
     # Core Purpose & Ethics
     mission: Mapped[str] = mapped_column(Text, nullable=False)
     values: Mapped[list] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="List of core ethical and operational values"
+        JSON, default=list, nullable=False, comment="List of core ethical and operational values"
     )
     operating_principles: Mapped[list] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Operational guidelines and decision criteria"
+        JSON, default=list, nullable=False, comment="Operational guidelines and decision criteria"
     )
 
     # Strict Boundaries & Safety Constraints
     prohibited_actions: Mapped[list] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Explicitly forbidden actions (e.g., unauthorized data exfiltration, unapproved financial spends)"
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Explicitly forbidden actions (e.g., unauthorized data exfiltration, unapproved financial spends)",
     )
     approval_requirements: Mapped[list] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Conditions requiring mandatory human/manager sign-off"
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Conditions requiring mandatory human/manager sign-off",
     )
 
     # Domain Governance Rules
     security_rules: Mapped[list] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Authentication, encryption, key handling, and zero-trust policies"
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Authentication, encryption, key handling, and zero-trust policies",
     )
     financial_rules: Mapped[list] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Budget thresholds, spend approvals, invoice authorization constraints"
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Budget thresholds, spend approvals, invoice authorization constraints",
     )
     data_rules: Mapped[list] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Data residency, classification (PII, confidential), retention, export limits"
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Data residency, classification (PII, confidential), retention, export limits",
     )
 
     # Autonomy & Escalation
     autonomy_boundaries: Mapped[dict] = mapped_column(
-        JSON, default=dict, nullable=False,
-        comment="Default global ceilings and autonomy ceilings across domains"
+        JSON,
+        default=dict,
+        nullable=False,
+        comment="Default global ceilings and autonomy ceilings across domains",
     )
     escalation_rules: Mapped[list] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Chain-of-command routing triggers for edge cases and exceptions"
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Chain-of-command routing triggers for edge cases and exceptions",
     )
 
     # Metadata
@@ -103,6 +119,7 @@ class AutonomyConfig(NexoraBase):
     Company -> Department -> Role -> Agent -> Tool -> Task Type -> Action.
     Enforces highest-precedence specific rules down to organizational defaults.
     """
+
     __tablename__ = "autonomy_configs"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -120,22 +137,30 @@ class AutonomyConfig(NexoraBase):
         ForeignKey("agents.id", ondelete="CASCADE"), nullable=True, index=True
     )
     tool_name: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, index=True,
-        comment="Target specific tool (e.g. database_write, payment_gateway)"
+        String(100),
+        nullable=True,
+        index=True,
+        comment="Target specific tool (e.g. database_write, payment_gateway)",
     )
     task_type: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, index=True,
-        comment="Target specific task category (e.g. customer_support, deployment)"
+        String(100),
+        nullable=True,
+        index=True,
+        comment="Target specific task category (e.g. customer_support, deployment)",
     )
     action_name: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, index=True,
-        comment="Target specific atomic action (e.g. delete_database, issue_refund)"
+        String(100),
+        nullable=True,
+        index=True,
+        comment="Target specific atomic action (e.g. delete_database, issue_refund)",
     )
 
     # The Autonomy Level (0 to 5)
     autonomy_level: Mapped[int] = mapped_column(
-        Integer, default=GovernanceAutonomyLevel.LEVEL_2.value, nullable=False,
-        comment="0=OBSERVE, 1=RECOMMEND, 2=EXECUTE_WITH_APPROVAL, 3=EXECUTE_WITHIN_POLICY, 4=AUTONOMOUS, 5=AUTONOMOUS_ADAPTIVE"
+        Integer,
+        default=GovernanceAutonomyLevel.LEVEL_2.value,
+        nullable=False,
+        comment="0=OBSERVE, 1=RECOMMEND, 2=EXECUTE_WITH_APPROVAL, 3=EXECUTE_WITHIN_POLICY, 4=AUTONOMOUS, 5=AUTONOMOUS_ADAPTIVE",
     )
 
     risk_level: Mapped[GovernanceRiskLevel] = mapped_column(
@@ -144,12 +169,16 @@ class AutonomyConfig(NexoraBase):
         nullable=False,
     )
     requires_explicit_approval: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False,
-        comment="High-risk operations require explicit approval unless deliberately overridden"
+        Boolean,
+        default=True,
+        nullable=False,
+        comment="High-risk operations require explicit approval unless deliberately overridden",
     )
     conditions: Mapped[dict] = mapped_column(
-        JSON, default=dict, nullable=False,
-        comment="Dynamic evaluation constraints (e.g. {'max_amount_usd': 500, 'time_window': 'business_hours'})"
+        JSON,
+        default=dict,
+        nullable=False,
+        comment="Dynamic evaluation constraints (e.g. {'max_amount_usd': 500, 'time_window': 'business_hours'})",
     )
     rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -159,6 +188,7 @@ class ApprovalRequest(NexoraBase):
     Formal approval ticket required for high-risk operations, Level 2 autonomy actions,
     or actions exceeding policy thresholds.
     """
+
     __tablename__ = "approval_requests"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -180,8 +210,10 @@ class ApprovalRequest(NexoraBase):
         nullable=False,
     )
     proposed_payload: Mapped[dict] = mapped_column(
-        JSON, default=dict, nullable=False,
-        comment="Parameters and payload for the proposed execution"
+        JSON,
+        default=dict,
+        nullable=False,
+        comment="Parameters and payload for the proposed execution",
     )
     reason: Mapped[str] = mapped_column(Text, nullable=False, comment="Why this action is needed")
 
@@ -205,6 +237,7 @@ class EscalationRecord(NexoraBase):
     Formal record of an organizational escalation when an agent is blocked,
     encounters a prohibited action attempt, or experiences severe policy conflict.
     """
+
     __tablename__ = "escalation_records"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -229,9 +262,7 @@ class EscalationRecord(NexoraBase):
         default=EscalationStatus.OPEN,
         nullable=False,
     )
-    context_data: Mapped[dict] = mapped_column(
-        JSON, default=dict, nullable=False
-    )
+    context_data: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     resolution: Mapped[str | None] = mapped_column(Text, nullable=True)
     resolved_by_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
@@ -252,6 +283,7 @@ class GovernanceAuditLog(NexoraBase):
     - autonomy_level (LEVEL 0 - 5 applied during evaluation)
     - execution_id (correlation id)
     """
+
     __tablename__ = "governance_audit_logs"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -262,17 +294,24 @@ class GovernanceAuditLog(NexoraBase):
     # Actor & Authority
     actor_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
     actor_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    actor_type: Mapped[str] = mapped_column(String(50), default="AGENT", nullable=False)  # AGENT | USER | SYSTEM
+    actor_type: Mapped[str] = mapped_column(
+        String(50), default="AGENT", nullable=False
+    )  # AGENT | USER | SYSTEM
     authority: Mapped[str] = mapped_column(
-        String(255), nullable=False,
-        comment="Authority credentials or role backing this action (e.g. 'role:FINANCE_LEAD', 'autonomy:LEVEL_3')"
+        String(255),
+        nullable=False,
+        comment="Authority credentials or role backing this action (e.g. 'role:FINANCE_LEAD', 'autonomy:LEVEL_3')",
     )
 
     # Action & Consequence
     action: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     target: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    reason: Mapped[str] = mapped_column(Text, nullable=False, comment="Explicit rationale explaining why action occurred")
-    result: Mapped[str] = mapped_column(String(50), nullable=False, index=True)  # SUCCESS | BLOCKED | REJECTED | FAILED
+    reason: Mapped[str] = mapped_column(
+        Text, nullable=False, comment="Explicit rationale explaining why action occurred"
+    )
+    result: Mapped[str] = mapped_column(
+        String(50), nullable=False, index=True
+    )  # SUCCESS | BLOCKED | REJECTED | FAILED
 
     autonomy_level: Mapped[int] = mapped_column(
         Integer, default=GovernanceAutonomyLevel.LEVEL_3.value, nullable=False
@@ -283,6 +322,8 @@ class GovernanceAuditLog(NexoraBase):
         nullable=False,
     )
     details: Mapped[dict] = mapped_column(
-        JSON, default=dict, nullable=False,
-        comment="Complete telemetry, inputs, state snapshot, and verification data"
+        JSON,
+        default=dict,
+        nullable=False,
+        comment="Complete telemetry, inputs, state snapshot, and verification data",
     )

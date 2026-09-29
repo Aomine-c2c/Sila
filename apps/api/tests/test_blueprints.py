@@ -23,14 +23,18 @@ Covers:
   operating cost estimate, risks identified, and missing capabilities without immediate activation.
 - Approving and instantiating the synthesized company proposal.
 """
+
 import uuid
+
 import pytest
 from httpx import AsyncClient
 
 
 class TestCompanyBlueprints:
     @pytest.mark.asyncio
-    async def test_list_and_seed_10_system_blueprints(self, client: AsyncClient, auth_headers: dict):
+    async def test_list_and_seed_10_system_blueprints(
+        self, client: AsyncClient, auth_headers: dict
+    ):
         res = await client.get("/api/v1/blueprints", headers=auth_headers)
         assert res.status_code == 200
         bps = res.json()
@@ -64,7 +68,9 @@ class TestCompanyBlueprints:
         assert sw_bp["estimated_monthly_cost_usd"] > 0
 
     @pytest.mark.asyncio
-    async def test_blueprint_customization_duplicate_export_import(self, client: AsyncClient, auth_headers: dict):
+    async def test_blueprint_customization_duplicate_export_import(
+        self, client: AsyncClient, auth_headers: dict
+    ):
         # 1. Fetch blueprint
         res = await client.get("/api/v1/blueprints/marketing_agency", headers=auth_headers)
         assert res.status_code == 200
@@ -99,13 +105,17 @@ class TestCompanyBlueprints:
         # 5. Import blueprint JSON
         exported["key"] = f"imported-custom-{uuid.uuid4().hex[:6]}"
         exported["name"] = "Imported Scale Marketing"
-        import_res = await client.post("/api/v1/blueprints/import", json=exported, headers=auth_headers)
+        import_res = await client.post(
+            "/api/v1/blueprints/import", json=exported, headers=auth_headers
+        )
         assert import_res.status_code == 201
         imported = import_res.json()
         assert imported["name"] == "Imported Scale Marketing"
 
     @pytest.mark.asyncio
-    async def test_instantiate_blueprint_into_real_company(self, client: AsyncClient, auth_headers: dict):
+    async def test_instantiate_blueprint_into_real_company(
+        self, client: AsyncClient, auth_headers: dict
+    ):
         """
         Instantiate Cybersecurity Company blueprint and verify that real database records are created:
         Company, DNA, Departments, OrgRoles, Employee Agents, Workflows, Policies, Constitution, and Governance.
@@ -139,14 +149,18 @@ class TestCompanyBlueprints:
         assert "SOC Analyst Agent" in agent_names
 
         # Verify company constitution is active
-        const_res = await client.get(f"/api/v1/companies/{company_id}/governance/constitution", headers=auth_headers)
+        const_res = await client.get(
+            f"/api/v1/companies/{company_id}/governance/constitution", headers=auth_headers
+        )
         assert const_res.status_code == 200
         const = const_res.json()
         assert const["mission"]
         assert len(const["security_rules"]) >= 1
 
     @pytest.mark.asyncio
-    async def test_save_company_as_template(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_save_company_as_template(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
 
         save_req = {
@@ -156,14 +170,18 @@ class TestCompanyBlueprints:
             "description": "Harvested baseline company template for fast cloning",
             "category": "Technology",
         }
-        res = await client.post("/api/v1/blueprints/save-template", json=save_req, headers=auth_headers)
+        res = await client.post(
+            "/api/v1/blueprints/save-template", json=save_req, headers=auth_headers
+        )
         assert res.status_code == 201
         tpl = res.json()
         assert tpl["key"] == save_req["template_key"]
         assert tpl["name"] == "Nexora Enterprise Standard Template"
 
     @pytest.mark.asyncio
-    async def test_build_my_company_natural_language_synthesis_and_approval(self, client: AsyncClient, auth_headers: dict):
+    async def test_build_my_company_natural_language_synthesis_and_approval(
+        self, client: AsyncClient, auth_headers: dict
+    ):
         """
         User describes organization in natural language.
         Verify:
@@ -213,6 +231,8 @@ class TestCompanyBlueprints:
         assert inst_data["status"] == "INSTANTIATED"
 
         # Verify proposal status changed to INSTANTIATED
-        check_prop = await client.get(f"/api/v1/blueprints/build-my-company/{proposal_id}", headers=auth_headers)
+        check_prop = await client.get(
+            f"/api/v1/blueprints/build-my-company/{proposal_id}", headers=auth_headers
+        )
         assert check_prop.status_code == 200
         assert check_prop.json()["status"] == "INSTANTIATED"

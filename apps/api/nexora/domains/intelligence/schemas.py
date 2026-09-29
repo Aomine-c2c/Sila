@@ -1,9 +1,9 @@
 """Pydantic schemas for the Intelligence Exchange."""
+
 import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, Field
-
 
 # ── Provider & Model Metadata Schemas ─────────────────────────────────────────
 
@@ -79,11 +79,15 @@ class ModelResponse(BaseModel):
 class ModelRoutingPolicyCreate(BaseModel):
     name: str = Field(min_length=2, max_length=150)
     description: str | None = None
-    strategy: str = "BALANCED"  # BALANCED | LOWEST_COST | LOWEST_LATENCY | HIGHEST_CAPABILITY | STRICT_PRIVACY
+    strategy: str = (
+        "BALANCED"  # BALANCED | LOWEST_COST | LOWEST_LATENCY | HIGHEST_CAPABILITY | STRICT_PRIVACY
+    )
     max_cost_per_query_usd: float = 0.50
     max_acceptable_latency_ms: float = 5000.0
     required_privacy_level: str | None = None
-    fallback_chain: list[str] = Field(default_factory=lambda: ["claude-3-5-sonnet", "gemini-1.5-pro", "local-deepseek-r1"])
+    fallback_chain: list[str] = Field(
+        default_factory=lambda: ["claude-3-5-sonnet", "gemini-1.5-pro", "local-deepseek-r1"]
+    )
     capability_preferences: dict[str, str] = Field(default_factory=dict)
     is_default: bool = False
 
@@ -113,6 +117,7 @@ class ModelRequest(BaseModel):
     Standard vendor-agnostic request format for organizational intelligence.
     Agents express needs in terms of capabilities, with optional provider preferences or overrides.
     """
+
     prompt: str = Field(min_length=1)
     system_prompt: str | None = None
     required_capabilities: list[str] = Field(default_factory=lambda: ["reasoning"])
@@ -128,6 +133,7 @@ class ModelRequest(BaseModel):
 
 class ModelResponsePayload(BaseModel):
     """Normalized response payload delivered back to organizational agents."""
+
     text: str
     model_used: str
     provider_used: str

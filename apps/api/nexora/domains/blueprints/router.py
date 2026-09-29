@@ -14,6 +14,7 @@ Endpoints:
 - GET /blueprints/build-my-company/{proposal_id} (Inspect proposal)
 - POST /blueprints/build-my-company/{proposal_id}/instantiate (Approve & instantiate)
 """
+
 import uuid
 from typing import Annotated, Any
 
@@ -84,7 +85,11 @@ async def customize_blueprint(
     return await service.update_blueprint(blueprint_id, data)
 
 
-@router.post("/{id_or_key}/instantiate", response_model=InstantiateBlueprintResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{id_or_key}/instantiate",
+    response_model=InstantiateBlueprintResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def instantiate_blueprint(
     id_or_key: str,
     req: InstantiateBlueprintRequest,
@@ -102,7 +107,11 @@ async def instantiate_blueprint(
     return await service.instantiate_blueprint(id_or_key, current_user, req)
 
 
-@router.post("/{blueprint_id}/duplicate", response_model=CompanyBlueprintResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{blueprint_id}/duplicate",
+    response_model=CompanyBlueprintResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def duplicate_blueprint(
     blueprint_id: uuid.UUID,
     current_user: CurrentUser,
@@ -123,7 +132,9 @@ async def export_blueprint(
     return await service.export_blueprint_json(blueprint_id)
 
 
-@router.post("/import", response_model=CompanyBlueprintResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/import", response_model=CompanyBlueprintResponse, status_code=status.HTTP_201_CREATED
+)
 async def import_blueprint(
     payload: dict[str, Any],
     current_user: CurrentUser,
@@ -134,7 +145,9 @@ async def import_blueprint(
     return await service.import_blueprint_json(payload, user_id=current_user.id)
 
 
-@router.post("/save-template", response_model=CompanyBlueprintResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/save-template", response_model=CompanyBlueprintResponse, status_code=status.HTTP_201_CREATED
+)
 async def save_company_as_template(
     req: SaveAsTemplateRequest,
     current_user: CurrentUser,
@@ -149,7 +162,12 @@ async def save_company_as_template(
 # BUILD MY COMPANY (NATURAL LANGUAGE SYNTHESIS)
 # ==========================================
 
-@router.post("/build-my-company", response_model=BuildMyCompanyProposalResponse, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/build-my-company",
+    response_model=BuildMyCompanyProposalResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def build_my_company(
     req: BuildMyCompanyRequest,
     current_user: CurrentUser,
@@ -176,7 +194,11 @@ async def get_generation_proposal(
     return await service.get_proposal(proposal_id)
 
 
-@router.post("/build-my-company/{proposal_id}/instantiate", response_model=InstantiateBlueprintResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/build-my-company/{proposal_id}/instantiate",
+    response_model=InstantiateBlueprintResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def instantiate_generation_proposal(
     proposal_id: uuid.UUID,
     current_user: CurrentUser,

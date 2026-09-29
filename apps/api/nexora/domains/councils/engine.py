@@ -19,18 +19,24 @@ Coordinates the full organizational deliberation lifecycle:
 6. DECISION: Final decision ratification.
 7. RECORD: Automatically persists into the company's decision repository and organizational memory.
 """
+
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from nexora.core.enums import DeliberationStage, DeliberationStatus, MemoryDomain, MemoryScope, ProvenanceType
+from nexora.core.enums import (
+    DeliberationStage,
+    DeliberationStatus,
+    MemoryDomain,
+    MemoryScope,
+    ProvenanceType,
+)
 from nexora.domains.councils.models import AgentCouncil, CouncilDeliberation
 from nexora.domains.councils.repository import CouncilRepository
 from nexora.domains.decisions.repository import DecisionRepository
 from nexora.domains.memory.repository import MemoryRepository
-from nexora.exceptions import BusinessRuleError, NotFoundError
 
 
 class DeliberationEngine:
@@ -52,11 +58,41 @@ class DeliberationEngine:
         if not members:
             # Default fallback members if none configured
             members = [
-                {"role_title": "CTO", "agent_name": "Chief Technology Agent", "perspective": "Strategic Feasibility & Business Alignment", "model_identifier": "gpt-4o", "model_provider": "openai"},
-                {"role_title": "Chief Architect", "agent_name": "Systems Architect Agent", "perspective": "Scalability, Modularity & Distributed Systems", "model_identifier": "claude-3-5-sonnet", "model_provider": "anthropic"},
-                {"role_title": "Principal Backend Engineer", "agent_name": "Backend Engineering Agent", "perspective": "Implementation Complexity & Performance", "model_identifier": "gemini-2.5-pro", "model_provider": "google"},
-                {"role_title": "Principal Security Engineer", "agent_name": "Cybersecurity Agent", "perspective": "Zero-Trust, Attack Vectors & Compliance", "model_identifier": "claude-3-5-haiku", "model_provider": "anthropic"},
-                {"role_title": "QA Lead", "agent_name": "Quality Assurance Agent", "perspective": "Testability, Chaos Tolerance & Edge Cases", "model_identifier": "gpt-4o-mini", "model_provider": "openai"},
+                {
+                    "role_title": "CTO",
+                    "agent_name": "Chief Technology Agent",
+                    "perspective": "Strategic Feasibility & Business Alignment",
+                    "model_identifier": "gpt-4o",
+                    "model_provider": "openai",
+                },
+                {
+                    "role_title": "Chief Architect",
+                    "agent_name": "Systems Architect Agent",
+                    "perspective": "Scalability, Modularity & Distributed Systems",
+                    "model_identifier": "claude-3-5-sonnet",
+                    "model_provider": "anthropic",
+                },
+                {
+                    "role_title": "Principal Backend Engineer",
+                    "agent_name": "Backend Engineering Agent",
+                    "perspective": "Implementation Complexity & Performance",
+                    "model_identifier": "gemini-2.5-pro",
+                    "model_provider": "google",
+                },
+                {
+                    "role_title": "Principal Security Engineer",
+                    "agent_name": "Cybersecurity Agent",
+                    "perspective": "Zero-Trust, Attack Vectors & Compliance",
+                    "model_identifier": "claude-3-5-haiku",
+                    "model_provider": "anthropic",
+                },
+                {
+                    "role_title": "QA Lead",
+                    "agent_name": "Quality Assurance Agent",
+                    "perspective": "Testability, Chaos Tolerance & Edge Cases",
+                    "model_identifier": "gpt-4o-mini",
+                    "model_provider": "openai",
+                },
             ]
             council.members = members
 
@@ -103,12 +139,14 @@ class DeliberationEngine:
             reviews.append(rev)
 
             for obj in rev["objections"]:
-                all_objections.append({
-                    "raised_by": name,
-                    "role": role,
-                    "model": f"{provider}:{model}",
-                    "objection": obj,
-                })
+                all_objections.append(
+                    {
+                        "raised_by": name,
+                        "role": role,
+                        "model": f"{provider}:{model}",
+                        "objection": obj,
+                    }
+                )
 
         deliberation.independent_reviews = reviews
         await self.db.flush()
@@ -142,21 +180,23 @@ class DeliberationEngine:
                     {
                         "respondent": "Principal Backend Engineer (Gemini)",
                         "argument": "Valid concern, but acceptable tradeoff if latency budget remains under 50ms.",
-                    }
+                    },
                 ],
                 "resolved": True,
             }
             threads.append(thread)
 
             # Record disagreement as organizational knowledge!
-            disagreements.append({
-                "topic": f"Perspective Divergence #{idx + 1}: {obj_entry['role']}",
-                "dissenting_agents": [obj_entry["raised_by"]],
-                "dissenting_models": [obj_entry["model"]],
-                "argument": obj_entry["objection"],
-                "counter_argument": "Tradeoff accepted in favor of developer velocity and decoupling",
-                "mitigation": "Continuous load and telemetry monitoring in staging before full promotion",
-            })
+            disagreements.append(
+                {
+                    "topic": f"Perspective Divergence #{idx + 1}: {obj_entry['role']}",
+                    "dissenting_agents": [obj_entry["raised_by"]],
+                    "dissenting_models": [obj_entry["model"]],
+                    "argument": obj_entry["objection"],
+                    "counter_argument": "Tradeoff accepted in favor of developer velocity and decoupling",
+                    "mitigation": "Continuous load and telemetry monitoring in staging before full promotion",
+                }
+            )
 
         deliberation.discussion_threads = threads
         deliberation.disagreements_recorded = disagreements
@@ -179,7 +219,9 @@ class DeliberationEngine:
                 "Prioritize resiliency and security isolation over pure synchronous execution simplicity",
                 "Adopt structured logging and telemetry for observable state reproduction",
             ],
-            "confidence_consensus": round(sum(r["confidence"] for r in reviews) / max(len(reviews), 1), 2),
+            "confidence_consensus": round(
+                sum(r["confidence"] for r in reviews) / max(len(reviews), 1), 2
+            ),
             "dissent_summary": f"Captured {len(disagreements)} valuable technical disagreements in organizational memory.",
         }
         deliberation.synthesis_proposal = synthesis
@@ -207,7 +249,11 @@ class DeliberationEngine:
 
         # 1. Create permanent Decision Record in decisions domain
         prop_list = [
-            {"id": p.get("id", str(i)), "title": p.get("title", f"Proposal {i}"), "description": p.get("summary", "")}
+            {
+                "id": p.get("id", str(i)),
+                "title": p.get("title", f"Proposal {i}"),
+                "description": p.get("summary", ""),
+            }
             for i, p in enumerate(deliberation.proposals)
         ]
         participants_data = [
@@ -217,6 +263,8 @@ class DeliberationEngine:
 
         council_name = "Agent Council"
         if deliberation.council_id:
+            # Flush first to persist the status change before fetching council
+            await self.db.flush()
             c = await self.repo.get_council(deliberation.council_id, deliberation.company_id)
             if c:
                 council_name = c.name
@@ -226,14 +274,16 @@ class DeliberationEngine:
             title=f"Council Decision: {deliberation.title}",
             problem=deliberation.problem_statement,
             proposals=prop_list,
-            evidence=[{"source": r["agent_name"], "evidence": r["evidence"]} for r in deliberation.independent_reviews],
+            evidence=[
+                {"source": r["agent_name"], "evidence": r["evidence"]}
+                for r in deliberation.independent_reviews
+            ],
             participants=participants_data,
             decision=decision_text,
             rationale=rationale,
             expected_outcome=f"Ratified by {council_name}",
         )
         deliberation.decision_id = dec.id
-
 
         # 2. Record Disagreements as permanent organizational memory
         if record_in_memory:
@@ -243,7 +293,7 @@ class DeliberationEngine:
                     company_id=deliberation.company_id,
                     domain=MemoryDomain.DECISION.value,
                     scope=MemoryScope.PUBLIC.value,
-                    title=f"Deliberation Dissent Record #{idx+1}: {deliberation.title}",
+                    title=f"Deliberation Dissent Record #{idx + 1}: {deliberation.title}",
                     content=(
                         f"Problem: {deliberation.problem_statement}\n"
                         f"Dissenting Agents: {', '.join(d.get('dissenting_agents', []))}\n"
@@ -283,11 +333,19 @@ class DeliberationEngine:
                 "intelligence_provider": provider,
                 "model_identifier": model,
                 "proposal": f"Architect a modular, fault-tolerant solution prioritizing business continuity for: {problem}",
-                "evidence": ["Industry benchmarks show 45% reduction in incident MTTR with isolated service boundaries."],
-                "risks": ["Resource allocation overrun if initial MVP scope expands uncontrollably."],
-                "assumptions": ["Existing engineering capacity can support asynchronous messaging."],
+                "evidence": [
+                    "Industry benchmarks show 45% reduction in incident MTTR with isolated service boundaries."
+                ],
+                "risks": [
+                    "Resource allocation overrun if initial MVP scope expands uncontrollably."
+                ],
+                "assumptions": [
+                    "Existing engineering capacity can support asynchronous messaging."
+                ],
                 "confidence": 0.92,
-                "objections": ["Timeline might slip by 2 weeks if dependencies are not strictly isolated."],
+                "objections": [
+                    "Timeline might slip by 2 weeks if dependencies are not strictly isolated."
+                ],
             }
         elif "architect" in role_lower:
             return {
@@ -296,11 +354,15 @@ class DeliberationEngine:
                 "intelligence_provider": provider,
                 "model_identifier": model,
                 "proposal": "Implement event-driven microservices with Redis Pub/Sub and transactional outbox pattern.",
-                "evidence": ["Linear scaling verified up to 50k concurrent requests in architectural simulations."],
+                "evidence": [
+                    "Linear scaling verified up to 50k concurrent requests in architectural simulations."
+                ],
                 "risks": ["Eventual consistency complexity in edge synchronization."],
                 "assumptions": ["Broker availability exceeds 99.99%."],
                 "confidence": 0.95,
-                "objections": ["Synchronous REST calls between microservices must be strictly prohibited."],
+                "objections": [
+                    "Synchronous REST calls between microservices must be strictly prohibited."
+                ],
             }
         elif "security" in role_lower:
             return {
@@ -313,7 +375,9 @@ class DeliberationEngine:
                 "risks": ["Key rotation lag could cause temporary validation hiccups."],
                 "assumptions": ["Service identities are provisioned automatically."],
                 "confidence": 0.90,
-                "objections": ["Plaintext token transmission or unencrypted internal communication must fail closed."],
+                "objections": [
+                    "Plaintext token transmission or unencrypted internal communication must fail closed."
+                ],
             }
         elif "qa" in role_lower or "quality" in role_lower:
             return {

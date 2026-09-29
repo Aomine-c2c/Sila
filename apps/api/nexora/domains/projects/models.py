@@ -1,8 +1,10 @@
 """Project and Task models."""
+
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, Enum as SAEnum, ForeignKey, String, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, String, Text
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from nexora.core.base import NexoraBase
@@ -11,6 +13,7 @@ from nexora.core.enums import Priority, ProjectStatus, TaskStatus
 
 class Project(NexoraBase):
     """A company-level initiative with objectives, milestones, and deadlines."""
+
     __tablename__ = "projects"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -43,6 +46,7 @@ class Project(NexoraBase):
 
 class Task(NexoraBase):
     """A unit of work within a Project, optionally assigned to an Agent."""
+
     __tablename__ = "tasks"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -73,7 +77,9 @@ class Task(NexoraBase):
     # Relationships
     project: Mapped["Project"] = relationship("Project", back_populates="tasks")
     company: Mapped["Company"] = relationship("Company")  # noqa: F821
-    assigned_agent: Mapped["Agent | None"] = relationship("Agent", back_populates="tasks", lazy="select")  # noqa: F821
+    assigned_agent: Mapped["Agent | None"] = relationship(
+        "Agent", back_populates="tasks", lazy="select"
+    )  # noqa: F821
 
     def __repr__(self) -> str:
         return f"<Task id={self.id} title={self.title} status={self.status}>"

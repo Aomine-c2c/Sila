@@ -1,7 +1,9 @@
 """Policy model — organizational rules and constraints."""
+
 import uuid
 
-from sqlalchemy import JSON, Enum as SAEnum, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, ForeignKey, Integer, String, Text
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from nexora.core.base import NexoraBase
@@ -14,6 +16,7 @@ class Policy(NexoraBase):
     Policies can target the whole company, a department, specific agents,
     projects, or workflows — at varying enforcement strengths.
     """
+
     __tablename__ = "policies"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -27,13 +30,18 @@ class Policy(NexoraBase):
         SAEnum(PolicyScope, name="policy_scope"), default=PolicyScope.COMPANY, nullable=False
     )
     scope_id: Mapped[uuid.UUID | None] = mapped_column(
-        nullable=True, index=True,
-        comment="Specific entity this policy applies to (dept_id, agent_id, etc.)"
+        nullable=True,
+        index=True,
+        comment="Specific entity this policy applies to (dept_id, agent_id, etc.)",
     )
 
     # The actual rules
-    rules: Mapped[list] = mapped_column(JSON, default=list, nullable=False,
-        comment="List of rule objects: {id, name, condition, action, priority}")
+    rules: Mapped[list] = mapped_column(
+        JSON,
+        default=list,
+        nullable=False,
+        comment="List of rule objects: {id, name, condition, action, priority}",
+    )
 
     enforcement_level: Mapped[EnforcementLevel] = mapped_column(
         SAEnum(EnforcementLevel, name="enforcement_level"),

@@ -3,6 +3,7 @@ Governance Evaluation Engine:
 Evaluates whether any organizational action is permitted, prohibited, or requires approval.
 Implements the 6-tier Autonomy Matrix (LEVEL 0 to 5) across Company, Department, Role, Agent, Tool, Task Type, and Action scopes.
 """
+
 import uuid
 from typing import Any
 

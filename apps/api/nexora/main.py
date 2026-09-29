@@ -3,47 +3,46 @@ NEXORA API — Main Application Entry Point.
 
 Wires together all domain routers, middleware, and lifecycle events.
 """
-import structlog
+
 from contextlib import asynccontextmanager
 
+import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from nexora.config import get_settings
-from nexora.database import engine, Base
-from nexora.exceptions import NexoraError, nexora_exception_handler, register_exception_handlers
-from nexora.middleware import RequestIDMiddleware
-
-# Domain routers
-from nexora.domains.auth.router import router as auth_router
-from nexora.domains.organizations.router import router as org_router
-from nexora.domains.agents.router import router as agent_router
-from nexora.domains.projects.router import router as project_router
-from nexora.domains.workflows.router import router as workflow_router
-from nexora.domains.policies.router import router as policy_router
-from nexora.domains.decisions.router import router as decision_router
-from nexora.domains.intelligence.router import router as intelligence_router
-from nexora.domains.resources.router import router as resource_router
-from nexora.domains.memory.router import router as memory_router
-from nexora.domains.governance.router import router as governance_router
-from nexora.domains.blueprints.router import router as blueprint_router
-from nexora.domains.councils.router import router as council_router
+import nexora.domains.agents.models  # noqa: F401
 
 # Import all models so Alembic/SQLAlchemy can discover them
 import nexora.domains.auth.models  # noqa: F401
-import nexora.domains.organizations.models  # noqa: F401
-import nexora.domains.agents.models  # noqa: F401
-import nexora.domains.projects.models  # noqa: F401
-import nexora.domains.workflows.models  # noqa: F401
-import nexora.domains.policies.models  # noqa: F401
-import nexora.domains.decisions.models  # noqa: F401
-import nexora.domains.intelligence.models  # noqa: F401
-import nexora.domains.resources.models  # noqa: F401
-import nexora.domains.memory.models  # noqa: F401
-import nexora.domains.governance.models  # noqa: F401
 import nexora.domains.blueprints.models  # noqa: F401
 import nexora.domains.councils.models  # noqa: F401
+import nexora.domains.decisions.models  # noqa: F401
+import nexora.domains.governance.models  # noqa: F401
+import nexora.domains.intelligence.models  # noqa: F401
+import nexora.domains.memory.models  # noqa: F401
+import nexora.domains.organizations.models  # noqa: F401
+import nexora.domains.policies.models  # noqa: F401
+import nexora.domains.projects.models  # noqa: F401
+import nexora.domains.resources.models  # noqa: F401
+import nexora.domains.workflows.models  # noqa: F401
+from nexora.config import get_settings
+from nexora.domains.agents.router import router as agent_router
 
+# Domain routers
+from nexora.domains.auth.router import router as auth_router
+from nexora.domains.blueprints.router import router as blueprint_router
+from nexora.domains.councils.router import router as council_router
+from nexora.domains.decisions.router import router as decision_router
+from nexora.domains.governance.router import router as governance_router
+from nexora.domains.intelligence.router import router as intelligence_router
+from nexora.domains.memory.router import router as memory_router
+from nexora.domains.organizations.router import router as org_router
+from nexora.domains.policies.router import router as policy_router
+from nexora.domains.projects.router import router as project_router
+from nexora.domains.resources.router import router as resource_router
+from nexora.domains.workflows.router import router as workflow_router
+from nexora.exceptions import register_exception_handlers
+from nexora.middleware import RequestIDMiddleware
 
 settings = get_settings()
 logger = structlog.get_logger(__name__)
@@ -103,6 +102,7 @@ def create_app() -> FastAPI:
 
     # ── UI Route ───────────────────────────────────────────────────────────
     from pathlib import Path
+
     from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
 
@@ -126,7 +126,9 @@ def create_app() -> FastAPI:
         async def memory_ui():
             return FileResponse(static_dir / "organizational_memory.html")
 
-        @app.get("/ui/governance", tags=["UI"], summary="Organizational Governance & Audit Viewer UI")
+        @app.get(
+            "/ui/governance", tags=["UI"], summary="Organizational Governance & Audit Viewer UI"
+        )
         async def governance_ui():
             return FileResponse(static_dir / "governance_dashboard.html")
 
@@ -134,14 +136,17 @@ def create_app() -> FastAPI:
         async def blueprints_ui():
             return FileResponse(static_dir / "company_blueprints.html")
 
-        @app.get("/ui/workflows", tags=["UI"], summary="NEXORA Workflow Observability & Execution Engine UI")
+        @app.get(
+            "/ui/workflows",
+            tags=["UI"],
+            summary="NEXORA Workflow Observability & Execution Engine UI",
+        )
         async def workflows_ui():
             return FileResponse(static_dir / "workflow_dashboard.html")
 
         @app.get("/ui/councils", tags=["UI"], summary="Agent Council & Deliberation UI")
         async def councils_ui():
             return FileResponse(static_dir / "council_deliberation.html")
-
 
     # ── Health Check ───────────────────────────────────────────────────────
     @app.get("/health", tags=["System"], summary="Health check")

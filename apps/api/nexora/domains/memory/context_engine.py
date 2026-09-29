@@ -13,9 +13,8 @@ Core Architectural Law:
   → construct context
   → send minimal necessary context to model
 """
+
 import re
-import uuid
-from typing import Any
 
 from nexora.core.enums import MemoryDomain, MemoryScope
 from nexora.domains.memory.models import MemoryItem
@@ -28,7 +27,9 @@ from nexora.domains.memory.schemas import (
 
 class ContextAssemblyEngine:
     @staticmethod
-    def identify_required_domains(task_objective: str, explicit_domains: list[MemoryDomain] | None) -> list[str]:
+    def identify_required_domains(
+        task_objective: str, explicit_domains: list[MemoryDomain] | None
+    ) -> list[str]:
         """
         Identify which of the 10 memory domains are needed for this task.
         Uses explicit request if provided; otherwise infers from keywords.
@@ -122,7 +123,9 @@ class ContextAssemblyEngine:
         2. Scores and ranks by task relevance
         3. Formulates minimal, clean, non-leaking prompt segment
         """
-        required_domains = cls.identify_required_domains(request.task_objective, request.target_domains)
+        required_domains = cls.identify_required_domains(
+            request.task_objective, request.target_domains
+        )
 
         # 1. Filter by domain and authorization
         authorized = []
@@ -171,7 +174,7 @@ class ContextAssemblyEngine:
             )
 
             prompt_parts.append(
-                f"[{item.domain} MEMORY] {item.title} (Confidence: {int(item.confidence*100)}%)\n"
+                f"[{item.domain} MEMORY] {item.title} (Confidence: {int(item.confidence * 100)}%)\n"
                 f"{excerpt}\n"
             )
 

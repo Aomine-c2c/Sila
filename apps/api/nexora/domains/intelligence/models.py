@@ -5,6 +5,7 @@ Intelligence Exchange domain models:
 - ModelRoutingPolicy (Priority-based capability matching, cost/latency/privacy/fallback rules)
 - ModelRequestLog (Historical log of routing, execution, tokens, latency, cost)
 """
+
 import uuid
 from datetime import datetime
 
@@ -28,6 +29,7 @@ class ModelProvider(NexoraBase):
     An AI vendor / service provider (OpenAI, Anthropic, Google Gemini, Local/Self-hosted, etc.).
     Keeps organizational agents decoupled from vendor APIs.
     """
+
     __tablename__ = "model_providers"
 
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
@@ -40,7 +42,9 @@ class ModelProvider(NexoraBase):
     # Health / availability monitoring
     is_healthy: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     consecutive_failures: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    last_health_check_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_health_check_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # Relationships
     models: Mapped[list["Model"]] = relationship(
@@ -56,26 +60,30 @@ class Model(NexoraBase):
     A specific model instance offered by a provider.
     Exposes capabilities, modalities, context capacity, pricing, latency, and privacy metadata.
     """
+
     __tablename__ = "models"
 
     provider_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("model_providers.id", ondelete="CASCADE"), nullable=False, index=True
     )
     model_identifier: Mapped[str] = mapped_column(
-        String(150), nullable=False, index=True,
-        comment="Provider API identifier, e.g. gpt-4o, claude-3-5-sonnet-20241022, gemini-1.5-pro"
+        String(150),
+        nullable=False,
+        index=True,
+        comment="Provider API identifier, e.g. gpt-4o, claude-3-5-sonnet-20241022, gemini-1.5-pro",
     )
     display_name: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Capabilities & Features
     capabilities: Mapped[list] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Tags: reasoning, code_generation, creative, fast, vision, agentic, large_context"
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Tags: reasoning, code_generation, creative, fast, vision, agentic, large_context",
     )
     modalities: Mapped[list] = mapped_column(
-        JSON, default=lambda: ["text"], nullable=False,
-        comment="text, vision, audio, code"
+        JSON, default=lambda: ["text"], nullable=False, comment="text, vision, audio, code"
     )
     tool_support: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     structured_output_support: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -102,7 +110,9 @@ class Model(NexoraBase):
     provider: Mapped["ModelProvider"] = relationship("ModelProvider", back_populates="models")
 
     def __repr__(self) -> str:
-        return f"<Model id={self.id} identifier={self.model_identifier} provider={self.provider_id}>"
+        return (
+            f"<Model id={self.id} identifier={self.model_identifier} provider={self.provider_id}>"
+        )
 
 
 class ModelRoutingPolicy(NexoraBase):
@@ -111,6 +121,7 @@ class ModelRoutingPolicy(NexoraBase):
     Guides how capability requests are resolved across providers with cost, latency,
     privacy, fallback, and explicit user preference rules.
     """
+
     __tablename__ = "model_routing_policies"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -120,8 +131,10 @@ class ModelRoutingPolicy(NexoraBase):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     strategy: Mapped[str] = mapped_column(
-        String(50), default="BALANCED", nullable=False,
-        comment="BALANCED | LOWEST_COST | LOWEST_LATENCY | HIGHEST_CAPABILITY | STRICT_PRIVACY"
+        String(50),
+        default="BALANCED",
+        nullable=False,
+        comment="BALANCED | LOWEST_COST | LOWEST_LATENCY | HIGHEST_CAPABILITY | STRICT_PRIVACY",
     )
     max_cost_per_query_usd: Mapped[float] = mapped_column(Float, default=0.50, nullable=False)
     max_acceptable_latency_ms: Mapped[float] = mapped_column(Float, default=5000.0, nullable=False)
@@ -129,7 +142,9 @@ class ModelRoutingPolicy(NexoraBase):
 
     # Fallback chain: list of model identifiers to try in order on rate-limit or failure
     fallback_chain: Mapped[list] = mapped_column(
-        JSON, default=lambda: ["claude-3-5-sonnet", "gemini-1.5-pro", "local-deepseek-r1"], nullable=False
+        JSON,
+        default=lambda: ["claude-3-5-sonnet", "gemini-1.5-pro", "local-deepseek-r1"],
+        nullable=False,
     )
 
     # Explicit user/agent preferences: { "architectural_reasoning": "claude-3-5-sonnet", "quick_formatting": "gemini-1.5-flash" }
@@ -142,6 +157,7 @@ class ModelRequestLog(UUIDBase, TimestampMixin):
     Telemetry and audit log for every model invocation routed through the Intelligence Exchange.
     Provides data for the Intelligence Exchange Dashboard.
     """
+
     __tablename__ = "model_request_logs"
 
     company_id: Mapped[uuid.UUID] = mapped_column(

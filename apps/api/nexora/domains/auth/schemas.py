@@ -1,4 +1,5 @@
 """Pydantic schemas for authentication."""
+
 import uuid
 from datetime import datetime
 

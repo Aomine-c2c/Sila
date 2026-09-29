@@ -1,4 +1,5 @@
 """Organization service — business logic for company, dept, role, membership."""
+
 import re
 import uuid
 
@@ -6,7 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.core.enums import MembershipRole
 from nexora.domains.auth.models import User
-from nexora.domains.organizations.models import Company, CompanyMember, Department, OrganizationalDNA, OrgRole
+from nexora.domains.organizations.models import (
+    Company,
+    CompanyMember,
+    Department,
+    OrganizationalDNA,
+    OrgRole,
+)
 from nexora.domains.organizations.repository import (
     CompanyMemberRepository,
     CompanyRepository,
@@ -111,7 +118,9 @@ class CompanyService:
 
         # Cannot assign OWNER role via invite
         if role == MembershipRole.OWNER:
-            raise BusinessRuleError("Cannot assign OWNER role via invite. Transfer ownership instead.")
+            raise BusinessRuleError(
+                "Cannot assign OWNER role via invite. Transfer ownership instead."
+            )
 
         return await self.member_repo.add_member(company_id, user_id, role)
 
@@ -198,9 +207,7 @@ class OrgRoleService:
         self.repo = OrgRoleRepository(db)
         self.dept_repo = DepartmentRepository(db)
 
-    async def create(
-        self, department_id: uuid.UUID, company_id: uuid.UUID, **kwargs
-    ) -> OrgRole:
+    async def create(self, department_id: uuid.UUID, company_id: uuid.UUID, **kwargs) -> OrgRole:
         dept = await self.dept_repo.get_by_id(department_id)
         if not dept or dept.company_id != company_id:
             raise BusinessRuleError("Department must belong to the same company.")

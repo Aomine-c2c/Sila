@@ -1,11 +1,12 @@
 """Project and Task services."""
+
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.domains.projects.models import Project, Task
 from nexora.domains.projects.repository import ProjectRepository, TaskRepository
-from nexora.exceptions import BusinessRuleError, ForbiddenError, NotFoundError
+from nexora.exceptions import ForbiddenError, NotFoundError
 
 
 class ProjectService:
@@ -44,9 +45,7 @@ class TaskService:
         self.repo = TaskRepository(db)
         self.project_repo = ProjectRepository(db)
 
-    async def create(
-        self, project_id: uuid.UUID, company_id: uuid.UUID, **kwargs
-    ) -> Task:
+    async def create(self, project_id: uuid.UUID, company_id: uuid.UUID, **kwargs) -> Task:
         project = await self.project_repo.get_by_id(project_id)
         if not project or project.company_id != company_id:
             raise NotFoundError("Project not found.")

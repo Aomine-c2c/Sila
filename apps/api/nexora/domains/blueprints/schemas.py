@@ -1,4 +1,5 @@
 """Pydantic schemas for NEXORA Company Blueprints and Build My Company generation."""
+
 import uuid
 from datetime import datetime
 from typing import Any
@@ -183,7 +184,9 @@ class InstantiateBlueprintResponse(BaseModel):
 # BUILD MY COMPANY (NATURAL LANGUAGE SYNTHESIS)
 # -------------------------------------------------------------
 class BuildMyCompanyRequest(BaseModel):
-    description: str = Field(..., min_length=10, description="Natural language description of the company to build")
+    description: str = Field(
+        ..., min_length=10, description="Natural language description of the company to build"
+    )
     target_budget_monthly_usd: float | None = None
     preferred_autonomy_level: int | None = Field(None, ge=0, le=5)
 

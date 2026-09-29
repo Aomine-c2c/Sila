@@ -21,8 +21,9 @@ Metadata:
 Decision Records:
 - problem, options, evidence, decision, rationale, participants, expected outcome, actual outcome, lessons learned.
 """
+
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import (
@@ -37,9 +38,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from nexora.core.base import NexoraBase, TimestampMixin, UUIDBase
+from nexora.core.base import NexoraBase
 from nexora.core.enums import (
-    MemoryDomain,
     MemoryScope,
     ProvenanceType,
     RetentionPolicy,
@@ -51,13 +51,16 @@ class MemoryItem(NexoraBase):
     A discrete unit of organizational memory belonging to one of the 10 domains.
     Includes full provenance, permission scopes, confidence score, and retention.
     """
+
     __tablename__ = "memory_items"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True
     )
     domain: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
-    scope: Mapped[str] = mapped_column(String(50), default=MemoryScope.INTERNAL.value, nullable=False, index=True)
+    scope: Mapped[str] = mapped_column(
+        String(50), default=MemoryScope.INTERNAL.value, nullable=False, index=True
+    )
 
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
@@ -82,8 +85,9 @@ class MemoryItem(NexoraBase):
         String(50), default=ProvenanceType.HUMAN_INPUT.value, nullable=False
     )
     source: Mapped[str] = mapped_column(
-        String(255), nullable=False,
-        comment="Originating actor, system component, API, or doc reference"
+        String(255),
+        nullable=False,
+        comment="Originating actor, system component, API, or doc reference",
     )
     owner_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
@@ -91,20 +95,18 @@ class MemoryItem(NexoraBase):
 
     # Intelligence & Confidence metrics
     confidence: Mapped[float] = mapped_column(
-        Float, default=1.0, nullable=False,
-        comment="Reliability / confidence score 0.0 to 1.0"
+        Float, default=1.0, nullable=False, comment="Reliability / confidence score 0.0 to 1.0"
     )
     relevance_score: Mapped[float] = mapped_column(
-        Float, default=1.0, nullable=False,
-        comment="Dynamic organizational relevance score"
+        Float, default=1.0, nullable=False, comment="Dynamic organizational relevance score"
     )
     access_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    last_accessed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_accessed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # Access control permissions list: e.g. ["role:ADMIN", "dept:engineering", "agent:*"]
-    required_permissions: Mapped[list[str]] = mapped_column(
-        JSON, default=list, nullable=False
-    )
+    required_permissions: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
 
     # Lifecycle & Retention
     retention_policy: Mapped[str] = mapped_column(
@@ -140,6 +142,7 @@ class DecisionRecord(NexoraBase):
     - actual outcome
     - lessons learned
     """
+
     __tablename__ = "memory_decision_records"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -149,16 +152,19 @@ class DecisionRecord(NexoraBase):
     problem: Mapped[str] = mapped_column(Text, nullable=False)
 
     options: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="[{id, title, description, pros, cons, impact_score}]"
+        JSON,
+        default=list,
+        nullable=False,
+        comment="[{id, title, description, pros, cons, impact_score}]",
     )
     evidence: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="[{source, claim, verified, url_or_ref}]"
+        JSON, default=list, nullable=False, comment="[{source, claim, verified, url_or_ref}]"
     )
     participants: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="[{name, role, identity_type: USER|AGENT, stance}]"
+        JSON,
+        default=list,
+        nullable=False,
+        comment="[{name, role, identity_type: USER|AGENT, stance}]",
     )
 
     decision: Mapped[str] = mapped_column(Text, nullable=False)
@@ -180,5 +186,5 @@ class DecisionRecord(NexoraBase):
     )
 
     decided_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )

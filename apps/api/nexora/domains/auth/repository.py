@@ -1,4 +1,5 @@
 """User repository — database access layer for auth."""
+
 import uuid
 
 from sqlalchemy import select
@@ -16,15 +17,11 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     async def get_by_email(self, email: str) -> User | None:
-        result = await self.db.execute(
-            select(User).where(User.email == email.lower())
-        )
+        result = await self.db.execute(select(User).where(User.email == email.lower()))
         return result.scalar_one_or_none()
 
     async def get_by_username(self, username: str) -> User | None:
-        result = await self.db.execute(
-            select(User).where(User.username == username.lower())
-        )
+        result = await self.db.execute(select(User).where(User.username == username.lower()))
         return result.scalar_one_or_none()
 
     async def create(

@@ -2,8 +2,9 @@
 Resource Engine Service.
 Orchestrates requests, allocations, real usage tracking, and the Resource Control Center.
 """
+
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,9 +27,6 @@ from nexora.domains.resources.schemas import (
     CapacityOverviewItem,
     ExpensiveTaskSummary,
     ProviderUsageMetric,
-    RequestedComputeSpec,
-    RequestedIntelligenceSpec,
-    RequestedOperationalSpec,
     ResourceBottleneckItem,
     ResourceBudgetCreate,
     ResourceControlCenterResponse,
@@ -37,7 +35,7 @@ from nexora.domains.resources.schemas import (
     ResourceRequestCreate,
     ResourceUsageRecordCreate,
 )
-from nexora.exceptions import NotFoundError, ValidationError
+from nexora.exceptions import NotFoundError
 
 
 class ResourceService:
@@ -55,11 +53,41 @@ class ResourceService:
 
         # Create baseline realistic pools
         default_configs = [
-            ("Core Compute Cluster (CPU)", ResourceCategory.COMPUTE.value, 32.0, "cores", "Physical and virtual worker CPU threads"),
-            ("Cluster Memory Pool (RAM)", ResourceCategory.COMPUTE.value, 64.0, "GB", "Total accessible high-speed system memory"),
-            ("Intelligence Token Quota", ResourceCategory.INTELLIGENCE.value, 10_000_000.0, "tokens", "Monthly shared LLM generation tokens"),
-            ("Agent Execution Slots", ResourceCategory.OPERATIONAL.value, 16.0, "slots", "Concurrent agent process slots"),
-            ("Human Approval Bandwidth", ResourceCategory.OPERATIONAL.value, 10.0, "slots", "Concurrent pending executive decision slots"),
+            (
+                "Core Compute Cluster (CPU)",
+                ResourceCategory.COMPUTE.value,
+                32.0,
+                "cores",
+                "Physical and virtual worker CPU threads",
+            ),
+            (
+                "Cluster Memory Pool (RAM)",
+                ResourceCategory.COMPUTE.value,
+                64.0,
+                "GB",
+                "Total accessible high-speed system memory",
+            ),
+            (
+                "Intelligence Token Quota",
+                ResourceCategory.INTELLIGENCE.value,
+                10_000_000.0,
+                "tokens",
+                "Monthly shared LLM generation tokens",
+            ),
+            (
+                "Agent Execution Slots",
+                ResourceCategory.OPERATIONAL.value,
+                16.0,
+                "slots",
+                "Concurrent agent process slots",
+            ),
+            (
+                "Human Approval Bandwidth",
+                ResourceCategory.OPERATIONAL.value,
+                10.0,
+                "slots",
+                "Concurrent pending executive decision slots",
+            ),
         ]
 
         created = []
@@ -88,11 +116,15 @@ class ResourceService:
             description=data.description,
         )
 
-    async def list_pools(self, company_id: uuid.UUID, category: str | None = None) -> list[ResourcePool]:
+    async def list_pools(
+        self, company_id: uuid.UUID, category: str | None = None
+    ) -> list[ResourcePool]:
         await self.ensure_default_pools(company_id)
         return await self.repo.list_pools(company_id, category)
 
-    async def create_budget(self, company_id: uuid.UUID, data: ResourceBudgetCreate) -> ResourceBudget:
+    async def create_budget(
+        self, company_id: uuid.UUID, data: ResourceBudgetCreate
+    ) -> ResourceBudget:
         return await self.repo.create_budget(
             company_id=company_id,
             name=data.name,
@@ -151,15 +183,25 @@ class ResourceService:
             for pool in pools:
                 if "cpu" in pool.unit.lower() or "core" in pool.unit.lower():
                     alloc_amt = min(pool.available_capacity, data.requested_compute.cpu_cores)
-                    await self.repo.create_allocation(company_id, pool.id, req.id, alloc_amt, pool.unit)
+                    await self.repo.create_allocation(
+                        company_id, pool.id, req.id, alloc_amt, pool.unit
+                    )
                     await self.repo.update_pool_capacity(pool, allocated_delta=alloc_amt)
                 elif "token" in pool.unit.lower():
-                    alloc_amt = min(pool.available_capacity, float(data.requested_intelligence.tokens))
-                    await self.repo.create_allocation(company_id, pool.id, req.id, alloc_amt, pool.unit)
+                    alloc_amt = min(
+                        pool.available_capacity, float(data.requested_intelligence.tokens)
+                    )
+                    await self.repo.create_allocation(
+                        company_id, pool.id, req.id, alloc_amt, pool.unit
+                    )
                     await self.repo.update_pool_capacity(pool, allocated_delta=alloc_amt)
                 elif "slot" in pool.unit.lower():
-                    alloc_amt = min(pool.available_capacity, float(data.requested_operational.slots_needed))
-                    await self.repo.create_allocation(company_id, pool.id, req.id, alloc_amt, pool.unit)
+                    alloc_amt = min(
+                        pool.available_capacity, float(data.requested_operational.slots_needed)
+                    )
+                    await self.repo.create_allocation(
+                        company_id, pool.id, req.id, alloc_amt, pool.unit
+                    )
                     await self.repo.update_pool_capacity(pool, allocated_delta=alloc_amt)
 
         return req, eval_result
@@ -225,18 +267,24 @@ class ResourceService:
     # -------------------------------------------------------------
     # RESOURCE CONTROL CENTER ANALYTICS
     # -------------------------------------------------------------
-    async def get_control_center_overview(self, company_id: uuid.UUID) -> ResourceControlCenterResponse:
+    async def get_control_center_overview(
+        self, company_id: uuid.UUID
+    ) -> ResourceControlCenterResponse:
         pools = await self.list_pools(company_id)
         budgets = await self.list_budgets(company_id)
         allocations = await self.list_allocations(company_id, status=AllocationStatus.ACTIVE.value)
-        queued_requests = await self.repo.list_requests(company_id, decision=ResourceEvaluationDecision.QUEUE.value)
+        queued_requests = await self.repo.list_requests(
+            company_id, decision=ResourceEvaluationDecision.QUEUE.value
+        )
         usage_records = await self.repo.list_usage_records(company_id, limit=200)
 
         # 1. Capacity overview items
         capacity_items = []
         bottlenecks = []
         for p in pools:
-            util = (p.allocated_capacity / p.total_capacity * 100.0) if p.total_capacity > 0 else 0.0
+            util = (
+                (p.allocated_capacity / p.total_capacity * 100.0) if p.total_capacity > 0 else 0.0
+            )
             capacity_items.append(
                 CapacityOverviewItem(
                     category=p.category,
@@ -270,7 +318,9 @@ class ResourceService:
             "total_budget_usd": round(total_budget, 2),
             "spent_budget_usd": round(total_spent, 2),
             "remaining_budget_usd": round(max(0.0, total_budget - total_spent), 2),
-            "burn_rate_percent": round((total_spent / total_budget * 100.0), 1) if total_budget > 0 else 0.0,
+            "burn_rate_percent": round((total_spent / total_budget * 100.0), 1)
+            if total_budget > 0
+            else 0.0,
             "budgets_count": len(budgets),
         }
 
@@ -313,7 +363,7 @@ class ResourceService:
 
         return ResourceControlCenterResponse(
             company_id=company_id,
-            generated_at=datetime.now(timezone.utc),
+            generated_at=datetime.now(UTC),
             capacities=capacity_items,
             budget_consumption=budget_summary,
             active_allocations_count=len(allocations),

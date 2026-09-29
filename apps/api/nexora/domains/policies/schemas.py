@@ -1,4 +1,5 @@
 """Policy Pydantic schemas."""
+
 import uuid
 from datetime import datetime
 
@@ -10,7 +11,9 @@ from nexora.core.enums import EnforcementLevel, PolicyScope, PolicyStatus
 class PolicyRule(BaseModel):
     id: str
     name: str
-    condition: str = Field(description="Natural language or expression describing when this rule applies")
+    condition: str = Field(
+        description="Natural language or expression describing when this rule applies"
+    )
     action: str = Field(description="What happens when the condition is met")
     priority: int = Field(default=0, description="Higher priority rules are evaluated first")
     active: bool = True

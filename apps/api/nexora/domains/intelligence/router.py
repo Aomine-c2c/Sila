@@ -1,4 +1,5 @@
 """Intelligence Exchange API router."""
+
 import uuid
 from typing import Annotated
 
@@ -17,8 +18,6 @@ from nexora.domains.intelligence.schemas import (
     ModelRequest,
     ModelResponse,
     ModelResponsePayload,
-    ModelRoutingPolicyCreate,
-    ModelRoutingPolicyResponse,
 )
 from nexora.domains.intelligence.service import IntelligenceService
 
@@ -75,7 +74,9 @@ async def list_providers(
     return providers
 
 
-@router.post("/providers", response_model=ModelProviderResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/providers", response_model=ModelProviderResponse, status_code=status.HTTP_201_CREATED
+)
 async def add_provider(
     company_id: uuid.UUID,
     body: ModelProviderCreate,

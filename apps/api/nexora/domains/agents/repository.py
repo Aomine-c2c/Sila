@@ -1,4 +1,5 @@
 """Agent repository with multi-agent capabilities, memory, communication, and audits."""
+
 import uuid
 from datetime import UTC, datetime
 
@@ -21,17 +22,17 @@ class AgentRepository:
 
     async def list_by_company(self, company_id: uuid.UUID) -> list[Agent]:
         result = await self.db.execute(
-            select(Agent).where(
-                Agent.company_id == company_id, Agent.is_deleted.is_(False)
-            ).order_by(Agent.name)
+            select(Agent)
+            .where(Agent.company_id == company_id, Agent.is_deleted.is_(False))
+            .order_by(Agent.name)
         )
         return list(result.scalars().all())
 
     async def list_direct_reports(self, manager_agent_id: uuid.UUID) -> list[Agent]:
         result = await self.db.execute(
-            select(Agent).where(
-                Agent.manager_agent_id == manager_agent_id, Agent.is_deleted.is_(False)
-            ).order_by(Agent.name)
+            select(Agent)
+            .where(Agent.manager_agent_id == manager_agent_id, Agent.is_deleted.is_(False))
+            .order_by(Agent.name)
         )
         return list(result.scalars().all())
 
@@ -104,11 +105,16 @@ class AgentMemoryRepository:
         return list(result.scalars().all())
 
     async def search_memory(self, agent_id: uuid.UUID, keyword: str) -> list[AgentMemory]:
-        q = select(AgentMemory).where(
-            AgentMemory.agent_id == agent_id,
-            AgentMemory.is_deleted.is_(False),
-            (AgentMemory.key.ilike(f"%{keyword}%") | AgentMemory.content.ilike(f"%{keyword}%")),
-        ).order_by(desc(AgentMemory.importance)).limit(20)
+        q = (
+            select(AgentMemory)
+            .where(
+                AgentMemory.agent_id == agent_id,
+                AgentMemory.is_deleted.is_(False),
+                (AgentMemory.key.ilike(f"%{keyword}%") | AgentMemory.content.ilike(f"%{keyword}%")),
+            )
+            .order_by(desc(AgentMemory.importance))
+            .limit(20)
+        )
         result = await self.db.execute(q)
         return list(result.scalars().all())
 
@@ -144,26 +150,44 @@ class AgentCommunicationRepository:
         return msg
 
     async def list_inbox(self, agent_id: uuid.UUID, limit: int = 50) -> list[AgentCommunication]:
-        q = select(AgentCommunication).where(
-            AgentCommunication.to_agent_id == agent_id,
-            AgentCommunication.is_deleted.is_(False),
-        ).order_by(desc(AgentCommunication.created_at)).limit(limit)
+        q = (
+            select(AgentCommunication)
+            .where(
+                AgentCommunication.to_agent_id == agent_id,
+                AgentCommunication.is_deleted.is_(False),
+            )
+            .order_by(desc(AgentCommunication.created_at))
+            .limit(limit)
+        )
         result = await self.db.execute(q)
         return list(result.scalars().all())
 
     async def list_outbox(self, agent_id: uuid.UUID, limit: int = 50) -> list[AgentCommunication]:
-        q = select(AgentCommunication).where(
-            AgentCommunication.from_agent_id == agent_id,
-            AgentCommunication.is_deleted.is_(False),
-        ).order_by(desc(AgentCommunication.created_at)).limit(limit)
+        q = (
+            select(AgentCommunication)
+            .where(
+                AgentCommunication.from_agent_id == agent_id,
+                AgentCommunication.is_deleted.is_(False),
+            )
+            .order_by(desc(AgentCommunication.created_at))
+            .limit(limit)
+        )
         result = await self.db.execute(q)
         return list(result.scalars().all())
 
-    async def list_for_agent(self, agent_id: uuid.UUID, limit: int = 20) -> list[AgentCommunication]:
-        q = select(AgentCommunication).where(
-            (AgentCommunication.from_agent_id == agent_id) | (AgentCommunication.to_agent_id == agent_id),
-            AgentCommunication.is_deleted.is_(False),
-        ).order_by(desc(AgentCommunication.created_at)).limit(limit)
+    async def list_for_agent(
+        self, agent_id: uuid.UUID, limit: int = 20
+    ) -> list[AgentCommunication]:
+        q = (
+            select(AgentCommunication)
+            .where(
+                (AgentCommunication.from_agent_id == agent_id)
+                | (AgentCommunication.to_agent_id == agent_id),
+                AgentCommunication.is_deleted.is_(False),
+            )
+            .order_by(desc(AgentCommunication.created_at))
+            .limit(limit)
+        )
         result = await self.db.execute(q)
         return list(result.scalars().all())
 
@@ -215,16 +239,23 @@ class AgentAuditRepository:
         await self.db.refresh(audit)
         return audit
 
-    async def list_for_agent(self, agent_id: uuid.UUID, limit: int = 50) -> list[AgentExecutionAudit]:
-        q = select(AgentExecutionAudit).where(
-            AgentExecutionAudit.agent_id == agent_id
-        ).order_by(desc(AgentExecutionAudit.created_at)).limit(limit)
+    async def list_for_agent(
+        self, agent_id: uuid.UUID, limit: int = 50
+    ) -> list[AgentExecutionAudit]:
+        q = (
+            select(AgentExecutionAudit)
+            .where(AgentExecutionAudit.agent_id == agent_id)
+            .order_by(desc(AgentExecutionAudit.created_at))
+            .limit(limit)
+        )
         result = await self.db.execute(q)
         return list(result.scalars().all())
 
     async def list_by_execution(self, execution_id: uuid.UUID) -> list[AgentExecutionAudit]:
-        q = select(AgentExecutionAudit).where(
-            AgentExecutionAudit.execution_id == execution_id
-        ).order_by(AgentExecutionAudit.created_at)
+        q = (
+            select(AgentExecutionAudit)
+            .where(AgentExecutionAudit.execution_id == execution_id)
+            .order_by(AgentExecutionAudit.created_at)
+        )
         result = await self.db.execute(q)
         return list(result.scalars().all())

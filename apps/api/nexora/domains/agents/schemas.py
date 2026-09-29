@@ -1,4 +1,5 @@
 """Pydantic schemas for Agents and Multi-Agent infrastructure."""
+
 import uuid
 from datetime import datetime
 
@@ -123,6 +124,7 @@ class AgentResponse(BaseModel):
 
 class AgentProfileResponse(BaseModel):
     """Rich organizational employee profile view for frontend inspection."""
+
     model_config = {"from_attributes": True}
 
     id: uuid.UUID
@@ -159,7 +161,9 @@ class AgentProfileResponse(BaseModel):
 
 
 class MemoryCreate(BaseModel):
-    memory_type: str = Field(default="episodic", description="episodic | semantic | procedural | reflection")
+    memory_type: str = Field(
+        default="episodic", description="episodic | semantic | procedural | reflection"
+    )
     key: str = Field(min_length=1, max_length=255)
     content: str = Field(min_length=1)
     metadata: dict = Field(default_factory=dict)

@@ -14,7 +14,7 @@ Executes and coordinates orchestrated multi-step organizational processes:
 - TIMEOUTS
 - State persistence at every step (Observable, auditable, reproducible)
 """
-import asyncio
+
 import time
 import uuid
 from typing import Any
@@ -23,16 +23,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.core.enums import (
     ApprovalStatus,
-    GovernanceRiskLevel,
-    ResourceCategory,
     WorkflowExecutionStatus,
-    WorkflowStepType,
 )
 from nexora.domains.agents.repository import AgentRepository
-from nexora.domains.governance.models import ApprovalRequest
 from nexora.domains.governance.repository import GovernanceRepository
-from nexora.domains.resources.repository import ResourceRepository
-from nexora.domains.workflows.models import Workflow, WorkflowExecution, WorkflowExecutionStep
+from nexora.domains.workflows.models import Workflow, WorkflowExecution
 from nexora.domains.workflows.repository import WorkflowExecutionRepository, WorkflowRepository
 from nexora.exceptions import BusinessRuleError, NotFoundError
 
@@ -149,7 +144,9 @@ class WorkflowExecutionEngine:
             branch_target = self._evaluate_branching(step, execution.state_payload)
             if branch_target:
                 # Jump to target step index
-                target_idx = next((i for i, s in enumerate(steps) if s.get("id") == branch_target), None)
+                target_idx = next(
+                    (i for i, s in enumerate(steps) if s.get("id") == branch_target), None
+                )
                 if target_idx is not None:
                     step_idx = target_idx
                     continue
@@ -191,7 +188,9 @@ class WorkflowExecutionEngine:
 
                 # Check if approval already created and approved
                 if execution.pending_approval_id:
-                    app_req = await self.gov_repo.get_approval_request(execution.pending_approval_id, execution.company_id)
+                    app_req = await self.gov_repo.get_approval_request(
+                        execution.pending_approval_id, execution.company_id
+                    )
                     if app_req and app_req.status == ApprovalStatus.APPROVED:
                         execution.pending_approval_id = None
                         out = {"approved": True, "reviewer_notes": app_req.reviewer_notes}
@@ -208,7 +207,11 @@ class WorkflowExecutionEngine:
                         )
                         return out, None, False
                     elif app_req and app_req.status == ApprovalStatus.REJECTED:
-                        return None, f"Workflow step rejected by reviewer: {app_req.reviewer_notes}", False
+                        return (
+                            None,
+                            f"Workflow step rejected by reviewer: {app_req.reviewer_notes}",
+                            False,
+                        )
                     else:
                         execution.status = WorkflowExecutionStatus.WAITING_APPROVAL
                         return None, None, True
@@ -241,7 +244,9 @@ class WorkflowExecutionEngine:
             # 2. AGENT EXECUTION
             elif step_type_str == "AGENT":
                 agent_id_str = step_config.get("agent_id")
-                agent_name = step_config.get("agent") or step_config.get("agent_name") or "Autonomous Agent"
+                agent_name = (
+                    step_config.get("agent") or step_config.get("agent_name") or "Autonomous Agent"
+                )
                 instruction = step_config.get("instruction") or f"Execute workflow step {step_name}"
 
                 agent_id = None
@@ -346,7 +351,9 @@ class WorkflowExecutionEngine:
                 esc = await self.gov_repo.create_escalation(
                     company_id=execution.company_id,
                     reason=step_config.get("reason", f"Workflow Escalation at {step_name}"),
-                    description=step_config.get("description", "Workflow encountered configured escalation rule"),
+                    description=step_config.get(
+                        "description", "Workflow encountered configured escalation rule"
+                    ),
                     severity="HIGH",
                     context_data={"execution_id": str(execution.id)},
                 )

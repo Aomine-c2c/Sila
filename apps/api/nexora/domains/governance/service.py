@@ -1,12 +1,12 @@
 """Service layer for NEXORA Organizational Governance Layer."""
+
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.core.enums import (
     ApprovalStatus,
-    EscalationStatus,
     GovernanceAutonomyLevel,
     GovernanceRiskLevel,
 )
@@ -21,9 +21,7 @@ from nexora.domains.governance.models import (
 from nexora.domains.governance.repository import GovernanceRepository
 from nexora.domains.governance.schemas import (
     ApprovalDecisionUpdate,
-    ApprovalRequestCreate,
     AutonomyConfigCreate,
-    CompanyConstitutionCreate,
     CompanyConstitutionUpdate,
     EscalationRecordCreate,
     EscalationResolutionUpdate,
@@ -105,7 +103,9 @@ class GovernanceService:
         data: CompanyConstitutionUpdate,
     ) -> CompanyConstitution:
         constitution = await self.get_or_seed_constitution(company_id)
-        return await self.repo.update_constitution(constitution, **data.model_dump(exclude_unset=True))
+        return await self.repo.update_constitution(
+            constitution, **data.model_dump(exclude_unset=True)
+        )
 
     # -------------------------------------------------------------
     # AUTONOMY CONFIGS
@@ -174,13 +174,15 @@ class GovernanceService:
         configs = await self.list_autonomy_configs(company_id)
 
         # 1. Constitution check: Prohibited actions
-        is_prohibited, matched_clause, mandatory_approval = GovernanceEngine.evaluate_constitution_compliance(
-            constitution=constitution,
-            action_name=req.action_name,
-            target=req.target,
-            reason=req.reason,
-            payload=req.payload,
-            declared_risk=req.declared_risk_level,
+        is_prohibited, matched_clause, mandatory_approval = (
+            GovernanceEngine.evaluate_constitution_compliance(
+                constitution=constitution,
+                action_name=req.action_name,
+                target=req.target,
+                reason=req.reason,
+                payload=req.payload,
+                declared_risk=req.declared_risk_level,
+            )
         )
 
         if is_prohibited:
@@ -190,7 +192,7 @@ class GovernanceService:
                 actor_id=req.actor_id,
                 actor_name=req.actor_name,
                 actor_type=req.actor_type,
-                authority=f"GovernanceEngine:ConstitutionViolation",
+                authority="GovernanceEngine:ConstitutionViolation",
                 action=req.action_name,
                 target=req.target,
                 reason=req.reason,
@@ -224,7 +226,11 @@ class GovernanceService:
         requires_approval = mandatory_approval
         if matched_cfg and matched_cfg.requires_explicit_approval:
             requires_approval = True
-        if autonomy_level in (GovernanceAutonomyLevel.LEVEL_0.value, GovernanceAutonomyLevel.LEVEL_1.value, GovernanceAutonomyLevel.LEVEL_2.value):
+        if autonomy_level in (
+            GovernanceAutonomyLevel.LEVEL_0.value,
+            GovernanceAutonomyLevel.LEVEL_1.value,
+            GovernanceAutonomyLevel.LEVEL_2.value,
+        ):
             requires_approval = True
 
         approval_request_id = None
@@ -258,7 +264,10 @@ class GovernanceService:
             result=res_status,
             autonomy_level=autonomy_level,
             risk_level=(req.declared_risk_level or GovernanceRiskLevel.MEDIUM).value,
-            details={"payload": req.payload, "approval_request_id": str(approval_request_id) if approval_request_id else None},
+            details={
+                "payload": req.payload,
+                "approval_request_id": str(approval_request_id) if approval_request_id else None,
+            },
         )
 
         return GovernanceActionEvaluationResponse(
@@ -270,13 +279,17 @@ class GovernanceService:
             matched_constitution_clause=matched_clause,
             matched_config_id=matched_cfg.id if matched_cfg else None,
             approval_request_id=approval_request_id,
-            reason="Action permitted autonomously" if not requires_approval else "Action requires explicit approval before execution",
+            reason="Action permitted autonomously"
+            if not requires_approval
+            else "Action requires explicit approval before execution",
         )
 
     # -------------------------------------------------------------
     # APPROVALS
     # -------------------------------------------------------------
-    async def list_approvals(self, company_id: uuid.UUID, status: str | None = None) -> list[ApprovalRequest]:
+    async def list_approvals(
+        self, company_id: uuid.UUID, status: str | None = None
+    ) -> list[ApprovalRequest]:
         return await self.repo.list_approval_requests(company_id, status=status)
 
     async def decide_approval(
@@ -295,7 +308,7 @@ class GovernanceService:
         req.status = data.decision
         req.reviewer_user_id = user_id
         req.reviewer_notes = data.reviewer_notes
-        req.resolved_at = datetime.now(timezone.utc)
+        req.resolved_at = datetime.now(UTC)
         await self.db.flush()
         await self.db.refresh(req)
 
@@ -311,7 +324,9 @@ class GovernanceService:
             reason=data.reviewer_notes or f"Manual decision by reviewer: {data.decision.value}",
             result=data.decision.value,
             autonomy_level=GovernanceAutonomyLevel.LEVEL_2.value,
-            risk_level=req.risk_level.value if hasattr(req.risk_level, "value") else str(req.risk_level),
+            risk_level=req.risk_level.value
+            if hasattr(req.risk_level, "value")
+            else str(req.risk_level),
             details={"original_action": req.action, "target": req.target},
         )
         return req
@@ -350,7 +365,9 @@ class GovernanceService:
         )
         return record
 
-    async def list_escalations(self, company_id: uuid.UUID, status: str | None = None) -> list[EscalationRecord]:
+    async def list_escalations(
+        self, company_id: uuid.UUID, status: str | None = None
+    ) -> list[EscalationRecord]:
         return await self.repo.list_escalations(company_id, status=status)
 
     async def resolve_escalation(
@@ -380,7 +397,9 @@ class GovernanceService:
             reason=data.resolution,
             result="RESOLVED",
             autonomy_level=GovernanceAutonomyLevel.LEVEL_2.value,
-            risk_level=record.severity.value if hasattr(record.severity, "value") else str(record.severity),
+            risk_level=record.severity.value
+            if hasattr(record.severity, "value")
+            else str(record.severity),
             details={"original_reason": record.reason},
         )
         return record

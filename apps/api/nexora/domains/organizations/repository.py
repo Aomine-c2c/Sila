@@ -1,4 +1,5 @@
 """Repositories for the Organizations domain."""
+
 import uuid
 
 from sqlalchemy import and_, select
@@ -92,6 +93,7 @@ class CompanyRepository:
 
     async def soft_delete(self, company: Company) -> None:
         from datetime import UTC, datetime
+
         company.is_deleted = True
         company.deleted_at = datetime.now(UTC)
         company.status = CompanyStatus.ARCHIVED
@@ -128,17 +130,15 @@ class DepartmentRepository:
 
     async def get_by_id(self, dept_id: uuid.UUID) -> Department | None:
         result = await self.db.execute(
-            select(Department).where(
-                Department.id == dept_id, Department.is_deleted.is_(False)
-            )
+            select(Department).where(Department.id == dept_id, Department.is_deleted.is_(False))
         )
         return result.scalar_one_or_none()
 
     async def list_by_company(self, company_id: uuid.UUID) -> list[Department]:
         result = await self.db.execute(
-            select(Department).where(
-                Department.company_id == company_id, Department.is_deleted.is_(False)
-            ).order_by(Department.name)
+            select(Department)
+            .where(Department.company_id == company_id, Department.is_deleted.is_(False))
+            .order_by(Department.name)
         )
         return list(result.scalars().all())
 
@@ -159,6 +159,7 @@ class DepartmentRepository:
 
     async def soft_delete(self, dept: Department) -> None:
         from datetime import UTC, datetime
+
         dept.is_deleted = True
         dept.deleted_at = datetime.now(UTC)
         dept.status = DepartmentStatus.INACTIVE
@@ -177,17 +178,17 @@ class OrgRoleRepository:
 
     async def list_by_department(self, dept_id: uuid.UUID) -> list[OrgRole]:
         result = await self.db.execute(
-            select(OrgRole).where(
-                OrgRole.department_id == dept_id, OrgRole.is_deleted.is_(False)
-            ).order_by(OrgRole.title)
+            select(OrgRole)
+            .where(OrgRole.department_id == dept_id, OrgRole.is_deleted.is_(False))
+            .order_by(OrgRole.title)
         )
         return list(result.scalars().all())
 
     async def list_by_company(self, company_id: uuid.UUID) -> list[OrgRole]:
         result = await self.db.execute(
-            select(OrgRole).where(
-                OrgRole.company_id == company_id, OrgRole.is_deleted.is_(False)
-            ).order_by(OrgRole.title)
+            select(OrgRole)
+            .where(OrgRole.company_id == company_id, OrgRole.is_deleted.is_(False))
+            .order_by(OrgRole.title)
         )
         return list(result.scalars().all())
 
@@ -208,6 +209,7 @@ class OrgRoleRepository:
 
     async def soft_delete(self, role: OrgRole) -> None:
         from datetime import UTC, datetime
+
         role.is_deleted = True
         role.deleted_at = datetime.now(UTC)
         await self.db.flush()

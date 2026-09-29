@@ -4,22 +4,19 @@ Pytest configuration and shared fixtures.
 Uses an async SQLite in-memory database for fast, isolated tests.
 Each test function gets a fresh database and a fresh HTTP client.
 """
-import asyncio
-from typing import AsyncGenerator
-from unittest.mock import AsyncMock, patch
 
-import pytest
+from collections.abc import AsyncGenerator
+
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
-from nexora.config import Settings, get_settings
+from nexora.core.enums import MembershipRole
 from nexora.database import Base, get_db
-from nexora.domains.auth.service import hash_password
 from nexora.domains.auth.models import User
-from nexora.domains.organizations.models import Company, CompanyMember, OrganizationalDNA, Department, OrgRole
-from nexora.core.enums import CompanyStatus, MembershipRole
+from nexora.domains.auth.service import hash_password
+from nexora.domains.organizations.models import Company, CompanyMember
 from nexora.main import create_app
 
 # ── Test Database Setup ────────────────────────────────────────────────────
@@ -143,17 +140,23 @@ async def company(db: AsyncSession, user: User) -> Company:
 @pytest_asyncio.fixture
 async def auth_headers(client: AsyncClient) -> dict[str, str]:
     """Register + login alice, return Authorization headers."""
-    await client.post("/api/v1/auth/register", json={
-        "email": "alice@example.com",
-        "username": "alice",
-        "password": "TestPass123!",
-        "first_name": "Alice",
-        "last_name": "Smith",
-    })
-    response = await client.post("/api/v1/auth/login", json={
-        "email": "alice@example.com",
-        "password": "TestPass123!",
-    })
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "alice@example.com",
+            "username": "alice",
+            "password": "TestPass123!",
+            "first_name": "Alice",
+            "last_name": "Smith",
+        },
+    )
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "alice@example.com",
+            "password": "TestPass123!",
+        },
+    )
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
 

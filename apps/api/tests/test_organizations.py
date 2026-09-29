@@ -1,4 +1,5 @@
 """Tests for the Organizations domain: Company, DNA, Department, OrgRole."""
+
 import pytest
 from httpx import AsyncClient
 
@@ -19,9 +20,13 @@ class TestCompany:
         assert data["industry"] == "Software"
         assert "id" in data
 
-    async def test_create_company_generates_unique_slugs(self, client: AsyncClient, auth_headers: dict):
+    async def test_create_company_generates_unique_slugs(
+        self, client: AsyncClient, auth_headers: dict
+    ):
         await client.post("/api/v1/companies", json={"name": "My Company"}, headers=auth_headers)
-        resp = await client.post("/api/v1/companies", json={"name": "My Company"}, headers=auth_headers)
+        resp = await client.post(
+            "/api/v1/companies", json={"name": "My Company"}, headers=auth_headers
+        )
         assert resp.status_code == 201
         assert resp.json()["slug"] == "my-company-1"
 
@@ -32,13 +37,17 @@ class TestCompany:
         assert resp.status_code == 200
         assert len(resp.json()) == 2
 
-    async def test_get_company(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_get_company(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
         resp = await client.get(f"/api/v1/companies/{company_id}", headers=auth_headers)
         assert resp.status_code == 200
         assert resp.json()["id"] == company_id
 
-    async def test_update_company(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_update_company(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
         resp = await client.patch(
             f"/api/v1/companies/{company_id}",
@@ -52,7 +61,9 @@ class TestCompany:
         resp = await client.post("/api/v1/companies", json={"name": "NoAuth"})
         assert resp.status_code == 401
 
-    async def test_creator_is_auto_owner(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_creator_is_auto_owner(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
         resp = await client.get(f"/api/v1/companies/{company_id}/members", headers=auth_headers)
         assert resp.status_code == 200
@@ -95,18 +106,28 @@ class TestOrganizationalDNA:
         assert resp.status_code == 200
         assert resp.json()["innovation_level"] == "PROGRESSIVE"
 
-    async def test_patch_dna_partial(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_patch_dna_partial(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
-        await client.put(f"/api/v1/companies/{company_id}/dna",
-            json={"risk_tolerance": "CAUTIOUS"}, headers=auth_headers)
-        resp = await client.patch(f"/api/v1/companies/{company_id}/dna",
-            json={"risk_tolerance": "FEARLESS"}, headers=auth_headers)
+        await client.put(
+            f"/api/v1/companies/{company_id}/dna",
+            json={"risk_tolerance": "CAUTIOUS"},
+            headers=auth_headers,
+        )
+        resp = await client.patch(
+            f"/api/v1/companies/{company_id}/dna",
+            json={"risk_tolerance": "FEARLESS"},
+            headers=auth_headers,
+        )
         assert resp.status_code == 200
         assert resp.json()["risk_tolerance"] == "FEARLESS"
 
 
 class TestDepartment:
-    async def test_create_department(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_create_department(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
         resp = await client.post(
             f"/api/v1/companies/{company_id}/departments",
@@ -119,7 +140,9 @@ class TestDepartment:
         assert data["company_id"] == company_id
         assert data["parent_id"] is None
 
-    async def test_create_nested_department(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_create_nested_department(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
         parent_resp = await client.post(
             f"/api/v1/companies/{company_id}/departments",
@@ -135,17 +158,27 @@ class TestDepartment:
         assert child_resp.status_code == 201
         assert child_resp.json()["parent_id"] == parent_id
 
-    async def test_list_departments(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_list_departments(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
-        await client.post(f"/api/v1/companies/{company_id}/departments",
-            json={"name": "Marketing"}, headers=auth_headers)
-        await client.post(f"/api/v1/companies/{company_id}/departments",
-            json={"name": "Sales"}, headers=auth_headers)
+        await client.post(
+            f"/api/v1/companies/{company_id}/departments",
+            json={"name": "Marketing"},
+            headers=auth_headers,
+        )
+        await client.post(
+            f"/api/v1/companies/{company_id}/departments",
+            json={"name": "Sales"},
+            headers=auth_headers,
+        )
         resp = await client.get(f"/api/v1/companies/{company_id}/departments", headers=auth_headers)
         assert resp.status_code == 200
         assert len(resp.json()) == 2
 
-    async def test_update_department(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_update_department(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
         create_resp = await client.post(
             f"/api/v1/companies/{company_id}/departments",
@@ -161,7 +194,9 @@ class TestDepartment:
         assert resp.status_code == 200
         assert resp.json()["purpose"] == "Keep the lights on"
 
-    async def test_delete_department(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_delete_department(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
         create_resp = await client.post(
             f"/api/v1/companies/{company_id}/departments",
@@ -190,7 +225,9 @@ class TestOrgRole:
         )
         return resp.json()["id"]
 
-    async def test_create_role(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_create_role(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
         dept_id = await self._make_dept(client, auth_headers, company_id)
         resp = await client.post(
@@ -211,13 +248,21 @@ class TestOrgRole:
         assert data["authority"] == "MANAGE"
         assert "Python" in data["required_skills"]
 
-    async def test_list_roles_by_company(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_list_roles_by_company(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
         dept_id = await self._make_dept(client, auth_headers, company_id)
-        await client.post(f"/api/v1/companies/{company_id}/roles/departments/{dept_id}",
-            json={"title": "Role A"}, headers=auth_headers)
-        await client.post(f"/api/v1/companies/{company_id}/roles/departments/{dept_id}",
-            json={"title": "Role B"}, headers=auth_headers)
+        await client.post(
+            f"/api/v1/companies/{company_id}/roles/departments/{dept_id}",
+            json={"title": "Role A"},
+            headers=auth_headers,
+        )
+        await client.post(
+            f"/api/v1/companies/{company_id}/roles/departments/{dept_id}",
+            json={"title": "Role B"},
+            headers=auth_headers,
+        )
         resp = await client.get(f"/api/v1/companies/{company_id}/roles", headers=auth_headers)
         assert resp.status_code == 200
         assert len(resp.json()) == 2

@@ -39,14 +39,22 @@ services:
       SECRET_KEY: dev-secret-key-change-in-production
       DEBUG: "true"
       ENVIRONMENT: development
-    volumes:
-      - ./apps/api:/app
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: uvicorn nexora.main:app --host 0.0.0.0 --port 8000 --reload
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:8000
+    depends_on:
+      - api
 
 volumes:
   postgres_data:

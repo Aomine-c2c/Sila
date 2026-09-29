@@ -2,14 +2,15 @@
 Repository layer for NEXORA Organizational Memory System.
 Handles storage, domain queries, text search, and decision records.
 """
+
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from nexora.core.enums import MemoryDomain, MemoryScope, ProvenanceType, RetentionPolicy
+from nexora.core.enums import MemoryScope, ProvenanceType, RetentionPolicy
 from nexora.domains.memory.models import DecisionRecord, MemoryItem
 
 
@@ -103,7 +104,9 @@ class MemoryRepository:
         if project_id:
             stmt = stmt.where(MemoryItem.project_id == project_id)
 
-        stmt = stmt.order_by(MemoryItem.relevance_score.desc(), MemoryItem.created_at.desc()).limit(limit)
+        stmt = stmt.order_by(MemoryItem.relevance_score.desc(), MemoryItem.created_at.desc()).limit(
+            limit
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
@@ -126,20 +129,24 @@ class MemoryRepository:
 
         # Basic case-insensitive text search across title, content, summary
         search_pattern = f"%{query}%"
-        stmt = stmt.where(
-            or_(
-                MemoryItem.title.ilike(search_pattern),
-                MemoryItem.content.ilike(search_pattern),
-                MemoryItem.summary.ilike(search_pattern),
+        stmt = (
+            stmt.where(
+                or_(
+                    MemoryItem.title.ilike(search_pattern),
+                    MemoryItem.content.ilike(search_pattern),
+                    MemoryItem.summary.ilike(search_pattern),
+                )
             )
-        ).order_by(MemoryItem.relevance_score.desc()).limit(limit)
+            .order_by(MemoryItem.relevance_score.desc())
+            .limit(limit)
+        )
 
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
     async def increment_access(self, item: MemoryItem) -> None:
         item.access_count += 1
-        item.last_accessed_at = datetime.now(timezone.utc)
+        item.last_accessed_at = datetime.now(UTC)
         await self.db.flush()
         await self.db.refresh(item)
 
@@ -178,14 +185,16 @@ class MemoryRepository:
             decided_by_user_id=decided_by_user_id,
             decided_by_agent_id=decided_by_agent_id,
             memory_item_id=memory_item_id,
-            decided_at=datetime.now(timezone.utc),
+            decided_at=datetime.now(UTC),
         )
         self.db.add(record)
         await self.db.flush()
         await self.db.refresh(record)
         return record
 
-    async def get_decision_record(self, record_id: uuid.UUID, company_id: uuid.UUID) -> DecisionRecord | None:
+    async def get_decision_record(
+        self, record_id: uuid.UUID, company_id: uuid.UUID
+    ) -> DecisionRecord | None:
         stmt = select(DecisionRecord).where(
             DecisionRecord.id == record_id,
             DecisionRecord.company_id == company_id,
@@ -193,10 +202,15 @@ class MemoryRepository:
         result = await self.db.execute(stmt)
         return result.scalars().first()
 
-    async def list_decision_records(self, company_id: uuid.UUID, limit: int = 50) -> list[DecisionRecord]:
-        stmt = select(DecisionRecord).where(
-            DecisionRecord.company_id == company_id
-        ).order_by(DecisionRecord.decided_at.desc()).limit(limit)
+    async def list_decision_records(
+        self, company_id: uuid.UUID, limit: int = 50
+    ) -> list[DecisionRecord]:
+        stmt = (
+            select(DecisionRecord)
+            .where(DecisionRecord.company_id == company_id)
+            .order_by(DecisionRecord.decided_at.desc())
+            .limit(limit)
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 

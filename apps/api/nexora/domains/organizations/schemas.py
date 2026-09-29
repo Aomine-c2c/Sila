@@ -1,9 +1,10 @@
 """Pydantic schemas for the Organizations domain."""
+
 import re
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator
 
 from nexora.core.enums import (
     AutonomyLevel,

@@ -1,11 +1,12 @@
 """Policy repository."""
+
 import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from nexora.domains.policies.models import Policy
 from nexora.core.enums import PolicyStatus
+from nexora.domains.policies.models import Policy
 
 
 class PolicyRepository:
@@ -20,9 +21,9 @@ class PolicyRepository:
 
     async def list_by_company(self, company_id: uuid.UUID) -> list[Policy]:
         result = await self.db.execute(
-            select(Policy).where(
-                Policy.company_id == company_id, Policy.is_deleted.is_(False)
-            ).order_by(Policy.name)
+            select(Policy)
+            .where(Policy.company_id == company_id, Policy.is_deleted.is_(False))
+            .order_by(Policy.name)
         )
         return list(result.scalars().all())
 
@@ -52,6 +53,7 @@ class PolicyRepository:
 
     async def soft_delete(self, policy: Policy) -> None:
         from datetime import UTC, datetime
+
         policy.is_deleted = True
         policy.deleted_at = datetime.now(UTC)
         policy.status = PolicyStatus.INACTIVE

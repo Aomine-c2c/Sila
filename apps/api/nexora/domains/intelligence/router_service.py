@@ -12,10 +12,10 @@ Implements:
 9. model availability monitoring
 10. usage tracking
 """
-import uuid
-from typing import Any
 
-from sqlalchemy import desc, func, select
+import uuid
+
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.domains.intelligence.adapters.base import ModelAdapterRegistry
@@ -39,10 +39,14 @@ class IntelligenceRouter:
 
     async def get_or_create_default_policy(self, company_id: uuid.UUID) -> ModelRoutingPolicy:
         """Fetch default company routing policy or create one."""
-        q = select(ModelRoutingPolicy).where(
-            ModelRoutingPolicy.company_id == company_id,
-            ModelRoutingPolicy.is_deleted.is_(False),
-        ).order_by(desc(ModelRoutingPolicy.is_default))
+        q = (
+            select(ModelRoutingPolicy)
+            .where(
+                ModelRoutingPolicy.company_id == company_id,
+                ModelRoutingPolicy.is_deleted.is_(False),
+            )
+            .order_by(desc(ModelRoutingPolicy.is_default))
+        )
         result = await self.db.execute(q)
         policy = result.scalars().first()
         if not policy:
@@ -106,7 +110,7 @@ class IntelligenceRouter:
 
             # 4. Cost ceiling check
             if request.max_acceptable_cost_usd is not None:
-                est_cost = (request.context_tokens_needed * m.input_cost_per_million / 1_000_000)
+                est_cost = request.context_tokens_needed * m.input_cost_per_million / 1_000_000
                 if est_cost > request.max_acceptable_cost_usd:
                     continue
 
@@ -120,10 +124,14 @@ class IntelligenceRouter:
             candidates.sort(key=lambda x: x.avg_latency_ms)
         elif strategy == "STRICT_PRIVACY":
             # Prioritize local/on-premise
-            candidates.sort(key=lambda x: 0 if x.privacy_classification == "ON_PREMISE_ZERO_RETENTION" else 1)
+            candidates.sort(
+                key=lambda x: 0 if x.privacy_classification == "ON_PREMISE_ZERO_RETENTION" else 1
+            )
         else:
             # BALANCED: score based on cost and latency
-            candidates.sort(key=lambda x: (x.input_cost_per_million * 0.5) + (x.avg_latency_ms * 0.001))
+            candidates.sort(
+                key=lambda x: (x.input_cost_per_million * 0.5) + (x.avg_latency_ms * 0.001)
+            )
 
         return candidates
 
@@ -176,15 +184,19 @@ class IntelligenceRouter:
         execution_chain = [target_model] if target_model else []
 
         if request.allow_fallback:
-            for fb_ident in (policy.fallback_chain or []):
-                q = select(Model).where(Model.model_identifier == fb_ident, Model.is_active.is_(True))
+            for fb_ident in policy.fallback_chain or []:
+                q = select(Model).where(
+                    Model.model_identifier == fb_ident, Model.is_active.is_(True)
+                )
                 res = await self.db.execute(q)
                 fb_model = res.scalar_one_or_none()
                 if fb_model and fb_model not in execution_chain:
                     execution_chain.append(fb_model)
 
         if not execution_chain:
-            raise NotFoundError("No intelligence provider available matching requested capabilities.")
+            raise NotFoundError(
+                "No intelligence provider available matching requested capabilities."
+            )
 
         last_error = None
         for idx, model in enumerate(execution_chain):
@@ -207,7 +219,9 @@ class IntelligenceRouter:
                     "output_cost_per_million": model.output_cost_per_million,
                 }
 
-                resp = await adapter.generate_response(model.model_identifier, request, metadata_dict)
+                resp = await adapter.generate_response(
+                    model.model_identifier, request, metadata_dict
+                )
                 resp.routed_via_fallback = routed_via_fallback
                 resp.fallback_reason = fallback_reason
 

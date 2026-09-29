@@ -6,8 +6,9 @@ Implements the BaseModelAdapter interface and concrete adapters for:
 - OpenAI
 - Local / Self-hosted (e.g. Ollama, vLLM, DeepSeek)
 """
-from abc import ABC, abstractmethod
+
 import time
+from abc import ABC, abstractmethod
 from typing import Any
 
 from nexora.domains.intelligence.schemas import ModelRequest, ModelResponsePayload
@@ -52,14 +53,18 @@ class OpenAIMockAdapter(BaseModelAdapter):
         t0 = time.perf_counter()
         # Simulated production generation with realistic latency and cost math
         latency_ms = model_metadata.get("avg_latency_ms", 450.0)
-        prompt_len = len(request.prompt.split()) + (len(request.system_prompt.split()) if request.system_prompt else 0)
+        prompt_len = len(request.prompt.split()) + (
+            len(request.system_prompt.split()) if request.system_prompt else 0
+        )
         prompt_tokens = int(prompt_len * 1.3) + 15
         completion_tokens = 280
         total_tokens = prompt_tokens + completion_tokens
 
         in_rate = model_metadata.get("input_cost_per_million", 2.50)
         out_rate = model_metadata.get("output_cost_per_million", 10.00)
-        cost_usd = (prompt_tokens * in_rate / 1_000_000) + (completion_tokens * out_rate / 1_000_000)
+        cost_usd = (prompt_tokens * in_rate / 1_000_000) + (
+            completion_tokens * out_rate / 1_000_000
+        )
 
         response_text = (
             f"[OpenAI/{model_identifier}] Synthesized response to: '{request.prompt[:60]}...' "
@@ -94,14 +99,18 @@ class AnthropicMockAdapter(BaseModelAdapter):
         model_metadata: dict[str, Any],
     ) -> ModelResponsePayload:
         latency_ms = model_metadata.get("avg_latency_ms", 650.0)
-        prompt_len = len(request.prompt.split()) + (len(request.system_prompt.split()) if request.system_prompt else 0)
+        prompt_len = len(request.prompt.split()) + (
+            len(request.system_prompt.split()) if request.system_prompt else 0
+        )
         prompt_tokens = int(prompt_len * 1.3) + 12
         completion_tokens = 320
         total_tokens = prompt_tokens + completion_tokens
 
         in_rate = model_metadata.get("input_cost_per_million", 3.00)
         out_rate = model_metadata.get("output_cost_per_million", 15.00)
-        cost_usd = (prompt_tokens * in_rate / 1_000_000) + (completion_tokens * out_rate / 1_000_000)
+        cost_usd = (prompt_tokens * in_rate / 1_000_000) + (
+            completion_tokens * out_rate / 1_000_000
+        )
 
         response_text = (
             f"[Anthropic/{model_identifier}] Analytical architectural output addressing: '{request.prompt[:60]}...' "
@@ -136,14 +145,18 @@ class GeminiMockAdapter(BaseModelAdapter):
         model_metadata: dict[str, Any],
     ) -> ModelResponsePayload:
         latency_ms = model_metadata.get("avg_latency_ms", 380.0)
-        prompt_len = len(request.prompt.split()) + (len(request.system_prompt.split()) if request.system_prompt else 0)
+        prompt_len = len(request.prompt.split()) + (
+            len(request.system_prompt.split()) if request.system_prompt else 0
+        )
         prompt_tokens = int(prompt_len * 1.3) + 10
         completion_tokens = 240
         total_tokens = prompt_tokens + completion_tokens
 
         in_rate = model_metadata.get("input_cost_per_million", 1.25)
         out_rate = model_metadata.get("output_cost_per_million", 5.00)
-        cost_usd = (prompt_tokens * in_rate / 1_000_000) + (completion_tokens * out_rate / 1_000_000)
+        cost_usd = (prompt_tokens * in_rate / 1_000_000) + (
+            completion_tokens * out_rate / 1_000_000
+        )
 
         response_text = (
             f"[Google Gemini/{model_identifier}] High-context response for: '{request.prompt[:60]}...' "
@@ -178,7 +191,9 @@ class LocalModelMockAdapter(BaseModelAdapter):
         model_metadata: dict[str, Any],
     ) -> ModelResponsePayload:
         latency_ms = model_metadata.get("avg_latency_ms", 850.0)
-        prompt_len = len(request.prompt.split()) + (len(request.system_prompt.split()) if request.system_prompt else 0)
+        prompt_len = len(request.prompt.split()) + (
+            len(request.system_prompt.split()) if request.system_prompt else 0
+        )
         prompt_tokens = int(prompt_len * 1.3) + 8
         completion_tokens = 260
         total_tokens = prompt_tokens + completion_tokens

@@ -9,21 +9,16 @@ Covers:
 - Enforcing that external model providers receive only authorized, task-relevant minimal context
 - Decision Records preserving deliberation, options, evidence, decision, rationale, participants, outcomes, lessons learned
 """
-import uuid
+
 import pytest
 from httpx import AsyncClient
-
-from nexora.core.enums import (
-    MemoryDomain,
-    MemoryScope,
-    ProvenanceType,
-    RetentionPolicy,
-)
 
 
 class TestOrganizationalMemory:
     @pytest.mark.asyncio
-    async def test_auto_seed_and_list_memories(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_auto_seed_and_list_memories(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
 
         # Initial list triggers default baseline memory seeder
@@ -40,7 +35,9 @@ class TestOrganizationalMemory:
         assert "KNOWLEDGE_BASE" in domains
 
     @pytest.mark.asyncio
-    async def test_create_domain_specific_memory_with_metadata(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_create_domain_specific_memory_with_metadata(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
 
         payload = {
@@ -73,7 +70,9 @@ class TestOrganizationalMemory:
         assert "role:MANAGER" in data["required_permissions"]
 
     @pytest.mark.asyncio
-    async def test_search_knowledge_base(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_search_knowledge_base(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         company_id = company_via_api["id"]
 
         # Search for post-mortem token failure keyword
@@ -84,10 +83,14 @@ class TestOrganizationalMemory:
         assert res.status_code == 200
         results = res.json()
         assert len(results) >= 1
-        assert any("token" in r["content"].lower() or "token" in r["title"].lower() for r in results)
+        assert any(
+            "token" in r["content"].lower() or "token" in r["title"].lower() for r in results
+        )
 
     @pytest.mark.asyncio
-    async def test_context_assembly_pipeline_permissions_and_minimal_prompt(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_context_assembly_pipeline_permissions_and_minimal_prompt(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         """
         Verify that Context Assembly:
         1. Infers required domains from task objective
@@ -135,7 +138,9 @@ class TestOrganizationalMemory:
         assert assembled["estimated_context_tokens"] > 0
 
     @pytest.mark.asyncio
-    async def test_decision_record_lifecycle_and_lessons_learned(self, client: AsyncClient, auth_headers: dict, company_via_api: dict):
+    async def test_decision_record_lifecycle_and_lessons_learned(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
         """Preserves problem, options, evidence, decision, rationale, outcomes, and lessons."""
         company_id = company_via_api["id"]
 
@@ -164,8 +169,18 @@ class TestOrganizationalMemory:
                 }
             ],
             "participants": [
-                {"name": "Chief Architect", "role": "Architect", "identity_type": "USER", "stance": "SUPPORT"},
-                {"name": "Infra Agent", "role": "Site Reliability", "identity_type": "AGENT", "stance": "SUPPORT"},
+                {
+                    "name": "Chief Architect",
+                    "role": "Architect",
+                    "identity_type": "USER",
+                    "stance": "SUPPORT",
+                },
+                {
+                    "name": "Infra Agent",
+                    "role": "Site Reliability",
+                    "identity_type": "AGENT",
+                    "stance": "SUPPORT",
+                },
             ],
             "decision": "Adopt Intelligence Exchange multi-provider capability routing.",
             "rationale": "High availability and data sovereignty outweigh adapter maintenance costs.",

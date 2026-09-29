@@ -8,11 +8,12 @@ Supports:
 - Deep dissent tracking: recording disagreements as valuable organizational knowledge
 - Synthesis agent decision proposals and linkage to official Decision records
 """
+
 import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from nexora.core.base import NexoraBase
@@ -24,13 +25,16 @@ class AgentCouncil(NexoraBase):
     An Agent Council is a temporary or permanent group of agents assembled
     to deliberate on complex problems (e.g., Architecture Council, Security Board, Ethics Panel).
     """
+
     __tablename__ = "agent_councils"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    charter: Mapped[str] = mapped_column(Text, nullable=False, comment="Mandate, scope, and evaluation principles")
+    charter: Mapped[str] = mapped_column(
+        Text, nullable=False, comment="Mandate, scope, and evaluation principles"
+    )
     council_type: Mapped[str] = mapped_column(
         String(50), default=CouncilType.PERMANENT.value, nullable=False
     )
@@ -49,7 +53,10 @@ class AgentCouncil(NexoraBase):
     company: Mapped["Company"] = relationship("Company", lazy="select")  # noqa: F821
     synthesis_agent: Mapped["Agent | None"] = relationship("Agent", lazy="select")  # noqa: F821
     deliberations: Mapped[list["CouncilDeliberation"]] = relationship(
-        "CouncilDeliberation", back_populates="council", cascade="all, delete-orphan", order_by="CouncilDeliberation.created_at.desc()"
+        "CouncilDeliberation",
+        back_populates="council",
+        cascade="all, delete-orphan",
+        order_by="CouncilDeliberation.created_at.desc()",
     )
 
     def __repr__(self) -> str:
@@ -61,6 +68,7 @@ class CouncilDeliberation(NexoraBase):
     A specific deliberation instance run by a council addressing an organizational problem.
     Cycles through: PROPOSAL -> INDEPENDENT REVIEW -> OBJECTIONS -> DISCUSSION -> SYNTHESIS -> DECISION -> RECORD.
     """
+
     __tablename__ = "council_deliberations"
 
     council_id: Mapped[uuid.UUID] = mapped_column(
@@ -83,24 +91,28 @@ class CouncilDeliberation(NexoraBase):
 
     # Deliberation Output Artefacts
     proposals: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Submitted candidate proposals"
+        JSON, default=list, nullable=False, comment="Submitted candidate proposals"
     )
     independent_reviews: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Reviews from participants: evidence, risks, assumptions, confidence, objections"
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Reviews from participants: evidence, risks, assumptions, confidence, objections",
     )
     objections: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Explicit objections raised with severity and rationale"
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Explicit objections raised with severity and rationale",
     )
     discussion_threads: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSON, default=list, nullable=False,
-        comment="Multi-agent and human discussion rounds addressing objections"
+        JSON,
+        default=list,
+        nullable=False,
+        comment="Multi-agent and human discussion rounds addressing objections",
     )
     synthesis_proposal: Mapped[dict[str, Any] | None] = mapped_column(
-        JSON, nullable=True,
-        comment="Structured proposal synthesized by synthesis agent"
+        JSON, nullable=True, comment="Structured proposal synthesized by synthesis agent"
     )
     final_decision: Mapped[str | None] = mapped_column(Text, nullable=True)
     decision_rationale: Mapped[str | None] = mapped_column(Text, nullable=True)

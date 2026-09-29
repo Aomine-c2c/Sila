@@ -13,6 +13,7 @@ Usage in endpoints:
     ):
         ...
 """
+
 import uuid
 from collections.abc import Callable
 
@@ -21,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.core.enums import MembershipRole
 from nexora.database import get_db
-from nexora.exceptions import ForbiddenError, NotFoundError, UnauthorizedError
+from nexora.exceptions import ForbiddenError, UnauthorizedError
 
 
 def require_company_role(minimum_role: MembershipRole) -> Callable:

@@ -1,6 +1,6 @@
 """Database repository for NEXORA Organizational Governance Layer."""
+
 import uuid
-from datetime import datetime, timezone
 
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,7 +61,9 @@ class GovernanceRepository:
         await self.db.refresh(constitution)
         return constitution
 
-    async def update_constitution(self, constitution: CompanyConstitution, **kwargs) -> CompanyConstitution:
+    async def update_constitution(
+        self, constitution: CompanyConstitution, **kwargs
+    ) -> CompanyConstitution:
         for k, v in kwargs.items():
             if v is not None and hasattr(constitution, k):
                 setattr(constitution, k, v)
@@ -144,7 +146,9 @@ class GovernanceRepository:
         await self.db.refresh(req)
         return req
 
-    async def get_approval_request(self, request_id: uuid.UUID, company_id: uuid.UUID) -> ApprovalRequest | None:
+    async def get_approval_request(
+        self, request_id: uuid.UUID, company_id: uuid.UUID
+    ) -> ApprovalRequest | None:
         stmt = select(ApprovalRequest).where(
             ApprovalRequest.id == request_id,
             ApprovalRequest.company_id == company_id,
@@ -206,7 +210,9 @@ class GovernanceRepository:
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_escalation(self, escalation_id: uuid.UUID, company_id: uuid.UUID) -> EscalationRecord | None:
+    async def get_escalation(
+        self, escalation_id: uuid.UUID, company_id: uuid.UUID
+    ) -> EscalationRecord | None:
         stmt = select(EscalationRecord).where(
             EscalationRecord.id == escalation_id,
             EscalationRecord.company_id == company_id,

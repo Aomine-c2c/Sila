@@ -1,4 +1,5 @@
 """Workflow API router."""
+
 import uuid
 from typing import Annotated
 
@@ -7,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.core.permissions import require_admin, require_manager, require_member, require_viewer
 from nexora.database import get_db
-from nexora.domains.auth.router import get_current_user
 from nexora.domains.auth.models import User
+from nexora.domains.auth.router import get_current_user
 from nexora.domains.workflows.schemas import WorkflowCreate, WorkflowResponse, WorkflowUpdate
 from nexora.domains.workflows.service import WorkflowService
 
@@ -19,7 +20,10 @@ DB = Annotated[AsyncSession, Depends(get_db)]
 
 @router.post("", response_model=WorkflowResponse, status_code=status.HTTP_201_CREATED)
 async def create_workflow(
-    company_id: uuid.UUID, body: WorkflowCreate, current_user: CurrentUser, db: DB,
+    company_id: uuid.UUID,
+    body: WorkflowCreate,
+    current_user: CurrentUser,
+    db: DB,
     _: None = Depends(require_manager()),
 ):
     return await WorkflowService(db).create(company_id, **body.model_dump())
@@ -27,7 +31,9 @@ async def create_workflow(
 
 @router.get("", response_model=list[WorkflowResponse])
 async def list_workflows(
-    company_id: uuid.UUID, current_user: CurrentUser, db: DB,
+    company_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
     _: None = Depends(require_viewer()),
 ):
     return await WorkflowService(db).list(company_id)
@@ -35,7 +41,10 @@ async def list_workflows(
 
 @router.get("/{workflow_id}", response_model=WorkflowResponse)
 async def get_workflow(
-    company_id: uuid.UUID, workflow_id: uuid.UUID, current_user: CurrentUser, db: DB,
+    company_id: uuid.UUID,
+    workflow_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
     _: None = Depends(require_viewer()),
 ):
     return await WorkflowService(db).get(workflow_id, company_id)
@@ -43,15 +52,24 @@ async def get_workflow(
 
 @router.patch("/{workflow_id}", response_model=WorkflowResponse)
 async def update_workflow(
-    company_id: uuid.UUID, workflow_id: uuid.UUID, body: WorkflowUpdate,
-    current_user: CurrentUser, db: DB, _: None = Depends(require_manager()),
+    company_id: uuid.UUID,
+    workflow_id: uuid.UUID,
+    body: WorkflowUpdate,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_manager()),
 ):
-    return await WorkflowService(db).update(workflow_id, company_id, **body.model_dump(exclude_none=True))
+    return await WorkflowService(db).update(
+        workflow_id, company_id, **body.model_dump(exclude_none=True)
+    )
 
 
 @router.post("/{workflow_id}/activate", response_model=WorkflowResponse)
 async def activate_workflow(
-    company_id: uuid.UUID, workflow_id: uuid.UUID, current_user: CurrentUser, db: DB,
+    company_id: uuid.UUID,
+    workflow_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
     _: None = Depends(require_manager()),
 ):
     return await WorkflowService(db).activate(workflow_id, company_id)
@@ -59,7 +77,10 @@ async def activate_workflow(
 
 @router.delete("/{workflow_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_workflow(
-    company_id: uuid.UUID, workflow_id: uuid.UUID, current_user: CurrentUser, db: DB,
+    company_id: uuid.UUID,
+    workflow_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
     _: None = Depends(require_admin()),
 ):
     await WorkflowService(db).delete(workflow_id, company_id)
@@ -74,7 +95,11 @@ from nexora.domains.workflows.schemas import (
 )
 
 
-@router.post("/{workflow_id}/execute", response_model=WorkflowExecutionResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{workflow_id}/execute",
+    response_model=WorkflowExecutionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def execute_workflow(
     company_id: uuid.UUID,
     workflow_id: uuid.UUID,
@@ -150,4 +175,3 @@ async def cancel_workflow_execution(
 ):
     """Cancels an in-flight workflow execution."""
     return await WorkflowService(db).cancel_execution(execution_id, company_id)
-

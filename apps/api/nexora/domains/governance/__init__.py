@@ -1,8 +1,9 @@
 """organizational governance models and relationships"""
+
 from nexora.domains.governance.models import (
-    CompanyConstitution,
-    AutonomyConfig,
     ApprovalRequest,
+    AutonomyConfig,
+    CompanyConstitution,
     EscalationRecord,
     GovernanceAuditLog,
 )

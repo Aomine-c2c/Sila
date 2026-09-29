@@ -1,6 +1,6 @@
 """All domain enums for NEXORA."""
-from enum import Enum, StrEnum
 
+from enum import Enum, StrEnum
 
 # ── Company ────────────────────────────────────────────────────────────────
 
@@ -263,10 +263,10 @@ class PolicyScope(str, Enum):
 
 
 class EnforcementLevel(str, Enum):
-    ADVISORY = "ADVISORY"      # Suggestions only
-    SOFT = "SOFT"              # Warns but allows override
-    HARD = "HARD"              # Blocks action, allows escalation
-    ABSOLUTE = "ABSOLUTE"      # Cannot be overridden
+    ADVISORY = "ADVISORY"  # Suggestions only
+    SOFT = "SOFT"  # Warns but allows override
+    HARD = "HARD"  # Blocks action, allows escalation
+    ABSOLUTE = "ABSOLUTE"  # Cannot be overridden
 
 
 class PolicyStatus(str, Enum):
@@ -355,11 +355,11 @@ class MemoryDomain(str, Enum):
 
 
 class MemoryScope(str, Enum):
-    PUBLIC = "PUBLIC"              # Organization-wide
-    INTERNAL = "INTERNAL"          # Department or project-wide
+    PUBLIC = "PUBLIC"  # Organization-wide
+    INTERNAL = "INTERNAL"  # Department or project-wide
     CONFIDENTIAL = "CONFIDENTIAL"  # Role or team restricted
-    RESTRICTED = "RESTRICTED"      # Executive or owner only
-    PRIVATE = "PRIVATE"            # Single agent/user only
+    RESTRICTED = "RESTRICTED"  # Executive or owner only
+    PRIVATE = "PRIVATE"  # Single agent/user only
 
 
 class RetentionPolicy(str, Enum):
@@ -386,8 +386,12 @@ class ProvenanceType(str, Enum):
 class GovernanceAutonomyLevel(int, Enum):
     LEVEL_0 = 0  # OBSERVE - Listen only, no recommendations or executions
     LEVEL_1 = 1  # RECOMMEND - Can formulate suggestions, proposals, and plans
-    LEVEL_2 = 2  # EXECUTE WITH APPROVAL - Must obtain explicit human/manager approval before execution
-    LEVEL_3 = 3  # EXECUTE WITHIN POLICY - Autonomous execution allowed within defined boundaries/ceilings
+    LEVEL_2 = (
+        2  # EXECUTE WITH APPROVAL - Must obtain explicit human/manager approval before execution
+    )
+    LEVEL_3 = (
+        3  # EXECUTE WITHIN POLICY - Autonomous execution allowed within defined boundaries/ceilings
+    )
     LEVEL_4 = 4  # AUTONOMOUS - Proactive execution across assigned scope, auto-escalates exceptions
     LEVEL_5 = 5  # AUTONOMOUS + ADAPTIVE - Self-optimizing, adaptive policy tuning, full delegation
 
@@ -449,4 +453,3 @@ class DeliberationStatus(str, Enum):
     SYNTHESIZED = "SYNTHESIZED"
     RESOLVED = "RESOLVED"
     CANCELLED = "CANCELLED"
-
