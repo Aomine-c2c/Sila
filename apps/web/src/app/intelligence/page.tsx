@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { createApiClient, createIntelligenceApi, type IntelligenceDashboard, type ModelProvider, type Model } from '@/lib/api';
 
@@ -203,7 +205,7 @@ export default function IntelligencePage() {
                     <div className="flex items-center gap-3">
                       <div className={cn('h-2 w-2 rounded-full', provider.is_healthy ? 'bg-green-500' : 'bg-red-500')} />
                       <span className="font-medium">{provider.display_name}</span>
-                      {provider.is_local && <Lock className="h-3 w-3 text-muted-foreground" title="Local/On-premise" />}
+                      {provider.is_local && <Lock className="h-3 w-3 text-muted-foreground" aria-label="Local/On-premise" />}
                     </div>
                     <Badge variant={provider.is_healthy ? 'success' : 'destructive'}>
                       {provider.is_healthy ? 'Healthy' : 'Degraded'}
@@ -247,7 +249,7 @@ export default function IntelligencePage() {
                         {log.success ? '✓' : '✗'}
                       </Badge>
                       <span className="font-medium">{log.model}</span>
-                      {log.fallback && <Zap className="h-3 w-3 text-amber-500" title="Routed via fallback" />}
+                      {log.fallback && <Zap className="h-3 w-3 text-amber-500" aria-label="Routed via fallback" />}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span>${log.cost_usd.toFixed(6)}</span>
@@ -282,9 +284,9 @@ export default function IntelligencePage() {
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     {provider.is_local ? (
-                      <Lock className="h-4 w-4" title="Local/On-premise" />
+                      <Lock className="h-4 w-4" aria-label="Local/On-premise" />
                     ) : (
-                      <Globe className="h-4 w-4" title="Cloud Provider" />
+                      <Globe className="h-4 w-4" aria-label="Cloud Provider" />
                     )}
                     <span>{provider.is_local ? 'Local/On-premise' : 'Cloud Provider'}</span>
                   </div>
@@ -450,11 +452,10 @@ export default function IntelligencePage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <label className="block text-sm font-medium">Prompt</label>
-              <textarea
+              <Textarea
                 value={generatePrompt}
                 onChange={(e) => setGeneratePrompt(e.target.value)}
                 rows={6}
-                className="w-full p-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="Enter your prompt here..."
               />
             </div>
@@ -485,34 +486,5 @@ export default function IntelligencePage() {
         </Card>
       )}
     </div>
-  );
-}
-
-// Button component
-function Button({ children, variant = 'default', disabled, className, ...props }: any) {
-  const baseStyles = 'inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
-  const variants = {
-    default: 'bg-primary text-primary-foreground hover:bg-primary/90',
-    outline: 'border border-border bg-background hover:bg-secondary text-foreground',
-    ghost: 'hover:bg-secondary text-foreground',
-  };
-  return (
-    <button
-      className={cn(baseStyles, variants[variant], className)}
-      disabled={disabled}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
-
-// Input component
-function Input({ className, ...props }: any) {
-  return (
-    <input
-      className={cn('flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50', className)}
-      {...props}
-    />
   );
 }
