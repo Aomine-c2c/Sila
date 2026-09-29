@@ -39,7 +39,7 @@ test-api:
 	cd $(API_DIR) && uv run pytest tests/ -v --tb=short
 
 test-web:
-	cd $(WEB_DIR) && npx jest
+	cd $(WEB_DIR) && NODE_ENV=test npx jest
 
 test-cov:
 	cd $(API_DIR) && uv run pytest tests/ -v --tb=short --cov=nexora --cov-report=term-missing

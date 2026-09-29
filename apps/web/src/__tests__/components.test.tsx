@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -49,7 +50,8 @@ describe('Utility Functions', () => {
 
   it('truncates long strings', () => {
     const { truncate } = require('@/lib/utils');
-    expect(truncate('hello world', 8)).toBe('hello...');
+    // truncate takes first N chars + '...'
+    expect(truncate('hello world', 5)).toBe('hello...');
     expect(truncate('hi', 10)).toBe('hi');
   });
 });

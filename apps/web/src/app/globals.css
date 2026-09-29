@@ -29,10 +29,12 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
   body {
-    @apply bg-nexora-dark text-foreground antialiased;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    @apply antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
@@ -47,7 +49,9 @@
   }
   
   .glass {
-    @apply bg-white/5 backdrop-blur-lg border border-white/10;
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   .text-balance {
@@ -57,27 +61,54 @@
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-nexora-dark disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50;
   }
   
   .btn-primary {
-    @apply btn bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary;
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+  
+  .btn-primary:hover {
+    background-color: hsl(var(--primary) / 0.9);
+  }
+  
+  .btn-primary:active {
+    background-color: hsl(var(--primary));
   }
   
   .btn-secondary {
-    @apply btn bg-secondary text-secondary-foreground hover:bg-secondary/80;
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+  }
+  
+  .btn-secondary:hover {
+    background-color: hsl(var(--secondary) / 0.8);
   }
   
   .btn-outline {
-    @apply btn border border-border bg-transparent hover:bg-secondary;
+    @apply btn border border-border bg-transparent;
+  }
+  
+  .btn-outline:hover {
+    background-color: hsl(var(--secondary));
   }
   
   .btn-ghost {
-    @apply btn bg-transparent hover:bg-secondary;
+    @apply btn bg-transparent;
+  }
+  
+  .btn-ghost:hover {
+    background-color: hsl(var(--secondary));
   }
   
   .btn-destructive {
-    @apply btn bg-destructive text-destructive-foreground hover:bg-destructive/90;
+    background-color: hsl(var(--destructive));
+    color: hsl(var(--destructive-foreground));
+  }
+  
+  .btn-destructive:hover {
+    background-color: hsl(var(--destructive) / 0.9);
   }
   
   .btn-sm {
@@ -129,19 +160,23 @@
   }
   
   .badge-primary {
-    @apply badge bg-primary/20 text-primary;
+    background-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--primary));
   }
   
   .badge-success {
-    @apply badge bg-green-500/20 text-green-400;
+    background-color: hsl(142 76% 36% / 0.2);
+    color: hsl(142 76% 36%);
   }
   
   .badge-warning {
-    @apply badge bg-yellow-500/20 text-yellow-400;
+    background-color: hsl(48 96% 53% / 0.2);
+    color: hsl(48 96% 53%);
   }
   
   .badge-destructive {
-    @apply badge bg-red-500/20 text-red-400;
+    background-color: hsl(var(--destructive) / 0.2);
+    color: hsl(var(--destructive));
   }
   
   .sidebar-item {
@@ -149,7 +184,8 @@
   }
   
   .sidebar-item-active {
-    @apply sidebar-item bg-primary/20 text-primary;
+    background-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--primary));
   }
   
   .table-container {
