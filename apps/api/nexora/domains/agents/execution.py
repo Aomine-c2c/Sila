@@ -240,8 +240,19 @@ class AgentExecutionEngine:
             preferred_model = override_model or intel_cfg.get("model")
             required_caps = agent.capabilities or ["reasoning"]
 
+            from nexora.core.security import ModelOutputBoundary, PromptSanitizer, ToolSandbox
+
+            # 1. Prompt Injection Scanning on task title and instructions
+            raw_prompt_text = f"Task: {task.title}. Instructions: {agent.system_instructions or 'Execute with precision.'}"
+            is_injected, injection_reason = PromptSanitizer.scan_for_injection(raw_prompt_text)
+            if is_injected:
+                raise ForbiddenError(f"Security Alert: Malicious prompt pattern detected: {injection_reason}")
+
+            # 2. PII & Secrets Scrubbing (Least-privilege context transmission to external model)
+            sanitized_prompt = PromptSanitizer.sanitize_for_external_llm(raw_prompt_text)
+
             intel_req = ModelRequest(
-                prompt=f"Task: {task.title}. Instructions: {agent.system_instructions or 'Execute with precision.'}",
+                prompt=sanitized_prompt,
                 required_capabilities=required_caps,
                 preferred_model=preferred_model,
             )
@@ -275,25 +286,41 @@ class AgentExecutionEngine:
 
             # ── 6. TOOL EXECUTION ──────────────────────────────────────────────
             t0 = time.perf_counter()
-            # Enforce capability-based permission verification
+            # Enforce capability-based permission verification and tool sandboxing
             allowed_tools = agent.permissions.get(
                 "allowed_tools", ["analysis_tool", "reporting_tool", "unit_test"]
             )
             executed_tools = []
             for tool in agent.tools or []:
                 t_name = tool.get("name") if isinstance(tool, dict) else str(tool)
-                if t_name in allowed_tools:
-                    executed_tools.append(t_name)
-                    await self.audit_repo.record_audit(
-                        agent_id=agent.id,
-                        company_id=company_id,
-                        execution_id=execution_id,
-                        task_id=task.id,
-                        action=AuditAction.TOOL_EXECUTED,
-                        step=ExecutionStep.TOOL_EXECUTION,
-                        status=ExecutionStatus.SUCCESS,
-                        details={"tool": t_name, "authorized": True},
+                if t_name not in allowed_tools:
+                    continue
+
+                # Sandboxing validations based on tool type
+                t_args = tool.get("args", {}) if isinstance(tool, dict) else {}
+                if "path" in t_args:
+                    ToolSandbox.validate_filesystem_access(
+                        t_args["path"],
+                        allowed_directories=agent.permissions.get("allowed_paths", ["/workspace", "/tmp"]),
                     )
+                if "command" in t_args:
+                    ToolSandbox.validate_terminal_command(t_args["command"])
+                if "query" in t_args:
+                    ToolSandbox.validate_database_query(t_args["query"])
+                if "url" in t_args:
+                    ToolSandbox.validate_external_url(t_args["url"])
+
+                executed_tools.append(t_name)
+                await self.audit_repo.record_audit(
+                    agent_id=agent.id,
+                    company_id=company_id,
+                    execution_id=execution_id,
+                    task_id=task.id,
+                    action=AuditAction.TOOL_EXECUTED,
+                    step=ExecutionStep.TOOL_EXECUTION,
+                    status=ExecutionStatus.SUCCESS,
+                    details={"tool": t_name, "authorized": True},
+                )
 
             step_records.append(
                 ExecutionStepRecord(
@@ -314,10 +341,16 @@ class AgentExecutionEngine:
                 task_id=task.id,
             )
 
+            # Inspect model output as untrusted input
+            is_smuggled, smuggle_err = ModelOutputBoundary.inspect_output_for_instruction_smuggling(gen_resp.text)
+            if is_smuggled:
+                raise ForbiddenError(f"Security Alert: Untrusted model response intercepted: {smuggle_err}")
+
             output_result = {
                 "task_title": task.title,
                 "summary": gen_resp.text,
                 "outcome_achieved": task.expected_outcome
+
                 or "Task requirements satisfied successfully.",
                 "tools_utilized": executed_tools,
                 "model_used": gen_resp.model_used,

@@ -160,6 +160,18 @@ cp .env.example .env.local  # Edit with your values
 npm run dev
 ```
 
+#### Desktop App (Tauri)
+```bash
+# Run desktop app with automatic API orchestration & hot-reload:
+make dev-desktop
+
+# Or directly via the runner script:
+./scripts/run-desktop.sh
+
+# Build native production desktop binary:
+make tauri-build
+```
+
 ## Available Commands
 
 ```bash

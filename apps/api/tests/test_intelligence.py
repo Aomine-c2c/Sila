@@ -166,3 +166,107 @@ class TestIntelligenceExchange:
         data = resp.json()
         assert data["provider_used"] == "google_gemini"
         assert data["model_used"] == "gemini-1.5-pro"
+
+    async def test_provider_timeout_failover(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
+        """Simulate Claude timing out -> router automatically fails over to Gemini."""
+        company_id = company_via_api["id"]
+        resp = await client.post(
+            f"/api/v1/companies/{company_id}/intelligence/generate",
+            json={
+                "prompt": "Security analysis of cryptographic protocols",
+                "preferred_model": "claude-3-5-sonnet",
+                "simulation_flags": {"anthropic": "timeout"},
+            },
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["routed_via_fallback"] is True
+        assert data["provider_used"] != "anthropic"
+        assert "anthropic" in data["fallback_reason"].lower()
+        # Verify routing trace recorded failover
+        assert len(data["routing_trace"]) >= 2
+        assert data["routing_trace"][0]["action"] == "FAILOVER"
+        assert data["routing_trace"][-1]["action"] == "COMPLETED"
+
+    async def test_four_tier_fallback_to_local_degraded(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
+        """All external cloud providers (Anthropic, Gemini, OpenAI) fail -> Task succeeds via LOCAL DEGRADED."""
+        company_id = company_via_api["id"]
+        resp = await client.post(
+            f"/api/v1/companies/{company_id}/intelligence/generate",
+            json={
+                "prompt": "Emergency mission-critical operations",
+                "preferred_model": "claude-3-5-sonnet",
+                "simulation_flags": {
+                    "anthropic": "timeout",
+                    "google_gemini": "rate_limit",
+                    "openai": "rate_limit",
+                },
+            },
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["routed_tier"] == "LOCAL_DEGRADED"
+        assert data["provider_used"] == "local"
+        assert data["model_used"] == "local-deepseek-r1"
+        assert data["estimated_cost_usd"] == 0.0
+
+    async def test_structured_output_validation(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
+        """Request structured JSON with required schema fields."""
+        company_id = company_via_api["id"]
+        resp = await client.post(
+            f"/api/v1/companies/{company_id}/intelligence/generate",
+            json={
+                "prompt": "Extract security posture matrix",
+                "preferred_model": "claude-3-5-sonnet",
+                "structured_output_schema": {
+                    "type": "object",
+                    "required": ["provider", "status", "analysis"],
+                },
+            },
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["structured_output_validated"] is True
+        import json
+        parsed = json.loads(data["text"])
+        assert "status" in parsed
+        assert "analysis" in parsed
+
+    async def test_context_overflow_rejection(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
+        """Requesting context size that exceeds all providers is rejected gracefully with explanation."""
+        company_id = company_via_api["id"]
+        resp = await client.post(
+            f"/api/v1/companies/{company_id}/intelligence/generate",
+            json={
+                "prompt": "Process astronomical raw telemetry",
+                "context_tokens_needed": 999_999_999,
+            },
+            headers=auth_headers,
+        )
+        assert resp.status_code == 400
+        assert "context capacity overflow" in resp.json()["message"].lower()
+
+
+    async def test_circuit_breaker_reset_endpoint(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
+        """Admin can reset tripped circuit breakers and provider health status."""
+        company_id = company_via_api["id"]
+        resp = await client.post(
+            f"/api/v1/companies/{company_id}/intelligence/circuit-breakers/reset",
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+

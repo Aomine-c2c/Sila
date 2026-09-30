@@ -138,3 +138,21 @@ async def add_model(
 ):
     """Register a new model specification under an existing provider."""
     return await IntelligenceService(db).add_model(body)
+
+
+@router.post("/circuit-breakers/reset")
+async def reset_circuit_breakers(
+    company_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_admin()),
+):
+    """Reset all provider circuit breakers and mark providers healthy."""
+    service = IntelligenceService(db)
+    service.router.registry.reset_circuit_breakers()
+    from sqlalchemy import update
+    from nexora.domains.intelligence.models import ModelProvider
+    await db.execute(update(ModelProvider).values(is_healthy=True, consecutive_failures=0))
+    await db.flush()
+    return {"status": "ok", "message": "All circuit breakers reset to CLOSED and providers marked healthy."}
+

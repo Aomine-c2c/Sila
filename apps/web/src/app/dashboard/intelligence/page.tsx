@@ -53,6 +53,8 @@ export default function IntelligenceExchangePage() {
   const [preferredModel, setPreferredModel] = useState<string>('');
   const [requiredPrivacy, setRequiredPrivacy] = useState<string>('');
   const [allowFallback, setAllowFallback] = useState(true);
+  const [simulationBehavior, setSimulationBehavior] = useState<string>('none');
+  const [requireStructuredJson, setRequireStructuredJson] = useState(false);
 
   // Policy Form State
   const [policyStrategy, setPolicyStrategy] = useState<
@@ -84,6 +86,15 @@ export default function IntelligenceExchangePage() {
     },
   });
 
+  // Mutation: Reset Circuit Breakers
+  const resetBreakersMutation = useMutation({
+    mutationFn: () => intelligenceApi.resetCircuitBreakers(companyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['intelligence-dashboard', companyId] });
+      refetch();
+    },
+  });
+
   // Mutation: Update Routing Policy
   const updatePolicyMutation = useMutation({
     mutationFn: (update: ModelRoutingPolicyUpdate) => intelligenceApi.updatePolicy(companyId, update),
@@ -96,6 +107,17 @@ export default function IntelligenceExchangePage() {
 
   const handleSimulate = (e: React.FormEvent) => {
     e.preventDefault();
+    const simFlags: Record<string, string> = {};
+    if (simulationBehavior === 'claude_timeout') {
+      simFlags.anthropic = 'timeout';
+    } else if (simulationBehavior === 'openai_ratelimit') {
+      simFlags.openai = 'rate_limit';
+    } else if (simulationBehavior === 'all_cloud_fail') {
+      simFlags.anthropic = 'timeout';
+      simFlags.google_gemini = 'rate_limit';
+      simFlags.openai = 'rate_limit';
+    }
+
     testGenerateMutation.mutate({
       prompt,
       required_capabilities: [selectedCapability],
@@ -103,6 +125,13 @@ export default function IntelligenceExchangePage() {
       preferred_model: preferredModel || undefined,
       required_privacy: requiredPrivacy || undefined,
       allow_fallback: allowFallback,
+      simulation_flags: Object.keys(simFlags).length > 0 ? simFlags : undefined,
+      structured_output_schema: requireStructuredJson
+        ? {
+            type: 'object',
+            required: ['provider', 'status', 'analysis'],
+          }
+        : undefined,
     });
   };
 
@@ -129,21 +158,33 @@ export default function IntelligenceExchangePage() {
               NEXORA Intelligence Exchange
             </div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-              Provider Abstraction & Dynamic Routing
+              Multi-Provider Resilience & Failover Routing
             </h1>
             <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-              <span className="font-semibold text-foreground">Rule:</span> Agents are organizational identities. AI models are intelligence providers. Agents request capabilities; the Intelligence Router dynamically balances cost, latency, privacy, and automatic fallbacks.
+              <span className="font-semibold text-foreground">Four-Tier Guarantee:</span> PRIMARY → FALLBACK → SECONDARY FALLBACK → LOCAL/DEGRADED MODE. A task never silently fails due to provider unavailability, quota exhaustion, or SLA timeouts.
             </p>
           </div>
-          <button
-            onClick={() => refetch()}
-            className="self-start md:self-auto inline-flex items-center gap-2 rounded-xl border border-border bg-card/60 px-4 py-2.5 text-xs font-medium text-foreground hover:bg-card hover:border-primary/40 transition-colors"
-          >
-            <RotateCw className="h-3.5 w-3.5" />
-            Refresh Telemetry
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => resetBreakersMutation.mutate()}
+              disabled={resetBreakersMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+              title="Reset Circuit Breakers to CLOSED"
+            >
+              <Shield className="h-3.5 w-3.5" />
+              Reset Breakers
+            </button>
+            <button
+              onClick={() => refetch()}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card/60 px-4 py-2 text-xs font-medium text-foreground hover:bg-card hover:border-primary/40 transition-colors"
+            >
+              <RotateCw className="h-3.5 w-3.5" />
+              Refresh Telemetry
+            </button>
+          </div>
         </div>
       </div>
+
 
       {/* Primary KPI Telemetry Ribbon */}
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
@@ -449,6 +490,36 @@ export default function IntelligenceExchangePage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-foreground block mb-1">
+                    Simulate Provider Failure <span className="text-muted-foreground font-normal">(Test Resiliency)</span>
+                  </label>
+                  <select
+                    value={simulationBehavior}
+                    onChange={(e) => setSimulationBehavior(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary"
+                  >
+                    <option value="none">Normal Operation (Healthy)</option>
+                    <option value="claude_timeout">Primary (Claude) Times Out → Failover</option>
+                    <option value="openai_ratelimit">OpenAI 429 Rate Limit → Exponential Retry</option>
+                    <option value="all_cloud_fail">All Cloud Fails → LOCAL DEGRADED MODE</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col justify-end">
+                  <label className="flex items-center gap-2 pb-2 text-xs text-muted-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={requireStructuredJson}
+                      onChange={(e) => setRequireStructuredJson(e.target.checked)}
+                      className="rounded border-border text-primary focus:ring-primary"
+                    />
+                    Require Structured JSON Schema Validation
+                  </label>
+                </div>
+              </div>
+
               <div className="flex items-center gap-2 pt-1">
                 <input
                   type="checkbox"
@@ -458,7 +529,7 @@ export default function IntelligenceExchangePage() {
                   className="rounded border-border text-primary focus:ring-primary"
                 />
                 <label htmlFor="allowFallback" className="text-xs text-muted-foreground cursor-pointer">
-                  Allow automatic failover through company fallback chain if provider errors
+                  Allow automatic 4-tier failover (PRIMARY → FALLBACK → SECONDARY → LOCAL)
                 </label>
               </div>
 
@@ -529,9 +600,9 @@ export default function IntelligenceExchangePage() {
                     </div>
 
                     <div className="p-2 rounded-lg bg-background border border-border">
-                      <div className="text-[10px] text-muted-foreground">Latency</div>
-                      <div className="text-xs font-semibold text-amber-400 font-mono">
-                        {testGenerateMutation.data.latency_ms} ms
+                      <div className="text-[10px] text-muted-foreground">Routing Tier</div>
+                      <div className="text-xs font-semibold text-violet-400 font-mono">
+                        {testGenerateMutation.data.routed_tier || 'PRIMARY'}
                       </div>
                     </div>
 
@@ -548,6 +619,38 @@ export default function IntelligenceExchangePage() {
                       <strong>Failover Provenance:</strong> {testGenerateMutation.data.fallback_reason}
                     </div>
                   )}
+
+                  {testGenerateMutation.data.routing_trace && testGenerateMutation.data.routing_trace.length > 0 && (
+                    <div className="p-3 rounded-lg border border-border bg-muted/20 space-y-2">
+                      <div className="text-xs font-semibold text-foreground flex items-center justify-between">
+                        <span>Decision Routing Trace</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          {testGenerateMutation.data.attempts_count} attempt(s)
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        {testGenerateMutation.data.routing_trace.map((step, idx) => (
+                          <div key={idx} className="text-[11px] flex items-center justify-between border-t border-border/40 pt-1">
+                            <span className="font-mono text-muted-foreground">
+                              [{step.tier}] {step.provider} / {step.model}
+                            </span>
+                            <span
+                              className={`font-semibold ${
+                                step.action === 'COMPLETED'
+                                  ? 'text-emerald-400'
+                                  : step.action === 'RETRY'
+                                  ? 'text-amber-400'
+                                  : 'text-rose-400'
+                              }`}
+                            >
+                              {step.action} {step.error ? `(${step.error})` : ''}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
 
                   {/* Generated Output */}
                   <div>
@@ -710,19 +813,21 @@ export default function IntelligenceExchangePage() {
               <thead className="bg-muted/30 text-muted-foreground border-b border-border">
                 <tr>
                   <th className="p-3">Time</th>
+                  <th className="p-3">Tier</th>
                   <th className="p-3">Capability Requested</th>
                   <th className="p-3">Provider Selected</th>
                   <th className="p-3">Model</th>
                   <th className="p-3">Cost ($)</th>
                   <th className="p-3">Latency</th>
-                  <th className="p-3">Fallback</th>
+                  <th className="p-3">Failover / Retries</th>
+                  <th className="p-3">Breaker</th>
                   <th className="p-3">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {decisions.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-6 text-center text-muted-foreground">
+                    <td colSpan={10} className="p-6 text-center text-muted-foreground">
                       No routing requests recorded yet. Run a simulation to log telemetry.
                     </td>
                   </tr>
@@ -731,6 +836,19 @@ export default function IntelligenceExchangePage() {
                     <tr key={d.id} className="hover:bg-muted/20 transition-colors">
                       <td className="p-3 text-muted-foreground font-mono">
                         {new Date(d.created_at).toLocaleTimeString()}
+                      </td>
+                      <td className="p-3 font-semibold font-mono text-[10px]">
+                        <span
+                          className={`px-1.5 py-0.5 rounded ${
+                            d.routed_tier === 'PRIMARY'
+                              ? 'bg-blue-500/10 text-blue-400'
+                              : d.routed_tier === 'LOCAL_DEGRADED'
+                              ? 'bg-emerald-500/10 text-emerald-400'
+                              : 'bg-amber-500/10 text-amber-300'
+                          }`}
+                        >
+                          {d.routed_tier || 'PRIMARY'}
+                        </span>
                       </td>
                       <td className="p-3 font-semibold text-foreground">
                         <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px]">
@@ -743,12 +861,30 @@ export default function IntelligenceExchangePage() {
                       <td className="p-3 font-mono text-foreground">{d.latency_ms} ms</td>
                       <td className="p-3">
                         {d.fallback ? (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-300">
-                            Cascaded
-                          </span>
+                          <div>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-300">
+                              Cascaded ({d.attempts_count || 1} att)
+                            </span>
+                            {d.fallback_reason && (
+                              <div className="text-[9px] text-muted-foreground mt-0.5 line-clamp-1 max-w-xs">
+                                {d.fallback_reason}
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-[10px] text-muted-foreground font-mono">Direct</span>
                         )}
+                      </td>
+                      <td className="p-3">
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
+                            d.circuit_breaker_status === 'CLOSED'
+                              ? 'bg-emerald-500/10 text-emerald-400'
+                              : 'bg-rose-500/10 text-rose-400'
+                          }`}
+                        >
+                          {d.circuit_breaker_status || 'CLOSED'}
+                        </span>
                       </td>
                       <td className="p-3">
                         {d.success ? (
@@ -772,3 +908,4 @@ export default function IntelligenceExchangePage() {
     </div>
   );
 }
+

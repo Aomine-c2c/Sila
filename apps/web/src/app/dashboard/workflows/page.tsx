@@ -51,16 +51,19 @@ const STATUS_BADGES: Record<string, string> = {
   CANCELLED: 'bg-muted/40 text-muted-foreground border-border',
 };
 
-// Canonical Software Delivery Pipeline Preset
+// Canonical Software Requirement Pipeline Preset (Exact user prompt workflow)
 const CANONICAL_SOFTWARE_PIPELINE: WorkflowStep[] = [
-  { id: 's-1', name: 'Product Agent Analyzes Requirement', type: 'AGENT', config: { agent: 'Product Agent', instruction: 'Evaluate business needs and produce functional spec.' } },
-  { id: 's-2', name: 'Architect Reviews Design', type: 'AGENT', config: { agent: 'Architect Agent', instruction: 'Review architectural tradeoffs and data model.' } },
-  { id: 's-3', name: 'CTO Approves Architecture', type: 'APPROVAL', config: { title: 'Core Architecture Sign-off', risk_level: 'HIGH' } },
-  { id: 's-4', name: 'Engineers Implement (Parallel)', type: 'PARALLEL', config: { tasks: [{ name: 'Backend API' }, { name: 'Frontend Portal' }] } },
-  { id: 's-5', name: 'QA Tests Implementation', type: 'TOOL', config: { tool_name: 'pytest_runner' } },
-  { id: 's-6', name: 'Security Reviews Code', type: 'AGENT', config: { agent: 'Security Agent', instruction: 'Audit least privilege and constitutional compliance.' } },
-  { id: 's-7', name: 'Production Deployment', type: 'TOOL', config: { tool_name: 'k8s_deployer' } },
-  { id: 's-8', name: 'Project Completion Monitor', type: 'AGENT', config: { agent: 'Monitoring Agent', instruction: 'Verify telemetry & close out task.' } },
+  { id: 's-1', name: 'Product Agent Analyzes Requirement', type: 'AGENT', config: { agent: 'Product Agent', instruction: 'Ingest requirement, evaluate domain constraints, and synthesize functional spec.' } },
+  { id: 's-2', name: 'Architect Reviews Design', type: 'AGENT', config: { agent: 'Architect Agent', instruction: 'Review architectural tradeoffs, schema migrations, and ADRs.' } },
+  { id: 's-3', name: 'CTO Approves Architecture', type: 'APPROVAL', config: { title: 'CTO Architectural Approval', risk_level: 'HIGH', action: 'APPROVE_ARCHITECTURE' } },
+  { id: 's-4', name: 'Engineers Implement (Parallel)', type: 'PARALLEL', config: { tasks: [{ name: 'Backend Services' }, { name: 'Frontend Interface' }, { name: 'DB Migrations' }] } },
+  { id: 's-5', name: 'QA Tests Implementation', type: 'TOOL', config: { tool_name: 'automated_test_suite_runner' } },
+  { id: 's-6', name: 'Security Reviews Code', type: 'AGENT', config: { agent: 'Security Agent', instruction: 'Audit least privilege, SAST scans, and constitutional compliance.' } },
+  { id: 's-7', name: 'Documentation Updates', type: 'AGENT', config: { agent: 'Doc Agent', instruction: 'Update API docs, OpenAPI specs, and system changelog.' } },
+  { id: 's-8', name: 'Deployment Approval Gate', type: 'APPROVAL', config: { title: 'Production Release Sign-off', risk_level: 'CRITICAL', action: 'APPROVE_DEPLOYMENT' } },
+  { id: 's-9', name: 'Production Deployment', type: 'TOOL', config: { tool_name: 'cloud_infra_deployer' } },
+  { id: 's-10', name: 'Telemetry & SRE Monitoring', type: 'AGENT', config: { agent: 'SRE Monitoring Agent', instruction: 'Observe latency, error rates, and resource utilization.' } },
+  { id: 's-11', name: 'Project Completion & Closeout', type: 'DECISION', config: { title: 'Project Verification & Delivery Sign-off', chosen_option: 'Verified Complete' } },
 ];
 
 export default function WorkflowsDashboardPage() {

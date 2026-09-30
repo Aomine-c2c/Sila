@@ -7,8 +7,12 @@ module.exports = {
     '^@/lib/(.*)$': '<rootDir>/src/lib/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
+  modulePathIgnorePatterns: ['<rootDir>/.next/'],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: 'tsconfig.json' }],
+    '^.+\\.(ts|tsx)$': [
+      'ts-jest',
+      { tsconfig: { ...require('./tsconfig.json').compilerOptions, jsx: 'react-jsx' } },
+    ],
   },
   testMatch: ['<rootDir>/src/**/*.test.(ts|tsx)'],
   collectCoverageFrom: [

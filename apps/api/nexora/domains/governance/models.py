@@ -327,3 +327,10 @@ class GovernanceAuditLog(NexoraBase):
         nullable=False,
         comment="Complete telemetry, inputs, state snapshot, and verification data",
     )
+    integrity_signature: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, comment="HMAC-SHA256 tamper-evident integrity signature"
+    )
+    previous_signature: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, comment="Signature of preceding audit record in chain"
+    )
+

@@ -107,7 +107,10 @@ class BlueprintRepository:
         proposed_blueprint: dict,
         estimated_operating_cost: dict,
         risks_identified: list,
-        missing_capabilities: list,
+        generation_stages: dict,
+        simulation_results: dict,
+        human_approval_requirements: list,
+        estimated_operational_complexity: str = "MODERATE",
         user_id: uuid.UUID | None = None,
     ) -> BlueprintGenerationProposal:
         proposal = BlueprintGenerationProposal(
@@ -117,7 +120,10 @@ class BlueprintRepository:
             proposed_blueprint=proposed_blueprint,
             estimated_operating_cost=estimated_operating_cost,
             risks_identified=risks_identified,
-            missing_capabilities=missing_capabilities,
+            generation_stages=generation_stages,
+            simulation_results=simulation_results,
+            human_approval_requirements=human_approval_requirements,
+            estimated_operational_complexity=estimated_operational_complexity,
         )
         self.db.add(proposal)
         await self.db.flush()

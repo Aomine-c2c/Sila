@@ -52,7 +52,8 @@ async function request<T>(
     } catch {
       data = { detail: res.statusText };
     }
-    const detail = (data as { detail?: string })?.detail ?? `API Error: ${res.status}`;
+    const errorBody = data as { detail?: string; message?: string } | null;
+    const detail = errorBody?.detail ?? errorBody?.message ?? `API Error: ${res.status}`;
     throw new ApiError(res.status, data, detail);
   }
 

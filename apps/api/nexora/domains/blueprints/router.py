@@ -32,6 +32,9 @@ from nexora.domains.blueprints.schemas import (
     CompanyBlueprintUpdate,
     InstantiateBlueprintRequest,
     InstantiateBlueprintResponse,
+    ProposalInstantiateRequest,
+    ProposalSimulateRequest,
+    ProposalUpdateRequest,
     SaveAsTemplateRequest,
 )
 from nexora.domains.blueprints.service import BlueprintService
@@ -194,6 +197,47 @@ async def get_generation_proposal(
     return await service.get_proposal(proposal_id)
 
 
+@router.patch("/build-my-company/{proposal_id}", response_model=BuildMyCompanyProposalResponse)
+async def update_generation_proposal(
+    proposal_id: uuid.UUID,
+    req: ProposalUpdateRequest,
+    current_user: CurrentUser,
+    db: DB,
+):
+    """
+    MODIFY PROPOSAL:
+    Allows users to modify everything (mission, departments, roles, agents, workflows, policies, budget, autonomy)
+    before approval and instantiation.
+    """
+    service = BlueprintService(db)
+    return await service.update_proposal(
+        proposal_id=proposal_id,
+        proposed_blueprint=req.proposed_blueprint,
+        target_budget_monthly_usd=req.target_budget_monthly_usd,
+        preferred_autonomy_level=req.preferred_autonomy_level,
+    )
+
+
+@router.post("/build-my-company/{proposal_id}/simulate", response_model=BuildMyCompanyProposalResponse)
+async def simulate_generation_proposal(
+    proposal_id: uuid.UUID,
+    req: ProposalSimulateRequest,
+    current_user: CurrentUser,
+    db: DB,
+):
+    """
+    SIMULATE:
+    Runs a controlled synthetic dry-run workload against the proposed organization to benchmark
+    latency, cost, throughput, and quality before human approval.
+    """
+    service = BlueprintService(db)
+    return await service.simulate_proposal(
+        proposal_id=proposal_id,
+        workload_size=req.test_workload_size,
+        concurrency=req.concurrency_level,
+    )
+
+
 @router.post(
     "/build-my-company/{proposal_id}/instantiate",
     response_model=InstantiateBlueprintResponse,
@@ -201,9 +245,20 @@ async def get_generation_proposal(
 )
 async def instantiate_generation_proposal(
     proposal_id: uuid.UUID,
+    req: ProposalInstantiateRequest,
     current_user: CurrentUser,
     db: DB,
 ):
-    """Approve and instantiate a synthesized company generation proposal into a real Company."""
+    """
+    REVIEW -> APPROVE -> INSTANTIATE:
+    Final human approval gate. Never silently creates a fully autonomous organization without review.
+    Instantiates the approved proposal into live production database models.
+    """
     service = BlueprintService(db)
-    return await service.instantiate_proposal(proposal_id, user=current_user)
+    return await service.instantiate_proposal(
+        proposal_id=proposal_id,
+        user=current_user,
+        approved_by=req.approved_by,
+        custom_company_name=req.custom_company_name,
+    )
+

@@ -138,9 +138,13 @@ class ModelRequest(BaseModel):
     preferred_model: str | None = None
     allow_fallback: bool = True
     max_acceptable_cost_usd: float | None = None
+    token_ceiling: int | None = None
+    timeout_seconds: float = 15.0
     required_privacy: str | None = None
     temperature: float = 0.7
     max_tokens: int = 4096
+    structured_output_schema: dict | None = None
+    simulation_flags: dict[str, str] | None = None  # e.g. {"openai": "rate_limit", "anthropic": "timeout"}
 
 
 class ModelResponsePayload(BaseModel):
@@ -154,8 +158,14 @@ class ModelResponsePayload(BaseModel):
     total_tokens: int
     estimated_cost_usd: float
     latency_ms: float
+    routed_tier: str = "PRIMARY"  # PRIMARY | FALLBACK | SECONDARY_FALLBACK | LOCAL_DEGRADED
     routed_via_fallback: bool = False
     fallback_reason: str | None = None
+    attempts_count: int = 1
+    routing_trace: list[dict] = Field(default_factory=list)
+    structured_output_validated: bool = False
+    circuit_breaker_status: str = "CLOSED"  # CLOSED | HALF_OPEN | OPEN
+
 
 
 # ── Dashboard & Analytics Schemas ───────────────────────────────────────────

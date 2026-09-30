@@ -4,6 +4,8 @@
 > **Scope:** Existing static HTML prototypes + identified backend issues affecting frontend
 > **Date:** 2026-09-25
 
+> **Update (2026-09-30):** This file's opening assessment records the historical pre-Next.js baseline and is no longer current. The Next.js application is implemented in `apps/web`; see the current review below for remaining gaps and verified work.
+
 ---
 
 ## 1. Executive Summary
@@ -258,6 +260,15 @@ These are issues in the backend code that will cause problems for the frontend:
 |---|---|---|
 | `list[...]` not subscriptable (method shadowing) | service.py:296, 318 | **FIXED** (renamed `list` → `list_agents`) |
 | Forward reference errors for SQLAlchemy relationships | models.py:150-154 | Pre-existing, marked with `# noqa: F821` |
+
+## 9. Current Frontend Review — 2026-09-30
+
+- Protected dashboard routes now wait for Zustand persistence hydration and validate the stored bearer token through `/auth/me`; expired sessions are cleared and redirected to login.
+- The login page now returns to the requested same-origin dashboard path after authentication. Redirect targets beginning with `//` are rejected.
+- The account settings route now uses the authenticated profile and active organization instead of a placeholder screen or fabricated identity.
+- Decision records now list, create, resolve, filter, and record outcomes through the decisions API.
+- Jest now transforms JSX correctly and ignores `.next` build artifacts. Auth-guard and decisions-page behavior has component coverage.
+- Remaining: token persistence uses browser local storage because the current API returns bearer tokens; migrating to a secure HttpOnly cookie requires a coordinated backend auth change. Project/task screens and preference editing remain incomplete. Current lint/build/test results should be taken from the latest cycle report rather than this historical register.
 | `None` default for non-Optional parameter | router.py:226-227, 246-247 | Pre-existing, type annotation mismatch |
 
 ### 8.3 Test Coverage Gaps

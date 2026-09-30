@@ -239,3 +239,39 @@ class TestOrganizationalGovernance:
         resolved = resolve_res.json()
         assert resolved["status"] == "RESOLVED"
         assert "secondary burst cluster" in resolved["resolution"]
+
+    @pytest.mark.asyncio
+    async def test_audit_integrity_cryptographic_verification(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
+        """Verify that every consequential audit record receives a valid HMAC signature and can be verified."""
+        company_id = company_via_api["id"]
+
+        create_res = await client.post(
+            f"/api/v1/companies/{company_id}/governance/audits",
+            json={
+                "actor_name": "Security Audit Bot",
+                "authority": "role:SECURITY_OFFICER",
+                "action": "REVOKE_API_KEY",
+                "target": "vendor-key-vault/gemini-prod",
+                "reason": "Routine 90-day cryptographic secret rotation",
+                "result": "SUCCESS",
+                "autonomy_level": 3,
+                "risk_level": "MEDIUM",
+                "details": {"key_id": "key-9912", "rotated": True},
+            },
+            headers=auth_headers,
+        )
+        assert create_res.status_code == 201
+        audit_id = create_res.json()["id"]
+
+        # Call verify endpoint
+        verify_res = await client.get(
+            f"/api/v1/companies/{company_id}/governance/audits/{audit_id}/verify",
+            headers=auth_headers,
+        )
+        assert verify_res.status_code == 200
+        verify_data = verify_res.json()
+        assert verify_data["verified"] is True
+        assert verify_data["signature"]
+

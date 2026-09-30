@@ -174,8 +174,14 @@ class ModelRequestLog(UUIDBase, TimestampMixin):
     selected_provider_name: Mapped[str] = mapped_column(String(100), nullable=False)
     selected_model_identifier: Mapped[str] = mapped_column(String(150), nullable=False)
 
+    routed_tier: Mapped[str] = mapped_column(
+        String(50), default="PRIMARY", nullable=False, comment="PRIMARY, FALLBACK, SECONDARY_FALLBACK, LOCAL_DEGRADED"
+    )
     routed_via_fallback: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     fallback_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    attempts_count: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    routing_trace: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    circuit_breaker_status: Mapped[str] = mapped_column(String(50), default="CLOSED", nullable=False)
 
     prompt_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     completion_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -185,3 +191,4 @@ class ModelRequestLog(UUIDBase, TimestampMixin):
 
     success: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+

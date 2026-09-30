@@ -1,12 +1,14 @@
 # NEXORA Frontend Architecture
 
-> **Status:** Planning Phase
+> **Status:** Implemented foundation; ongoing hardening
 > **Audience:** Frontend engineers, architects, Tauri/desktop team
-> **Last Updated:** 2026-09-25
+> **Last Updated:** 2026-09-30
 
 ---
 
 ## 1. Executive Summary
+
+> This document began as a frontend plan. The Next.js application, dashboard, domain API clients, auth pages, and Tauri shell now exist under `apps/web`. Some planned package boundaries and product surfaces are still outstanding; see `FRONTEND_TECHNICAL_DEBT.md` and `UI_ROADMAP.md` before treating the planned layout below as current implementation.
 
 NEXORA is an AI-native Organization Operating System. The backend (FastAPI + async SQLAlchemy + PostgreSQL) is fully implemented across 13 domains. There is **no existing frontend** — only six static HTML prototype pages in `apps/api/nexora/static/` that serve as design reference for six core UI surfaces.
 

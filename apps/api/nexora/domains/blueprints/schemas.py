@@ -200,9 +200,33 @@ class BuildMyCompanyProposalResponse(BaseModel):
     proposed_blueprint: dict[str, Any]
     estimated_operating_cost: dict[str, Any]
     risks_identified: list[dict[str, Any]]
-    missing_capabilities: list[dict[str, Any]]
+    generation_stages: dict[str, Any]
+    simulation_results: dict[str, Any]
+    human_approval_requirements: list[dict[str, Any]]
+    estimated_operational_complexity: str
     instantiated_company_id: uuid.UUID | None = None
     created_at: datetime
+
+
+class ProposalUpdateRequest(BaseModel):
+    proposed_blueprint: dict[str, Any] | None = None
+    target_budget_monthly_usd: float | None = None
+    preferred_autonomy_level: int | None = None
+
+
+class ProposalSimulateRequest(BaseModel):
+    test_workload_size: int = Field(default=30, ge=5, le=200)
+    concurrency_level: int = Field(default=4, ge=1, le=20)
+
+
+class ProposalInstantiateRequest(BaseModel):
+    approved_by: str = Field(default="Executive Sponsor", max_length=255)
+    confirmation_statement: str = Field(
+        default="I have reviewed the synthesized organizational design, simulation results, policies, and risks.",
+        max_length=500,
+    )
+    custom_company_name: str | None = None
+
 
 
 class SaveAsTemplateRequest(BaseModel):

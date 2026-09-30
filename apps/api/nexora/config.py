@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     # Redis (optional for MVP)
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # External Intelligence Provider Keys (Optional: when provided, live adapters activate)
+    OPENAI_API_KEY: str | None = None
+    ANTHROPIC_API_KEY: str | None = None
+    GEMINI_API_KEY: str | None = None
+    OLLAMA_HOST: str = "http://localhost:11434"
+
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT == "production"

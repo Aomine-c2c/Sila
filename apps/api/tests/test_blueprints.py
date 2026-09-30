@@ -183,20 +183,34 @@ class TestCompanyBlueprints:
         self, client: AsyncClient, auth_headers: dict
     ):
         """
-        User describes organization in natural language.
-        Verify:
-        1. Synthesis generates proposed blueprint without immediately activating
-        2. Proposes departments, agents, workflows, estimated operating cost, risks, and missing capabilities
-        3. Instantiates only after explicit user approval.
-        """
-        prompt = (
-            "Build an autonomous quantitative hedge fund focusing on foreign exchange arbitrage and "
-            "treasury bond yield curve models with real-time news sentiment tracking and strict risk stops."
-        )
+        Tests the complete natural-language organization generator workflow:
+        USER DESCRIPTION
+        -> REQUIREMENT ANALYSIS
+        -> INDUSTRY IDENTIFICATION
+        -> ORGANIZATIONAL DESIGN
+        -> DEPARTMENT GENERATION
+        -> ROLE GENERATION
+        -> AGENT GENERATION
+        -> WORKFLOW GENERATION
+        -> POLICY GENERATION
+        -> RESOURCE MODEL
+        -> INTELLIGENCE REQUIREMENTS
+        -> RISK ANALYSIS
+        -> COMPANY BLUEPRINT
 
+        Then:
+        - Modify everything (user customizes mission, agents, workflows, budget)
+        - SIMULATE (dry run controlled benchmark)
+        - REVIEW (audit results & metrics)
+        - APPROVE & INSTANTIATE (never silently activates without explicit user confirmation)
+        """
+        # User prompt from request
+        prompt = "I want to create a software company that builds agricultural management systems for small farmers in Africa."
+
+        # 1. Synthesis Request
         res = await client.post(
             "/api/v1/blueprints/build-my-company",
-            json={"description": prompt, "target_budget_monthly_usd": 450.0},
+            json={"description": prompt, "target_budget_monthly_usd": 250.0, "preferred_autonomy_level": 3},
             headers=auth_headers,
         )
         assert res.status_code == 201
@@ -205,34 +219,90 @@ class TestCompanyBlueprints:
         assert proposal["status"] == "PROPOSED"
         assert proposal["instantiated_company_id"] is None
 
-        # Verify synthesis contents
-        assert "departments" in proposal["proposed_blueprint"]
-        assert "agents" in proposal["proposed_blueprint"]
-        assert len(proposal["proposed_blueprint"]["agents"]) >= 3
+        # Verify 12-step stages are tracked
+        stages = proposal["generation_stages"]
+        assert "user_description" in stages
+        assert "requirement_analysis" in stages
+        assert "industry_identification" in stages
+        assert "agricultural" in stages["industry_identification"].lower()
+        assert "department_generation" in stages
+        assert "role_generation" in stages
+        assert "agent_generation" in stages
+        assert "workflow_generation" in stages
+        assert "policy_generation" in stages
+        assert "resource_model" in stages
+        assert "intelligence_requirements" in stages
+        assert "risk_analysis" in stages
 
-        # Verify Operating Cost Estimate
-        cost = proposal["estimated_operating_cost"]
-        assert cost["total_monthly_usd"] == 450.0
-        assert "token_cost_usd" in cost
-
-        # Verify Risks & Missing Capabilities
+        # Verify displayed items
+        bp = proposal["proposed_blueprint"]
+        assert "Agri" in bp["name"]
+        assert bp["company_definition"]["mission"]
+        assert len(bp["departments"]) >= 3
+        assert len(bp["roles"]) >= 3
+        assert len(bp["agents"]) >= 3
+        assert len(bp["workflows"]) >= 2
+        assert len(bp["policies"]) >= 2
+        assert "intelligence_requirements" in bp
+        assert "resource_policies" in bp
+        assert proposal["estimated_operational_complexity"] in ["LOW", "MODERATE", "HIGH"]
         assert len(proposal["risks_identified"]) >= 1
-        assert len(proposal["missing_capabilities"]) >= 1
+        assert len(proposal["human_approval_requirements"]) >= 1
 
-        # Now: User approves and instantiates
+        # 2. USER MODIFIES EVERYTHING (e.g. adjusts mission, budget, and adds an agent responsibility)
+        bp_modified = dict(bp)
+        bp_modified["name"] = "AgriSila Pan-Africa Technologies"
+        bp_modified["company_definition"]["mission"] = "Scaling food security and fair-trade market access for 500k smallholders."
+
+        patch_res = await client.patch(
+            f"/api/v1/blueprints/build-my-company/{proposal_id}",
+            json={
+                "proposed_blueprint": bp_modified,
+                "target_budget_monthly_usd": 300.0,
+                "preferred_autonomy_level": 4,
+            },
+            headers=auth_headers,
+        )
+        assert patch_res.status_code == 200
+        patched_data = patch_res.json()
+        assert patched_data["proposed_blueprint"]["name"] == "AgriSila Pan-Africa Technologies"
+        assert patched_data["estimated_operating_cost"]["total_monthly_usd"] == 300.0
+
+        # 3. SIMULATE (Runs a controlled dry-run benchmark against the proposed organization)
+        sim_res = await client.post(
+            f"/api/v1/blueprints/build-my-company/{proposal_id}/simulate",
+            json={"test_workload_size": 25, "concurrency_level": 5},
+            headers=auth_headers,
+        )
+        assert sim_res.status_code == 200
+        sim_data = sim_res.json()
+        assert sim_data["status"] == "SIMULATED"
+        sim_results = sim_data["simulation_results"]
+        assert sim_results["test_workload_size"] == 25
+        assert sim_results["simulated_tasks_succeeded"] >= 24
+        assert "EXPERIMENTAL SIMULATION RESULTS" in sim_results["dry_run_disclaimer"]
+
+        # 4. REVIEW -> APPROVE -> INSTANTIATE
         inst_res = await client.post(
             f"/api/v1/blueprints/build-my-company/{proposal_id}/instantiate",
+            json={
+                "approved_by": "Founder & Managing Director",
+                "confirmation_statement": "I have reviewed the synthesized organizational design, simulation results, policies, and risks.",
+                "custom_company_name": "AgriSila Pan-Africa Technologies",
+            },
             headers=auth_headers,
         )
         assert inst_res.status_code == 201
         inst_data = inst_res.json()
-        assert inst_data["company_name"]
+        assert inst_data["company_name"] == "AgriSila Pan-Africa Technologies"
         assert inst_data["agents_created"] >= 3
         assert inst_data["status"] == "INSTANTIATED"
 
-        # Verify proposal status changed to INSTANTIATED
+        # Verify proposal marked INSTANTIATED with reference to created company
         check_prop = await client.get(
             f"/api/v1/blueprints/build-my-company/{proposal_id}", headers=auth_headers
         )
         assert check_prop.status_code == 200
         assert check_prop.json()["status"] == "INSTANTIATED"
+        assert check_prop.json()["instantiated_company_id"] == inst_data["company_id"]
+

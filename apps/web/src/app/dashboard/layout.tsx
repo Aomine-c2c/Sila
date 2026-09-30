@@ -12,7 +12,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, activeCompany, setActiveCompany, setUser, logout } = useAuthStore();
+  const { user, activeCompany, setActiveCompany, logout } = useAuthStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   useEffect(() => {
@@ -24,21 +24,7 @@ export default function DashboardLayout({
         }
       }).catch(() => {});
     }
-    // Default user display if not yet set
-    if (!user) {
-      setUser({
-        id: '9427e8aa-5d77-4be6-9db3-cca1dbf68b19',
-        email: 'admin@furnitureco.com',
-        username: 'admin_furniture',
-        first_name: 'Admin',
-        last_name: 'Furniture',
-        is_active: true,
-        is_superuser: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-    }
-  }, [activeCompany, user, setActiveCompany, setUser]);
+  }, [activeCompany, setActiveCompany]);
 
   const handleLogout = () => {
     logout();

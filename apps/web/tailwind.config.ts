@@ -24,10 +24,10 @@ module.exports = {
           950: '#082f49',
         },
         nexora: {
-          dark: '#0a0f1a',
-          surface: '#111827',
-          border: '#1f2937',
-          muted: '#6b7280',
+          dark: '#0d0f0d',
+          surface: '#111411',
+          border: '#2b3028',
+          muted: '#858c7d',
         },
         // CSS variable-based colors for shadcn/ui compatibility
         background: 'hsl(var(--background))',

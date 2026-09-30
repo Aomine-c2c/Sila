@@ -1,8 +1,8 @@
-"""Database repository for NEXORA Organizational Governance Layer."""
-
 import uuid
+from datetime import UTC, datetime
 
 from sqlalchemy import or_, select
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.core.enums import ApprovalStatus, EscalationStatus
@@ -239,7 +239,34 @@ class GovernanceRepository:
         actor_type: str = "AGENT",
         execution_id: uuid.UUID | None = None,
     ) -> GovernanceAuditLog:
+        from nexora.core.security import AuditIntegrityChamber
+
+        # Fetch latest audit log signature for this company to chain
+        prev_stmt = (
+            select(GovernanceAuditLog.integrity_signature)
+            .where(GovernanceAuditLog.company_id == company_id)
+            .order_by(GovernanceAuditLog.created_at.desc())
+            .limit(1)
+        )
+        prev_sig_res = await self.db.execute(prev_stmt)
+        prev_sig = prev_sig_res.scalar_one_or_none() or "GENESIS"
+
+        log_id = uuid.uuid4()
+        now_dt = datetime.now(UTC)
+        timestamp_str = now_dt.isoformat()
+        sig = AuditIntegrityChamber.compute_record_signature(
+            audit_id=str(log_id),
+            company_id=str(company_id),
+            actor_id=str(actor_id or "NONE"),
+            action=action,
+            target=target,
+            result=result,
+            timestamp=timestamp_str,
+            previous_signature=prev_sig,
+        )
+
         log = GovernanceAuditLog(
+            id=log_id,
             company_id=company_id,
             actor_name=actor_name,
             actor_id=actor_id,
@@ -253,11 +280,16 @@ class GovernanceRepository:
             risk_level=risk_level,
             details=details,
             execution_id=execution_id,
+            created_at=now_dt,
+            integrity_signature=sig,
+            previous_signature=prev_sig,
         )
         self.db.add(log)
         await self.db.flush()
         await self.db.refresh(log)
         return log
+
+
 
     async def query_audit_logs(
         self,

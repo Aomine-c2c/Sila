@@ -239,8 +239,12 @@ class IntelligenceService:
                 "model": l.selected_model_identifier,
                 "cost_usd": l.estimated_cost_usd,
                 "latency_ms": l.latency_ms,
+                "routed_tier": getattr(l, "routed_tier", "PRIMARY"),
                 "fallback": l.routed_via_fallback,
                 "fallback_reason": l.fallback_reason,
+                "attempts_count": getattr(l, "attempts_count", 1),
+                "routing_trace": getattr(l, "routing_trace", []),
+                "circuit_breaker_status": getattr(l, "circuit_breaker_status", "CLOSED"),
                 "success": l.success,
                 "created_at": l.created_at.isoformat(),
             }

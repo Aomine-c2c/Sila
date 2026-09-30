@@ -249,3 +249,43 @@ async def record_audit(
     """Explicitly record a consequential action in the governance audit trail."""
     service = GovernanceService(db)
     return await service.record_consequential_audit(company_id, data)
+
+
+@router.get("/audits/{audit_id}/verify")
+async def verify_audit_integrity(
+    company_id: uuid.UUID,
+    audit_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_viewer()),
+):
+    """Verify cryptographic HMAC-SHA256 signature and tamper-evident integrity for an audit record."""
+    from nexora.core.security import AuditIntegrityChamber
+    from nexora.domains.governance.models import GovernanceAuditLog
+    from nexora.exceptions import NotFoundError
+
+    log = await db.get(GovernanceAuditLog, audit_id)
+    if not log or log.company_id != company_id:
+        raise NotFoundError("Audit record not found.")
+
+    if not log.integrity_signature:
+        return {"audit_id": str(audit_id), "verified": False, "reason": "No signature recorded."}
+
+    is_valid = AuditIntegrityChamber.verify_record_signature(
+        audit_id=str(log.id),
+        company_id=str(log.company_id),
+        actor_id=str(log.actor_id or "NONE"),
+        action=log.action,
+        target=log.target,
+        result=log.result,
+        timestamp=log.created_at.isoformat() if log.created_at else "",
+        signature=log.integrity_signature,
+        previous_signature=log.previous_signature or "GENESIS",
+    )
+    return {
+        "audit_id": str(audit_id),
+        "verified": is_valid,
+        "signature": log.integrity_signature,
+        "previous_signature": log.previous_signature,
+    }
+

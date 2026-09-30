@@ -11,6 +11,8 @@ help:
 	@echo "  make dev          Start full stack (docker-compose)"
 	@echo "  make dev-api      Start API only (local, hot-reload)"
 	@echo "  make dev-web      Start Web only (local, hot-reload)"
+	@echo "  make dev-desktop  Start Desktop app in Tauri with hot-reload"
+	@echo "  make tauri-build  Build production native desktop binary"
 	@echo "  make test         Run all tests (API + Web)"
 	@echo "  make test-api     Run API tests only"
 	@echo "  make test-web     Run Web tests only"
@@ -32,6 +34,12 @@ dev-api:
 
 dev-web:
 	cd $(WEB_DIR) && npm run dev
+
+dev-desktop:
+	./scripts/run-desktop.sh
+
+tauri-build:
+	cd $(WEB_DIR) && npx @tauri-apps/cli build
 
 test: test-api test-web
 

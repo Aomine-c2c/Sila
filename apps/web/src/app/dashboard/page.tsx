@@ -131,7 +131,7 @@ export default function ControlRoomPage() {
           <p className="mt-1 text-sm text-muted-foreground flex items-center gap-2">
             <span>{activeCompany.industry || 'AI Enterprise'}</span>
             <span>•</span>
-            <span className="text-primary font-medium">NEXORA Mission Control</span>
+              <span className="text-primary font-medium">ORGANIZATION / OPERATING PICTURE</span>
           </p>
         </div>
 
@@ -148,7 +148,7 @@ export default function ControlRoomPage() {
               }`}
             >
               <LayoutDashboard className="h-3.5 w-3.5" />
-              Mission Control
+              Operating picture
             </button>
             <button
               type="button"
@@ -229,6 +229,7 @@ export default function ControlRoomPage() {
                 </h2>
                 <OperationalGrid
                   companyId={companyId}
+                  departments={state.departments}
                   agents={state.agents}
                   projects={state.projects}
                   tasks={state.tasks}

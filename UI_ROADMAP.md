@@ -1,8 +1,10 @@
 # NEXORA Frontend UI Roadmap
 
-> **Status:** Planning Phase
+> **Status:** Implementation in progress
 > **Goal:** Build a production-grade Next.js frontend for NEXORA that replaces all 6 static HTML prototypes
 > **Approach:** Phase-based delivery — core functionality first, then enhancements, then platform extensions
+
+> **Implementation update (2026-09-30):** `apps/web` is now an operational Next.js dashboard with auth, organization management, agents, workflows, councils, memory, governance, resources, blueprints, intelligence, evolution, and decision routes. This plan is a backlog, not a statement that these planned tasks are all still untouched. The latest implemented items are documented in `FRONTEND_TECHNICAL_DEBT.md`; project/task management, comprehensive accessibility review, preferences, and broader end-to-end coverage remain open.
 
 ---
 

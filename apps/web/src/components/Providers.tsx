@@ -6,9 +6,10 @@
  */
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/auth';
 import { configureApiClient } from '@/lib/api/client';
+
+configureApiClient(() => useAuthStore.getState().token);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,16 +28,6 @@ const queryClient = new QueryClient({
 });
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const initialized = useRef(false);
-
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
-    // Wire the auth store token into the API client
-    configureApiClient(() => useAuthStore.getState().token);
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       {children}

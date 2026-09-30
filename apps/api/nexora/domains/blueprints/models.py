@@ -158,12 +158,29 @@ class BlueprintGenerationProposal(NexoraBase):
     risks_identified: Mapped[list] = mapped_column(
         JSON, default=list, nullable=False, comment="[{risk, severity, mitigation}]"
     )
-    missing_capabilities: Mapped[list] = mapped_column(
+    # 12-Step Synthesis Pipeline Artifacts
+    generation_stages: Mapped[dict] = mapped_column(
+        JSON,
+        default=dict,
+        nullable=False,
+        comment="Tracks stages: user_description, requirement_analysis, industry_identification, organizational_design, department_generation, role_generation, agent_generation, workflow_generation, policy_generation, resource_model, intelligence_requirements, risk_analysis",
+    )
+    simulation_results: Mapped[dict] = mapped_column(
+        JSON,
+        default=dict,
+        nullable=False,
+        comment="Dry-run simulation benchmark metrics (cost, latency, throughput, quality) before review/approval",
+    )
+    human_approval_requirements: Mapped[list] = mapped_column(
         JSON,
         default=list,
         nullable=False,
-        comment="[{capability, reason, suggested_tools_or_integrations}]",
+        comment="Mandatory governance sign-off criteria before real organization instantiation",
+    )
+    estimated_operational_complexity: Mapped[str] = mapped_column(
+        String(50), default="MODERATE", nullable=False
     )
     instantiated_company_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("companies.id", ondelete="SET NULL"), nullable=True
     )
+

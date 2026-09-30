@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Brain, 
   Zap, 
@@ -27,10 +27,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { createApiClient, createIntelligenceApi, type IntelligenceDashboard, type ModelProvider, type Model } from '@/lib/api';
-
-const COMPANY_ID = '00000000-0000-0000-0000-000000000001'; // Demo company
+import { useAuthStore } from '@/store/auth';
 
 export default function IntelligencePage() {
+  const companyId = useAuthStore((state) => state.activeCompany?.id);
   const [dashboard, setDashboard] = useState<IntelligenceDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,20 +39,16 @@ export default function IntelligencePage() {
   const [generateResult, setGenerateResult] = useState<string | null>(null);
   const [generateLoading, setGenerateLoading] = useState(false);
 
-  const client = createApiClient({
+  const api = useMemo(() => createIntelligenceApi(createApiClient({
     baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
     getToken: () => localStorage.getItem('access_token'),
-  });
-  const api = createIntelligenceApi(client);
+  })), []);
 
-  useEffect(() => {
-    fetchDashboard();
-  }, []);
-
-  const fetchDashboard = async () => {
+  const fetchDashboard = useCallback(async () => {
+    if (!companyId) return;
     try {
       setLoading(true);
-      const data = await api.getDashboard(COMPANY_ID);
+      const data = await api.getDashboard(companyId);
       setDashboard(data);
       setError(null);
     } catch (err: any) {
@@ -60,13 +56,17 @@ export default function IntelligencePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api, companyId]);
+
+  useEffect(() => {
+    if (companyId) void fetchDashboard();
+  }, [companyId, fetchDashboard]);
 
   const handleGenerate = async () => {
-    if (!generatePrompt.trim()) return;
+    if (!generatePrompt.trim() || !companyId) return;
     try {
       setGenerateLoading(true);
-      const result = await api.generate(COMPANY_ID, {
+      const result = await api.generate(companyId, {
         prompt: generatePrompt,
         required_capabilities: ['reasoning'],
         allow_fallback: true,

@@ -179,10 +179,15 @@ class ContextAssemblyEngine:
             )
 
         prompt_parts.append("---")
-        assembled_prompt = "\n".join(prompt_parts)
+        raw_assembled_prompt = "\n".join(prompt_parts)
+
+        # Apply least-privilege context transmission: scrub all embedded secrets and PII
+        from nexora.core.security import PromptSanitizer
+        assembled_prompt = PromptSanitizer.sanitize_for_external_llm(raw_assembled_prompt)
 
         return ContextAssemblyResponse(
             task_objective=request.task_objective,
+
             total_memories_evaluated=len(candidate_memories),
             authorized_memories_selected=len(snippets),
             estimated_context_tokens=total_estimated_tokens,

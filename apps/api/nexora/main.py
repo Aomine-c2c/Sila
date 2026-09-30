@@ -18,6 +18,7 @@ import nexora.domains.blueprints.models  # noqa: F401
 import nexora.domains.councils.models  # noqa: F401
 import nexora.domains.decisions.models  # noqa: F401
 import nexora.domains.governance.models  # noqa: F401
+import nexora.domains.intelligence.evolution_models  # noqa: F401
 import nexora.domains.intelligence.models  # noqa: F401
 import nexora.domains.memory.models  # noqa: F401
 import nexora.domains.organizations.models  # noqa: F401
@@ -34,6 +35,7 @@ from nexora.domains.blueprints.router import router as blueprint_router
 from nexora.domains.councils.router import router as council_router
 from nexora.domains.decisions.router import router as decision_router
 from nexora.domains.governance.router import router as governance_router
+from nexora.domains.intelligence.evolution_router import router as evolution_router
 from nexora.domains.intelligence.router import router as intelligence_router
 from nexora.domains.memory.router import router as memory_router
 from nexora.domains.organizations.router import router as org_router
@@ -99,6 +101,7 @@ def create_app() -> FastAPI:
     app.include_router(governance_router, prefix=API_PREFIX)
     app.include_router(blueprint_router, prefix=API_PREFIX)
     app.include_router(council_router, prefix=API_PREFIX)
+    app.include_router(evolution_router, prefix=API_PREFIX)
 
     # ── UI Route ───────────────────────────────────────────────────────────
     from pathlib import Path

@@ -258,6 +258,9 @@ class GovernanceAuditLogResponse(BaseModel):
     autonomy_level: int
     risk_level: GovernanceRiskLevel
     details: dict[str, Any]
+    integrity_signature: str | None = None
+    previous_signature: str | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+

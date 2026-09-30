@@ -69,8 +69,20 @@ export interface RoutingDecisionLog {
   model: string;
   cost_usd: number;
   latency_ms: number;
+  routed_tier?: string;
   fallback: boolean;
   fallback_reason?: string | null;
+  attempts_count?: number;
+  routing_trace?: Array<{
+    tier: string;
+    provider: string;
+    model: string;
+    action: string;
+    attempt?: number;
+    error?: string;
+    reason?: string;
+  }>;
+  circuit_breaker_status?: string;
   success: boolean;
   created_at: string;
 }
@@ -98,9 +110,13 @@ export interface GenerateRequest {
   preferred_model?: string;
   allow_fallback?: boolean;
   max_acceptable_cost_usd?: number;
+  token_ceiling?: number;
+  timeout_seconds?: number;
   required_privacy?: string;
   temperature?: number;
   max_tokens?: number;
+  structured_output_schema?: Record<string, unknown>;
+  simulation_flags?: Record<string, string>;
 }
 
 export interface GenerateResponse {
@@ -112,8 +128,21 @@ export interface GenerateResponse {
   total_tokens: number;
   estimated_cost_usd: number;
   latency_ms: number;
+  routed_tier: string;
   routed_via_fallback: boolean;
   fallback_reason?: string | null;
+  attempts_count: number;
+  routing_trace: Array<{
+    tier: string;
+    provider: string;
+    model: string;
+    action: string;
+    attempt?: number;
+    error?: string;
+    reason?: string;
+  }>;
+  structured_output_validated: boolean;
+  circuit_breaker_status: string;
 }
 
 export const intelligenceApi = {
@@ -134,4 +163,8 @@ export const intelligenceApi = {
 
   generate: (companyId: string, body: GenerateRequest): Promise<GenerateResponse> =>
     api.post<GenerateResponse>(`/api/v1/companies/${companyId}/intelligence/generate`, body),
+
+  resetCircuitBreakers: (companyId: string): Promise<{ status: string; message: string }> =>
+    api.post<{ status: string; message: string }>(`/api/v1/companies/${companyId}/intelligence/circuit-breakers/reset`, {}),
 };
+

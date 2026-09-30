@@ -1,5 +1,5 @@
 """
-Preconfigured catalog of 10 industry organizational blueprints for NEXORA.
+Preconfigured catalog of industry organizational blueprints for NEXORA.
 
 Blueprints included:
 1. Software Development Company
@@ -12,6 +12,7 @@ Blueprints included:
 8. Game Studio
 9. IT Services Company
 10. Education Organization
+11. Mining Technology Company
 """
 
 SYSTEM_BLUEPRINTS = [
@@ -2405,6 +2406,300 @@ SYSTEM_BLUEPRINTS = [
                 "severity": "MEDIUM",
                 "sla_minutes": 120,
             }
+        ],
+    },
+    # -------------------------------------------------------------
+    # 11. MINING TECHNOLOGY COMPANY
+    # -------------------------------------------------------------
+    {
+        "key": "mining_technology_company",
+        "name": "Mining Technology Company",
+        "tagline": "Autonomous Geological Exploration, Fleet Telemetry & Extraction Safety",
+        "description": "Industrial intelligence organization specializing in real-time geospatial ore body modeling, autonomous heavy haulage telemetry, predictive maintenance, and environmental compliance.",
+        "category": "Heavy Industry & Mining",
+        "icon": "pickaxe",
+        "is_system_template": True,
+        "default_autonomy": 2,
+        "estimated_monthly_cost_usd": 680.0,
+        "metadata_tags": ["mining", "geospatial", "iot", "fleet-telemetry", "predictive-maintenance", "safety"],
+        "company_definition": {
+            "name": "OreDynamics Autonomous Tech",
+            "mission": "Pioneer zero-harm autonomous mining operations through real-time geological sensors, predictive fleet management, and continuous environmental stewardship.",
+            "vision": "Fully autonomous, carbon-neutral subsurface and open-pit resource extraction.",
+            "industry": "Mining & Natural Resources",
+            "dna": {
+                "operating_philosophy": "Zero-compromise occupational safety, continuous telemetry streaming, and predictive asset protection",
+                "innovation_level": "PROGRESSIVE",
+                "autonomy_level": "RESTRICTED",
+                "risk_tolerance": "LOW",
+                "quality_threshold": "EXCEPTIONAL",
+                "decision_style": "DIRECTIVE",
+                "communication_style": "FORMAL",
+                "resource_strategy": "DEFENSIVE",
+            },
+        },
+        "departments": [
+            {
+                "name": "Geological Exploration & Geospatial",
+                "purpose": "Seismic data processing, 3D ore deposit block modeling, and grade control estimation",
+            },
+            {
+                "name": "Fleet Telemetry & Autonomous Operations",
+                "purpose": "Heavy equipment IoT telemetry, haul road dispatch optimization, and haul truck diagnostics",
+            },
+            {
+                "name": "Safety, Environmental & Regulatory Compliance",
+                "purpose": "Ground stability radar monitoring, emissions tracking, MSHA/OSHA compliance, and blast clearing protocols",
+            },
+        ],
+        "roles": [
+            {
+                "department_name": "Geological Exploration & Geospatial",
+                "title": "Principal Geostatistician",
+                "responsibilities": [
+                    "Kriging deposit grade estimation",
+                    "Geotechnical core scan interpretation",
+                    "Coordinate borehole drilling campaigns",
+                ],
+                "capabilities": ["geostatistical_modeling", "seismic_inversion", "resource_classification"],
+                "authority": "MANAGE",
+                "autonomy_level": 3,
+            },
+            {
+                "department_name": "Fleet Telemetry & Autonomous Operations",
+                "title": "Fleet Dispatch & Systems Engineer",
+                "responsibilities": [
+                    "Route optimization for haulage trucks",
+                    "Predictive vibration and thermal anomaly detection",
+                    "Autonomous drill rig scheduling",
+                ],
+                "capabilities": ["scada_integration", "iot_telemetry_analysis", "predictive_maintenance"],
+                "authority": "EXECUTE",
+                "autonomy_level": 3,
+            },
+            {
+                "department_name": "Safety, Environmental & Regulatory Compliance",
+                "title": "Mine Safety & Environmental Controller",
+                "responsibilities": [
+                    "Radar geotechnical slope stability monitoring",
+                    "Autonomous blast zone exclusion perimeter verification",
+                    "Environmental runoff and water table chemical monitoring",
+                ],
+                "capabilities": ["slope_stability_analysis", "hazard_triangulation", "regulatory_audit"],
+                "authority": "GOVERN",
+                "autonomy_level": 2,
+            },
+        ],
+        "agents": [
+            {
+                "name": "Geological Modeler Agent",
+                "role_title": "Principal Geostatistician",
+                "department_name": "Geological Exploration & Geospatial",
+                "system_instructions": "You are the OreDynamics Chief Geological AI. Ingest assay drillhole tables, construct 3D block models, calculate cut-off grades, and identify structural faults with strict confidence intervals.",
+                "responsibilities": [
+                    "Process hyperspectral core imagery",
+                    "Run 3D geostatistical kriging estimations",
+                    "Generate mine development block models",
+                ],
+                "capabilities": ["geostatistical_modeling", "seismic_inversion"],
+                "tools": [
+                    {"name": "geospatial_gis_bridge", "description": "GIS shapefile & voxel block grid reader", "risk_level": "LOW"},
+                    {"name": "assay_csv_parser", "description": "Chemical composition assay lab parser", "risk_level": "LOW"},
+                ],
+                "autonomy_level": 3,
+                "intelligence_config": {"model": "claude-3-5-sonnet", "temperature": 0.1},
+                "resource_limits": {"max_tokens_per_call": 16384, "max_daily_budget_usd": 25.0},
+            },
+            {
+                "name": "Fleet Telemetry Diagnostics Agent",
+                "role_title": "Fleet Dispatch & Systems Engineer",
+                "department_name": "Fleet Telemetry & Autonomous Operations",
+                "system_instructions": "Continuously analyze CAN-bus telemetry, tire pressure/temperature sensors, and hydraulic fluid vibration metrics across autonomous haulage fleets to prevent catastrophic machine downtime.",
+                "responsibilities": [
+                    "Monitor engine telemetry streams",
+                    "Trigger preventative maintenance work orders",
+                    "Optimize shovel-to-crusher cycle times",
+                ],
+                "capabilities": ["scada_integration", "iot_telemetry_analysis"],
+                "tools": [
+                    {"name": "canbus_telemetry_stream", "description": "Real-time heavy machinery CAN-bus reader", "risk_level": "LOW"},
+                    {"name": "sap_work_order_connector", "description": "Enterprise maintenance ERP connector", "risk_level": "MEDIUM"},
+                ],
+                "autonomy_level": 3,
+                "intelligence_config": {"model": "gemini-1.5-pro", "temperature": 0.2},
+                "resource_limits": {"max_tokens_per_call": 8192, "max_daily_budget_usd": 20.0},
+            },
+            {
+                "name": "Mine Safety & Environmental Guardian",
+                "role_title": "Mine Safety & Environmental Controller",
+                "department_name": "Safety, Environmental & Regulatory Compliance",
+                "system_instructions": "Maintain absolute vigilance over highwall slope stability, blast exclusion perimeters, and toxic gas sensor clusters (CO, NO2, CH4). Halt operations immediately if human safety or environmental thresholds are breached.",
+                "responsibilities": [
+                    "Inspect geotechnical displacement radar data",
+                    "Verify zero-personnel confirmation in active blast zones",
+                    "Track particulate and groundwater acidity metrics",
+                ],
+                "capabilities": ["slope_stability_analysis", "hazard_triangulation"],
+                "tools": [
+                    {"name": "slope_radar_telemetry", "description": "Sub-millimeter slope displacement radar API", "risk_level": "LOW"},
+                    {"name": "emergency_beacon_broadcaster", "description": "Emergency mine evacuation sirens and radios", "risk_level": "CRITICAL"},
+                ],
+                "autonomy_level": 2,
+                "intelligence_config": {"model": "gpt-4o", "temperature": 0.0},
+                "resource_limits": {"max_tokens_per_call": 8192, "max_daily_budget_usd": 30.0},
+            },
+        ],
+        "workflows": [
+            {
+                "name": "Autonomous Blast Clearing & Verification",
+                "description": "Multi-tier perimeter sweep verifying all personnel and equipment are evac'd before detonation",
+                "trigger_type": "SCHEDULED",
+                "steps": [
+                    {"step": 1, "action": "Query GPS wearable tags in blast radius", "responsible_role": "Mine Safety & Environmental Controller"},
+                    {"step": 2, "action": "Lock autonomous haul truck paths outside containment", "responsible_role": "Fleet Dispatch & Systems Engineer"},
+                    {"step": 3, "action": "Verify atmospheric gas dispersion simulations", "responsible_role": "Mine Safety & Environmental Controller"},
+                    {"step": 4, "action": "Require human General Mine Manager sign-off", "responsible_role": "Mine Safety & Environmental Controller"},
+                ],
+            },
+            {
+                "name": "Predictive Hauler Overhaul Scheduling",
+                "description": "Detects bearing degradation and schedules depot turnaround without impacting production targets",
+                "trigger_type": "EVENT_DRIVEN",
+                "steps": [
+                    {"step": 1, "action": "Ingest anomalous vibration spectrum on rear axle", "responsible_role": "Fleet Dispatch & Systems Engineer"},
+                    {"step": 2, "action": "Re-route redundant CAT 797 hauler into cycle", "responsible_role": "Fleet Dispatch & Systems Engineer"},
+                    {"step": 3, "action": "Dispatch maintenance work order and reserve parts", "responsible_role": "Fleet Dispatch & Systems Engineer"},
+                ],
+            },
+        ],
+        "policies": [
+            {
+                "name": "Zero-Harm Pit Safety Directive",
+                "description": "Any geotechnical ground movement above 5mm/hr triggers mandatory automated evacuation",
+                "scope": "COMPANY",
+                "enforcement_level": "HARD",
+                "rules": [
+                    {"metric": "slope_displacement_rate_mm_hr", "max_allowed": 5.0, "violation": "TRIGGER_EMERGENCY_ALARM"},
+                    {"metric": "toxic_gas_ppm_ch4", "max_allowed": 1.0, "violation": "VENTILATE_AND_HALT"},
+                ],
+            }
+        ],
+        "constitution": {
+            "mission": "Safely and efficiently extract essential mineral resources through autonomous technology without endangering human lives.",
+            "values": [
+                "Zero Harm to Workers",
+                "Environmental Responsibility",
+                "Predictive Over Reactive Operations",
+                "Data Integrity and Sensor Rigor",
+            ],
+            "operating_principles": [
+                "Never bypass geotechnical safety radars for production speed",
+                "Blast authorization requires affirmative human double-verification",
+                "Strict auditability of all hazardous materials and emissions",
+            ],
+            "prohibited_actions": [
+                "Disabling safety interlocks or exclusion zone warnings",
+                "Automating live blast ignition without human safety officer approval",
+                "Suppressing environmental exceedance records",
+            ],
+            "approval_requirements": [
+                "Pit boundary modifications and blast execution require General Manager approval",
+                "Autonomous fleet speed cap adjustments above 45km/h require Safety Director review",
+            ],
+            "security_rules": [
+                "SCADA network isolation with read-only diode bridging",
+                "Air-gapped safety instrumented systems (SIS)",
+            ],
+            "financial_rules": [
+                "Expenditures over $25,000 for heavy component replacements require executive signoff"
+            ],
+            "data_rules": [
+                "Sensor telemetry retained for 10 years for statutory compliance",
+                "Geological core sample logs protected as proprietary IP",
+            ],
+            "autonomy_boundaries": {
+                "blast_operations": "LEVEL_2",
+                "fleet_diagnostics": "LEVEL_3",
+                "environmental_alarms": "LEVEL_4",
+            },
+            "escalation_rules": [
+                "Immediately alert pit superintendent and trigger siren on slope displacement warning"
+            ],
+        },
+        "recommended_tools": [
+            {
+                "name": "scada_opcua_collector",
+                "description": "Industrial IoT OPC-UA collector",
+                "risk_level": "LOW",
+            },
+            {
+                "name": "geotech_radar_api",
+                "description": "Slope stability interferometric radar connector",
+                "risk_level": "LOW",
+            },
+            {
+                "name": "gis_3d_engine",
+                "description": "3D geological voxel voxelization service",
+                "risk_level": "LOW",
+            },
+        ],
+        "intelligence_requirements": {
+            "capabilities_required": [
+                "geostatistical_modeling",
+                "iot_telemetry_analysis",
+                "predictive_maintenance",
+                "hazard_triangulation",
+            ],
+            "recommended_models": ["claude-3-5-sonnet", "gemini-1.5-pro", "gpt-4o"],
+        },
+        "resource_policies": {"financial_budget_usd": 680.0, "execution_slots": 8},
+        "kpis": [
+            {
+                "name": "Total Recordable Incident Rate (TRIR)",
+                "metric": "trir_value",
+                "target": "0.00",
+                "review_frequency": "DAILY",
+            },
+            {
+                "name": "Haulage Fleet Availability",
+                "metric": "fleet_uptime_pct",
+                "target": ">= 94.5%",
+                "review_frequency": "WEEKLY",
+            },
+            {
+                "name": "Ore Grade Compliance",
+                "metric": "cut_off_variance_pct",
+                "target": "< 2.0%",
+                "review_frequency": "WEEKLY",
+            },
+        ],
+        "approval_rules": [
+            {
+                "action": "EXECUTE_BLAST_SEQUENCE",
+                "condition": "all",
+                "approver_role": "ADMIN",
+                "risk_level": "CRITICAL",
+            },
+            {
+                "action": "EXCEED_HEAVY_COMPONENT_BUDGET",
+                "condition": "cost > 25000",
+                "approver_role": "MANAGER",
+                "risk_level": "HIGH",
+            },
+        ],
+        "escalation_rules": [
+            {
+                "trigger": "Slope radar detects displacement >= 4mm/hr",
+                "route_to": "Mine Safety & Environmental Controller",
+                "severity": "CRITICAL",
+                "sla_minutes": 5,
+            },
+            {
+                "trigger": "Autonomous hauler telemetry timeout >= 30 seconds",
+                "route_to": "Fleet Dispatch & Systems Engineer",
+                "severity": "HIGH",
+                "sla_minutes": 10,
+            },
         ],
     },
 ]

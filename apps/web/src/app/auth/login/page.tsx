@@ -55,7 +55,11 @@ export default function LoginPage() {
         // No companies yet — will be prompted on dashboard
       }
 
-      router.replace('/dashboard');
+      const requestedPath = new URLSearchParams(window.location.search).get('next');
+      const destination = requestedPath?.startsWith('/') && !requestedPath.startsWith('//')
+        ? requestedPath
+        : '/dashboard';
+      router.replace(destination);
     } catch (err) {
       if (err instanceof ApiError) {
         setApiError(err.message);
@@ -68,7 +72,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-nexora-dark flex items-center justify-center overflow-hidden">
+    <div className="auth-stage relative min-h-screen bg-nexora-dark flex items-center justify-center overflow-hidden px-4 py-10">
       {/* Background grid */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.03]"
@@ -100,7 +104,23 @@ export default function LoginPage() {
         aria-hidden="true"
       />
 
-      <div className="relative w-full max-w-md px-4">
+      <div className="relative z-10 grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[1fr_440px]">
+        <section className="hidden max-w-2xl py-10 lg:block" aria-label="NEXORA organization operating system">
+          <div className="mb-10 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary font-mono text-lg font-black text-primary-foreground">N</div>
+            <div><p className="text-sm font-bold tracking-[0.2em] text-foreground">NEXORA</p><p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Organization OS</p></div>
+          </div>
+          <p className="mb-5 font-mono text-[10px] uppercase tracking-[0.24em] text-primary">A new kind of organization</p>
+          <h2 className="max-w-xl text-5xl font-semibold leading-[1.07] tracking-[-0.045em] text-foreground xl:text-6xl">Give intelligence<br />a <span className="text-primary">place to work.</span></h2>
+          <p className="mt-6 max-w-lg text-base leading-7 text-muted-foreground">A living operating system for people and AI employees. Shared memory, clear authority, and work that stays accountable.</p>
+          <div className="org-constellation mt-12 max-w-xl" aria-hidden="true">
+            <div className="constellation-orbit orbit-one" /><div className="constellation-orbit orbit-two" />
+            <span className="constellation-node node-core">N</span><span className="constellation-node node-a">OPS</span><span className="constellation-node node-b">MEMORY</span><span className="constellation-node node-c">POLICY</span><span className="constellation-node node-d">AGENTS</span>
+            <span className="constellation-caption">PEOPLE · AGENTS · SHARED PURPOSE</span>
+          </div>
+          <div className="mt-10 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px w-8 bg-primary/70" />Humans retain the final say.</div>
+        </section>
+        <div className="relative mx-auto w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-3">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/30">
@@ -228,6 +248,7 @@ export default function LoginPage() {
               Create one
             </Link>
           </p>
+        </div>
         </div>
       </div>
     </div>

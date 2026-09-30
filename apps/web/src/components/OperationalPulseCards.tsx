@@ -56,7 +56,7 @@ export function OperationalPulseCards({
         {/* Q1: What is the company doing? */}
         <div className="rounded-xl border border-border/70 bg-card/60 p-4 relative overflow-hidden group hover:border-primary/40 transition-all">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-            <span className="font-semibold uppercase tracking-wider text-[10px]">What is Company Doing?</span>
+            <span className="font-semibold uppercase tracking-wider text-[10px]">Execution</span>
             <FolderGit2 className="h-4 w-4 text-emerald-400" />
           </div>
           <div className="text-xl font-bold text-foreground">
@@ -65,9 +65,9 @@ export function OperationalPulseCards({
           <p className="text-xs text-muted-foreground mt-1">
             {runningTasks} tasks currently in automated execution
           </p>
-          <div className="mt-3 flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Execution Pace: Optimal
+          <div className={`mt-3 flex items-center gap-1.5 text-[11px] font-medium ${blockedTasks ? 'text-amber-400' : 'text-muted-foreground'}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${blockedTasks ? 'bg-amber-400' : 'bg-primary'}`} />
+            {blockedTasks ? `${blockedTasks} need attention` : `${runningTasks} running · ${tasks.length} tracked`}
           </div>
         </div>
 
@@ -88,7 +88,7 @@ export function OperationalPulseCards({
             <span className="text-red-400">{blockedAgents} Blocked</span>
           </div>
           <div className="mt-3 text-[11px] text-muted-foreground font-mono">
-            Provider: Multi-Model Mesh
+            {agents.length ? `${activeAgents + availableAgents + blockedAgents} employees reporting` : 'No employees configured'}
           </div>
         </div>
 
@@ -108,7 +108,7 @@ export function OperationalPulseCards({
             {blockedTasks} tasks awaiting supervisory signoff
           </p>
           <div className="mt-3 flex items-center gap-1.5 text-[11px] text-amber-400 font-medium">
-            Constitutional Governance Active
+            {pendingApprovals ? 'Human review required' : 'No approvals awaiting review'}
           </div>
         </div>
 
@@ -151,7 +151,7 @@ export function OperationalPulseCards({
             {decisions.length} Immutable decision records
           </p>
           <div className="mt-3 text-[11px] text-purple-400 font-medium">
-            Council Synthesis Ready
+            {pendingDecisions ? 'Awaiting a decision' : 'No open deliberations'}
           </div>
         </div>
       </div>
