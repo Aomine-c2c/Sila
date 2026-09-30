@@ -4,10 +4,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Building2, LogOut, ShieldCheck, UserRound } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
+import { useAccountContext, useOrganizationContext } from '@/lib/organizationContext';
+import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, activeCompany, logout } = useAuthStore();
+  const logout = useAuthStore((state) => state.logout);
+  const { user } = useAccountContext();
+  const activeCompany = useOrganizationContext();
+  const previewMode = isDevelopmentAuthBypassEnabled();
 
   function signOut() {
     logout();
@@ -58,7 +63,7 @@ export default function SettingsPage() {
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-300"><ShieldCheck className="h-5 w-5" aria-hidden="true" /></span>
           <div><h2 id="session-heading" className="font-semibold text-foreground">Session</h2><p className="text-xs text-muted-foreground">This signs you out of NEXORA in this browser.</p></div>
         </div>
-        <button type="button" className="btn btn-outline gap-2" onClick={signOut}><LogOut className="h-4 w-4" aria-hidden="true" />Sign out</button>
+        <button type="button" className="btn btn-outline gap-2" onClick={signOut} disabled={previewMode} title={previewMode ? 'Sign-out is unavailable in synthetic preview mode' : undefined}><LogOut className="h-4 w-4" aria-hidden="true" />{previewMode ? 'Sign out unavailable in preview' : 'Sign out'}</button>
       </section>
     </div>
   );

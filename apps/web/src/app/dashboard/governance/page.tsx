@@ -35,7 +35,7 @@ import {
   AutonomyConfigCreate,
   GovernanceRiskLevel,
 } from '@/lib/api/governance';
-import { useAuthStore } from '@/store/auth';
+import { useOrganizationContext } from '@/lib/organizationContext';
 
 const AUTONOMY_LEVELS = [
   { level: 0, label: 'LEVEL 0 — OBSERVE', desc: 'Read-only, telemetry gathering, zero action capacity' },
@@ -54,7 +54,7 @@ const RISK_BADGES: Record<string, { bg: string; text: string; border: string }> 
 };
 
 export default function GovernancePage() {
-  const activeCompany = useAuthStore((s) => s.activeCompany);
+  const activeCompany = useOrganizationContext();
   const companyId = activeCompany?.id || '';
   const queryClient = useQueryClient();
 

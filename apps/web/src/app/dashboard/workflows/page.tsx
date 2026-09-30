@@ -22,7 +22,7 @@ import {
   FileCode,
   Zap,
 } from 'lucide-react';
-import { useAuthStore } from '@/store/auth';
+import { useOrganizationContext } from '@/lib/organizationContext';
 import {
   workflowsApi,
   type Workflow,
@@ -68,7 +68,7 @@ const CANONICAL_SOFTWARE_PIPELINE: WorkflowStep[] = [
 
 export default function WorkflowsDashboardPage() {
   const qc = useQueryClient();
-  const { activeCompany } = useAuthStore();
+  const activeCompany = useOrganizationContext();
   const companyId = activeCompany?.id;
 
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);

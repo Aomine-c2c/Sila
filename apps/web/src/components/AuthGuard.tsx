@@ -11,8 +11,10 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { authApi } from '@/lib/api/auth';
 import { ApiError } from '@/lib/api/client';
+import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const developmentBypass = isDevelopmentAuthBypassEnabled();
   const router = useRouter();
   const pathname = usePathname();
   const token = useAuthStore((state) => state.token);
@@ -24,14 +26,23 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
+    if (developmentBypass) {
+      setHydrated(true);
+      setAuthorized(true);
+      return;
+    }
     if (useAuthStore.persist.hasHydrated()) {
       setHydrated(true);
       return;
     }
     return useAuthStore.persist.onFinishHydration(() => setHydrated(true));
-  }, []);
+  }, [developmentBypass]);
 
   useEffect(() => {
+    if (developmentBypass) {
+      setAuthorized(true);
+      return;
+    }
     if (!hydrated) return;
 
     if (!token) {
@@ -61,7 +72,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return () => {
       active = false;
     };
-  }, [hydrated, token, pathname, router, setUser, logout, retry]);
+  }, [developmentBypass, hydrated, token, pathname, router, setUser, logout, retry]);
+
+  if (developmentBypass) return <>{children}</>;
 
   if (checkFailed) {
     return (

@@ -6,16 +6,19 @@
 import { api } from './client';
 import type { Agent } from './agents';
 import type { Department, OrgRole } from './organizations';
+import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
+import { getControlRoomPreviewState } from './controlRoomPreview';
 
 export interface Project {
   id: string;
   company_id: string;
   owner_id: string;
-  title: string;
-  description?: string;
-  status: 'PLANNING' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED';
+  name: string;
+  objective: string | null;
+  status: 'DRAFT' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED';
   priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  progress_pct: number;
+  milestones: Array<{ title: string; description?: string | null; due_date?: string | null; completed: boolean }>;
+  deadline: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,7 +29,7 @@ export interface Task {
   assigned_agent_id?: string;
   title: string;
   description?: string;
-  status: 'PENDING' | 'RUNNING' | 'WAITING_APPROVAL' | 'BLOCKED' | 'COMPLETED' | 'FAILED';
+  status: 'PENDING' | 'IN_PROGRESS' | 'BLOCKED' | 'COMPLETED' | 'CANCELLED';
   priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
   created_at: string;
   updated_at: string;
@@ -61,13 +64,13 @@ export interface AuditLog {
 }
 
 export interface ResourceSummary {
-  compute_used_pct: number;
-  memory_used_gb: number;
-  memory_limit_gb: number;
-  token_usage_total: number;
-  intelligence_cost_usd: number;
-  budget_allocated_usd: number;
-  budget_spent_usd: number;
+  compute_used_pct: number | null;
+  memory_used_gb: number | null;
+  memory_limit_gb: number | null;
+  token_usage_total: number | null;
+  intelligence_cost_usd: number | null;
+  budget_allocated_usd: number | null;
+  budget_spent_usd: number | null;
 }
 
 export interface DecisionRecord {
@@ -103,12 +106,12 @@ export interface MemoryItem {
 export interface ModelProviderInfo {
   id: string;
   name: string;
-  provider: 'gemini' | 'claude' | 'openai' | 'local';
+  provider: string;
   status: 'ONLINE' | 'DEGRADED' | 'OFFLINE';
-  active_requests: number;
-  avg_latency_ms: number;
-  total_tokens: number;
-  cost_usd: number;
+  active_requests: number | null;
+  avg_latency_ms: number | null;
+  total_tokens: number | null;
+  cost_usd: number | null;
 }
 
 export interface ControlRoomState {
@@ -125,12 +128,17 @@ export interface ControlRoomState {
   policies: Policy[];
   memories: MemoryItem[];
   providers: ModelProviderInfo[];
+  unavailableSections: string[];
 }
 
 export const controlRoomApi = {
   // Aggregate call to load full control room state
   getOperationalState: async (companyId: string): Promise<ControlRoomState> => {
-    // Graceful fetch across endpoints with fallbacks
+    // Fixtures are only available in the explicit local development preview. This path
+    // returns before any network request and cannot be enabled in production.
+    if (isDevelopmentAuthBypassEnabled()) return getControlRoomPreviewState();
+
+    // Fetch each domain independently so a partial API outage does not hide usable data.
     const [
       agentsRes,
       deptsRes,
@@ -142,6 +150,7 @@ export const controlRoomApi = {
       policiesRes,
       resourceRes,
       intelligenceRes,
+      memoryRes,
     ] = await Promise.allSettled([
       api.get<Agent[]>(`/api/v1/companies/${companyId}/agents`),
       api.get<Department[]>(`/api/v1/companies/${companyId}/departments`),
@@ -153,6 +162,7 @@ export const controlRoomApi = {
       api.get<Policy[]>(`/api/v1/companies/${companyId}/policies`),
       api.get<any>(`/api/v1/companies/${companyId}/resources/control-center`),
       api.get<any>(`/api/v1/companies/${companyId}/intelligence/dashboard`),
+      api.get<MemoryItem[]>(`/api/v1/companies/${companyId}/memory/items?limit=50`),
     ]);
 
     const agents = agentsRes.status === 'fulfilled' ? agentsRes.value : [];
@@ -164,69 +174,47 @@ export const controlRoomApi = {
     const decisions = decisionsRes.status === 'fulfilled' ? decisionsRes.value : [];
     const policies = policiesRes.status === 'fulfilled' ? policiesRes.value : [];
 
-    // Synthesize mock/live resource telemetry
     const resourceData = resourceRes.status === 'fulfilled' ? resourceRes.value : null;
+    const summary = resourceData?.summary;
     const resources: ResourceSummary = {
-      compute_used_pct: resourceData?.summary?.compute_utilization ?? 34,
-      memory_used_gb: resourceData?.summary?.memory_used_gb ?? 5.4,
-      memory_limit_gb: resourceData?.summary?.memory_limit_gb ?? 16.0,
-      token_usage_total: resourceData?.summary?.tokens_consumed ?? 184520,
-      intelligence_cost_usd: resourceData?.summary?.total_cost_usd ?? 3.84,
-      budget_allocated_usd: resourceData?.summary?.budget_allocated ?? 500,
-      budget_spent_usd: resourceData?.summary?.budget_spent ?? 48.72,
+      compute_used_pct: summary?.compute_utilization ?? null,
+      memory_used_gb: summary?.memory_used_gb ?? null,
+      memory_limit_gb: summary?.memory_limit_gb ?? null,
+      token_usage_total: summary?.tokens_consumed ?? (intelligenceRes.status === 'fulfilled' ? intelligenceRes.value.total_tokens_consumed ?? null : null),
+      intelligence_cost_usd: summary?.total_cost_usd ?? (intelligenceRes.status === 'fulfilled' ? intelligenceRes.value.total_spend_usd ?? null : null),
+      budget_allocated_usd: summary?.budget_allocated ?? null,
+      budget_spent_usd: summary?.budget_spent ?? null,
     };
 
-    // Providers status
     const intelData = intelligenceRes.status === 'fulfilled' ? intelligenceRes.value : null;
-    const providers: ModelProviderInfo[] = intelData?.providers ?? [
-      { id: '1', name: 'Anthropic Claude 3.5 Sonnet', provider: 'claude', status: 'ONLINE', active_requests: 3, avg_latency_ms: 820, total_tokens: 124000, cost_usd: 2.15 },
-      { id: '2', name: 'Google Gemini 1.5 Pro', provider: 'gemini', status: 'ONLINE', active_requests: 1, avg_latency_ms: 450, total_tokens: 48000, cost_usd: 0.95 },
-      { id: '3', name: 'OpenAI GPT-4o', provider: 'openai', status: 'ONLINE', active_requests: 0, avg_latency_ms: 610, total_tokens: 12520, cost_usd: 0.74 },
-    ];
-
-    // Mock initial tasks if empty
-    const tasks: Task[] = [
-      {
-        id: 't-1',
-        project_id: projects[0]?.id ?? 'p-1',
-        assigned_agent_id: agents[0]?.id,
-        title: 'Architectural Blueprint Audit',
-        description: 'Verify system bounds and dependency limits',
-        status: 'RUNNING',
-        priority: 'HIGH',
-        created_at: new Date(Date.now() - 3600000).toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: 't-2',
-        project_id: projects[0]?.id ?? 'p-1',
-        assigned_agent_id: agents[1]?.id,
-        title: 'Security Vulnerability Scan',
-        description: 'Run automated least-privilege checks',
-        status: 'WAITING_APPROVAL',
-        priority: 'CRITICAL',
-        created_at: new Date(Date.now() - 7200000).toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
-
-    const memories: MemoryItem[] = [
-      {
-        id: 'm-1',
-        domain: 'DECISION',
-        title: 'Provider Fallback Architecture',
-        content: 'Fallback chain established: Claude -> Gemini -> Local Llama',
-        scope: 'INTERNAL',
-        created_at: new Date(Date.now() - 86400000).toISOString(),
-      },
-      {
-        id: 'm-2',
-        domain: 'POLICY',
-        title: 'Constitution Autonomy Rules',
-        content: 'Financial actions exceeding $50 strictly require human approval',
-        scope: 'INTERNAL',
-        created_at: new Date(Date.now() - 172800000).toISOString(),
-      },
+    const providers: ModelProviderInfo[] = (intelData?.available_providers ?? []).map((provider: any) => ({
+      id: provider.id,
+      name: provider.display_name,
+      provider: provider.is_local ? 'local' : provider.name,
+      status: !provider.is_active ? 'OFFLINE' : provider.is_healthy ? 'ONLINE' : 'DEGRADED',
+      active_requests: null,
+      avg_latency_ms: null,
+      total_tokens: null,
+      cost_usd: null,
+    }));
+    const memories = memoryRes.status === 'fulfilled' ? memoryRes.value : [];
+    const taskResults = await Promise.allSettled(projects.map((project) =>
+      api.get<Task[]>(`/api/v1/companies/${companyId}/projects/${project.id}/tasks`),
+    ));
+    const tasks = taskResults.flatMap((result) => result.status === 'fulfilled' ? result.value : []);
+    const unavailableSections = [
+      ...(agentsRes.status === 'rejected' ? ['agents'] : []),
+      ...(deptsRes.status === 'rejected' ? ['departments'] : []),
+      ...(rolesRes.status === 'rejected' ? ['roles'] : []),
+      ...(projectsRes.status === 'rejected' ? ['projects'] : []),
+      ...(approvalsRes.status === 'rejected' ? ['approvals'] : []),
+      ...(auditsRes.status === 'rejected' ? ['audit log'] : []),
+      ...(decisionsRes.status === 'rejected' ? ['decisions'] : []),
+      ...(policiesRes.status === 'rejected' ? ['policies'] : []),
+      ...(resourceRes.status === 'rejected' ? ['resource telemetry'] : []),
+      ...(intelligenceRes.status === 'rejected' ? ['provider telemetry'] : []),
+      ...(memoryRes.status === 'rejected' ? ['organization memory'] : []),
+      ...(taskResults.some((result) => result.status === 'rejected') ? ['some project tasks'] : []),
     ];
 
     return {
@@ -243,6 +231,7 @@ export const controlRoomApi = {
       policies,
       memories,
       providers,
+      unavailableSections,
     };
   },
 

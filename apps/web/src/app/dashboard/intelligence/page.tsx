@@ -28,7 +28,7 @@ import {
   GenerateRequest,
   ModelRoutingPolicyUpdate,
 } from '@/lib/api/intelligence';
-import { useAuthStore } from '@/store/auth';
+import { useOrganizationContext } from '@/lib/organizationContext';
 
 const STRATEGY_DESCRIPTIONS: Record<string, string> = {
   BALANCED: 'Optimizes across cost, latency, and capability matching based on company priorities.',
@@ -39,7 +39,7 @@ const STRATEGY_DESCRIPTIONS: Record<string, string> = {
 };
 
 export default function IntelligenceExchangePage() {
-  const activeCompany = useAuthStore((s) => s.activeCompany);
+  const activeCompany = useOrganizationContext();
   const companyId = activeCompany?.id || '';
   const queryClient = useQueryClient();
 
@@ -161,7 +161,7 @@ export default function IntelligenceExchangePage() {
               Multi-Provider Resilience & Failover Routing
             </h1>
             <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-              <span className="font-semibold text-foreground">Four-Tier Guarantee:</span> PRIMARY → FALLBACK → SECONDARY FALLBACK → LOCAL/DEGRADED MODE. A task never silently fails due to provider unavailability, quota exhaustion, or SLA timeouts.
+              Requests follow the organization&apos;s configured routing policy. Provider attempts, fallbacks, and failures are recorded when the routing API returns them.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -205,7 +205,7 @@ export default function IntelligenceExchangePage() {
             <Coins className="h-4 w-4 text-emerald-400" />
           </div>
           <div className="mt-2 text-2xl font-bold text-foreground">
-            ${isLoading ? '0.00' : (dashboard?.total_spend_usd ?? 0).toFixed(4)}
+            ${isLoading ? '0.00' : (dashboard?.total_spend_usd ?? 0).toFixed(2)}
           </div>
           <div className="text-[10px] text-muted-foreground">Cumulative AI inference</div>
         </div>
@@ -762,7 +762,7 @@ export default function IntelligenceExchangePage() {
             </div>
 
             <div className="space-y-3">
-              {(policy?.fallback_chain || ['claude-3-5-sonnet', 'gemini-1.5-pro', 'local-deepseek-r1']).map(
+              {(policy?.fallback_chain ?? []).map(
                 (ident, idx) => (
                   <div
                     key={ident}
@@ -774,19 +774,16 @@ export default function IntelligenceExchangePage() {
                     <div className="flex-1">
                       <div className="text-xs font-semibold text-foreground font-mono">{ident}</div>
                       <div className="text-[11px] text-muted-foreground">
-                        {idx === 0
-                          ? 'Primary Provider Target'
-                          : idx === 1
-                          ? 'Secondary Fallback Provider'
-                          : 'Emergency Air-Gapped Local Cluster'}
+                        {idx === 0 ? 'Primary route target' : 'Fallback route target'}
                       </div>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400">
-                      Auto-Cascade
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-secondary text-muted-foreground">
+                      Configured
                     </span>
                   </div>
                 )
               )}
+              {(policy?.fallback_chain ?? []).length === 0 && <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">No fallback chain is configured in this routing policy.</p>}
             </div>
 
             <div className="rounded-lg border border-border p-4 bg-muted/20 space-y-2">
@@ -794,7 +791,7 @@ export default function IntelligenceExchangePage() {
                 <Shield className="h-3.5 w-3.5 text-primary" /> Circuit Breaker Protection
               </div>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                If any provider logs 3 consecutive failures or 429 Rate Limits, the exchange marks it degraded and bypasses it automatically until health probes clear.
+                Adapter circuit breakers open after three consecutive failures. The default recovery window is 30 seconds, after which a probe request can move the breaker to half-open. The live provider registry reports its own health state.
               </p>
             </div>
           </div>
@@ -908,4 +905,3 @@ export default function IntelligenceExchangePage() {
     </div>
   );
 }
-

@@ -329,6 +329,15 @@ These are issues in the backend code that will cause problems for the frontend:
 
 ## 10. Risk Assessment
 
+### Cycle update — 2026-09-30
+
+- The design tokens and shell now have a distinct graphite/lime identity; verify all route-level hard-coded color utilities converge on tokens during future screen passes.
+- Responsive auth markup and desktop layout were inspected in a production browser preview. Authenticated dashboard visual regression remains unverified because this cycle had no valid user session in the preview browser.
+- The legacy `/intelligence` page previously used a demo organization UUID; it now uses the active organization from auth state. Continue consolidating this route with `/dashboard/intelligence` to avoid duplicate UX/API patterns.
+- Current automated frontend coverage is 10 Jest tests across auth guard, decisions list, control-room telemetry integrity, organization-map empty state, and test setup; additional workflow, navigation, accessibility, and visual coverage is still needed.
+- Control-room demo telemetry has been removed. Real tasks and memory are loaded from their organization endpoints, missing resource fields stay unavailable, and rejected domains are surfaced to the operator. A focused regression test now guards this boundary.
+- The organization map no longer seeds fictional departments, employees, projects, tasks, decisions, or provenance nodes. It draws only returned records and known project/task links. Intelligence routing no longer displays a made-up fallback chain or resilience guarantee.
+
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | Backend API changes break generated types | Medium | High | Regenerate types in CI on every backend PR |

@@ -34,6 +34,7 @@ export interface GraphNode {
 
 interface OrganizationalGraphProps {
   companyName: string;
+  companyStatus?: string;
   departments: Department[];
   agents: Agent[];
   projects: Project[];
@@ -43,6 +44,7 @@ interface OrganizationalGraphProps {
 
 export function OrganizationalGraph({
   companyName,
+  companyStatus,
   departments,
   agents,
   projects,
@@ -58,25 +60,17 @@ export function OrganizationalGraph({
     const nList: GraphNode[] = [];
     const eList: { from: string; to: string }[] = [];
 
-    // Root Company Node
     const rootId = 'root-company';
     nList.push({
       id: rootId,
       type: 'company',
-      title: companyName || 'NEXORA Organization',
-      subtitle: 'Root Autonomous Entity',
-      status: 'ACTIVE',
-      data: { name: companyName },
+      title: companyName || 'Organization',
+      subtitle: 'Organization',
+      status: companyStatus,
+      data: { name: companyName, status: companyStatus },
     });
 
-    // Departments
-    const activeDepts = departments.length > 0 ? departments : [
-      { id: 'dept-eng', name: 'Engineering & Architecture', purpose: 'Core platform & autonomous agents', company_id: '1', status: 'ACTIVE', created_at: '', updated_at: '' },
-      { id: 'dept-ops', name: 'Operations & Governance', purpose: 'Compliance & audit telemetry', company_id: '1', status: 'ACTIVE', created_at: '', updated_at: '' },
-      { id: 'dept-growth', name: 'Growth & Intelligence', purpose: 'Multi-model optimization', company_id: '1', status: 'ACTIVE', created_at: '', updated_at: '' },
-    ];
-
-    activeDepts.forEach((dept) => {
+    departments.forEach((dept) => {
       nList.push({
         id: `dept-${dept.id}`,
         type: 'department',
@@ -89,163 +83,65 @@ export function OrganizationalGraph({
       eList.push({ from: rootId, to: `dept-${dept.id}` });
     });
 
-    // Agents
-    const activeAgents = agents.length > 0 ? agents : [
-      {
-        id: 'ag-cto',
-        name: 'Autonomous CTO Agent',
-        status: 'AVAILABLE',
-        autonomy: 'AUTONOMOUS',
-        capabilities: ['Architecture', 'Synthesis', 'Audit'],
-        system_instructions: 'Supervises system health and technical governance.',
-        company_id: '1',
-        identity: {},
-        responsibilities: ['Architecture oversight', 'Task dispatch'],
-        goals: ['Zero drift', 'Continuous reliability'],
-        permissions: {},
-        tools: [],
-        intelligence_config: { provider: 'Anthropic Claude 3.5' },
-        resource_limits: {},
-        resource_usage: { total_cost_usd: 1.45 },
-        performance_metadata: { tasks_completed: 42 },
-        created_at: '',
-        updated_at: '',
-      },
-      {
-        id: 'ag-sec',
-        name: 'Security Sentinel Agent',
-        status: 'WORKING',
-        autonomy: 'SEMI_AUTONOMOUS',
-        capabilities: ['Vulnerability Scan', 'Policy Enforcement'],
-        system_instructions: 'Enforces least privilege and constitutional boundaries.',
-        company_id: '1',
-        identity: {},
-        responsibilities: ['Audit tracking', 'Approval gating'],
-        goals: ['Zero policy violations'],
-        permissions: {},
-        tools: [],
-        intelligence_config: { provider: 'Google Gemini 1.5 Pro' },
-        resource_limits: {},
-        resource_usage: { total_cost_usd: 0.88 },
-        performance_metadata: { tasks_completed: 19 },
-        created_at: '',
-        updated_at: '',
-      },
-      {
-        id: 'ag-intel',
-        name: 'Intelligence Routing Broker',
-        status: 'AVAILABLE',
-        autonomy: 'FULLY_AUTONOMOUS',
-        capabilities: ['Model Routing', 'Cost Optimization'],
-        system_instructions: 'Optimizes dynamic model routing across Claude, Gemini, OpenAI.',
-        company_id: '1',
-        identity: {},
-        responsibilities: ['Routing dispatch', 'Fallback handling'],
-        goals: ['Min latency', 'Min token cost'],
-        permissions: {},
-        tools: [],
-        intelligence_config: { provider: 'OpenAI GPT-4o' },
-        resource_limits: {},
-        resource_usage: { total_cost_usd: 0.65 },
-        performance_metadata: { tasks_completed: 110 },
-        created_at: '',
-        updated_at: '',
-      },
-    ];
-
-    activeAgents.forEach((ag, idx) => {
-      const deptTarget = activeDepts[idx % activeDepts.length];
-      const deptNodeId = `dept-${deptTarget.id}`;
+    const departmentIds = new Set(departments.map((dept) => dept.id));
+    agents.forEach((agent) => {
+      const departmentId = (agent as Agent & { department_id?: string | null }).department_id;
+      const parentId = departmentId && departmentIds.has(departmentId) ? `dept-${departmentId}` : rootId;
       nList.push({
-        id: `agent-${ag.id}`,
+        id: `agent-${agent.id}`,
         type: 'agent',
-        title: ag.name,
-        subtitle: (ag.intelligence_config as any)?.provider || 'AI Employee',
-        status: ag.status,
-        parentId: deptNodeId,
-        data: ag as unknown as Record<string, unknown>,
+        title: agent.name,
+        subtitle: (agent.intelligence_config as { provider?: string } | undefined)?.provider ?? 'AI employee',
+        status: agent.status,
+        parentId,
+        data: agent as unknown as Record<string, unknown>,
       });
-      eList.push({ from: deptNodeId, to: `agent-${ag.id}` });
+      eList.push({ from: parentId, to: `agent-${agent.id}` });
     });
 
-    // Projects
-    const activeProjects = projects.length > 0 ? projects : [
-      { id: 'proj-1', title: 'NEXORA Operating System Upgrade', progress_pct: 78, status: 'IN_PROGRESS' as const, priority: 'HIGH' as const, company_id: '1', owner_id: '1', created_at: '', updated_at: '' },
-      { id: 'proj-2', title: 'Multi-Provider Resilience Mesh', progress_pct: 92, status: 'IN_PROGRESS' as const, priority: 'CRITICAL' as const, company_id: '1', owner_id: '1', created_at: '', updated_at: '' },
-    ];
-
-    activeProjects.forEach((proj, idx) => {
-      const agentTarget = activeAgents[idx % activeAgents.length];
-      const agentNodeId = `agent-${agentTarget.id}`;
+    projects.forEach((project) => {
       nList.push({
-        id: `proj-${proj.id}`,
+        id: `project-${project.id}`,
         type: 'project',
-        title: proj.title,
-        subtitle: `${proj.progress_pct}% Completed`,
-        status: proj.status,
-        parentId: agentNodeId,
-        data: proj as unknown as Record<string, unknown>,
+        title: project.name,
+        subtitle: `Priority: ${project.priority}`,
+        status: project.status,
+        parentId: rootId,
+        data: project as unknown as Record<string, unknown>,
       });
-      eList.push({ from: agentNodeId, to: `proj-${proj.id}` });
+      eList.push({ from: rootId, to: `project-${project.id}` });
     });
 
-    // Tasks
-    const activeTasks = tasks.length > 0 ? tasks : [
-      { id: 'tsk-1', title: 'Compile Consequential Audit Log', status: 'RUNNING' as const, priority: 'HIGH' as const, project_id: 'proj-1', created_at: '', updated_at: '' },
-      { id: 'tsk-2', title: 'Validate Provider Fallback Chain', status: 'WAITING_APPROVAL' as const, priority: 'CRITICAL' as const, project_id: 'proj-2', created_at: '', updated_at: '' },
-    ];
-
-    activeTasks.forEach((tsk, idx) => {
-      const projTarget = activeProjects[idx % activeProjects.length];
-      const projNodeId = `proj-${projTarget.id}`;
+    const projectIds = new Set(projects.map((project) => project.id));
+    tasks.forEach((task) => {
+      const parentId = projectIds.has(task.project_id) ? `project-${task.project_id}` : rootId;
       nList.push({
-        id: `task-${tsk.id}`,
+        id: `task-${task.id}`,
         type: 'task',
-        title: tsk.title,
-        subtitle: `Priority: ${tsk.priority}`,
-        status: tsk.status,
-        parentId: projNodeId,
-        data: tsk as unknown as Record<string, unknown>,
+        title: task.title,
+        subtitle: `Priority: ${task.priority}`,
+        status: task.status,
+        parentId,
+        data: task as unknown as Record<string, unknown>,
       });
-      eList.push({ from: projNodeId, to: `task-${tsk.id}` });
+      eList.push({ from: parentId, to: `task-${task.id}` });
     });
 
-    // Decisions
-    const activeDecisions = decisions.length > 0 ? decisions : [
-      { id: 'dec-1', problem: 'Fallback to Gemini 1.5 Flash on Sonnet 3.5 429', decision: 'Auto-reroute latency-sensitive tasks', status: 'EXECUTED' as const, rationale: 'Avoid user blocking when primary vendor experiences rate spikes.', company_id: '1', created_at: '' },
-      { id: 'dec-2', problem: 'Require Human Signoff for Financial API Tool Execution', decision: 'Enforce Governance Gate 3', status: 'DECIDED' as const, rationale: 'Safeguard budgetary thresholds above $50.', company_id: '1', created_at: '' },
-    ];
-
-    activeDecisions.forEach((dec, idx) => {
-      const taskTarget = activeTasks[idx % activeTasks.length];
-      const taskNodeId = `task-${taskTarget.id}`;
+    decisions.forEach((decision) => {
       nList.push({
-        id: `dec-${dec.id}`,
+        id: `decision-${decision.id}`,
         type: 'decision',
-        title: dec.problem,
-        subtitle: dec.decision ?? 'Deliberation Record',
-        status: dec.status,
-        parentId: taskNodeId,
-        data: dec as unknown as Record<string, unknown>,
+        title: decision.problem,
+        subtitle: decision.decision ?? 'Decision record',
+        status: decision.status,
+        parentId: rootId,
+        data: decision as unknown as Record<string, unknown>,
       });
-      eList.push({ from: taskNodeId, to: `dec-${dec.id}` });
-
-      // Evidence node
-      const evidenceNodeId = `ev-${dec.id}`;
-      nList.push({
-        id: evidenceNodeId,
-        type: 'evidence',
-        title: `Evidence & Provenance [${dec.id}]`,
-        subtitle: dec.rationale ?? 'Verified Audit Proof',
-        status: 'VERIFIED',
-        parentId: `dec-${dec.id}`,
-        data: { rationale: dec.rationale, status: 'Audited' },
-      });
-      eList.push({ from: `dec-${dec.id}`, to: evidenceNodeId });
+      eList.push({ from: rootId, to: `decision-${decision.id}` });
     });
 
     return { nodes: nList, edges: eList };
-  }, [companyName, departments, agents, projects, tasks, decisions]);
+  }, [companyName, companyStatus, departments, agents, projects, tasks, decisions]);
 
   const getNodeIcon = (type: GraphNode['type']) => {
     switch (type) {
@@ -294,7 +190,7 @@ export function OrganizationalGraph({
               Autonomous Organizational Graph
             </h3>
             <p className="text-xs text-muted-foreground">
-              Direct Drilldown: Company → Dept → Agent → Project → Task → Decision → Evidence
+              Organization records · linked by known organizational relationships
             </p>
           </div>
         </div>

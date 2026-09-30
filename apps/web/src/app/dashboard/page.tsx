@@ -20,11 +20,16 @@ import { controlRoomApi, type ControlRoomState } from '@/lib/api/controlRoom';
 import { OrganizationalGraph } from '@/components/OrganizationalGraph';
 import { OperationalPulseCards } from '@/components/OperationalPulseCards';
 import { OperationalGrid } from '@/components/OperationalGrid';
+import { OrganizationCore } from '@/components/OrganizationCore';
+import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
+import { PREVIEW_COMPANY } from '@/lib/api/controlRoomPreview';
 
 export default function ControlRoomPage() {
   const qc = useQueryClient();
   const { activeCompany, user } = useAuthStore();
-  const companyId = activeCompany?.id;
+  const developmentBypass = isDevelopmentAuthBypassEnabled();
+  const displayCompany = developmentBypass ? PREVIEW_COMPANY : activeCompany;
+  const companyId = displayCompany?.id;
 
   const [activeTab, setActiveTab] = useState<'control' | 'graph'>('control');
 
@@ -71,7 +76,18 @@ export default function ControlRoomPage() {
           </p>
         </div>
 
-        {companies.length === 0 ? (
+        {developmentBypass ? (
+          <div className="flex flex-col items-center justify-center gap-5 rounded-2xl border border-dashed border-border bg-card/30 px-5 py-16 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+              <Building2 className="h-7 w-7" aria-hidden="true" />
+            </div>
+            <div className="max-w-md">
+              <h2 className="text-lg font-semibold text-foreground">Organization context needs a real session</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">The local preview opens the interface without signing in. Organization data and write actions come from the authenticated API, so they are not loaded in this mode.</p>
+            </div>
+            <Link href="/dashboard/organizations" className="btn btn-outline">Explore organization interface</Link>
+          </div>
+        ) : companies.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-border py-24">
             <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
               <Building2 className="h-10 w-10 text-primary" aria-hidden="true" />
@@ -121,15 +137,15 @@ export default function ControlRoomPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              {activeCompany.name}
+              {displayCompany?.name}
             </h1>
-            <span className="badge badge-success text-xs">
-              <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-green-400 inline-block animate-pulse" />
-              {activeCompany.status}
+            <span className="badge badge-default text-xs">
+              <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-primary inline-block" />
+              {displayCompany?.status}
             </span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground flex items-center gap-2">
-            <span>{activeCompany.industry || 'AI Enterprise'}</span>
+            <span>{displayCompany?.industry || 'AI Enterprise'}</span>
             <span>•</span>
               <span className="text-primary font-medium">ORGANIZATION / OPERATING PICTURE</span>
           </p>
@@ -169,10 +185,10 @@ export default function ControlRoomPage() {
             onClick={() => refetch()}
             disabled={isRefetching}
             className="btn btn-outline h-9 px-3 text-xs gap-1.5"
-            title="Refresh Real-time Operational Telemetry"
+            title={developmentBypass ? 'Reload the synthetic preview data' : 'Refresh real-time operational telemetry'}
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isRefetching ? 'animate-spin text-primary' : ''}`} />
-            Sync
+            {developmentBypass ? 'Reload sample' : 'Sync'}
           </button>
         </div>
       </div>
@@ -188,6 +204,19 @@ export default function ControlRoomPage() {
       {/* Operational State Loaded */}
       {!isLoading && state && (
         <div className="space-y-6">
+          {activeTab === 'control' && (
+            <OrganizationCore
+              companyName={displayCompany!.name}
+              companyStatus={displayCompany!.status}
+              departments={state.departments.length}
+              agents={state.agents.length}
+              activeAgents={state.agents.filter((agent) => agent.status === 'WORKING').length}
+              activeTasks={state.tasks.filter((task) => task.status === 'IN_PROGRESS').length}
+              pendingApprovals={state.approvals.filter((approval) => approval.status === 'PENDING').length}
+              onOpenGraph={() => setActiveTab('graph')}
+            />
+          )}
+
           {/* Executive Pulse Row (What is company doing? What are agents doing? Blocked? Resources?) */}
           <OperationalPulseCards
             agents={state.agents}
@@ -199,33 +228,20 @@ export default function ControlRoomPage() {
             decisions={state.decisions}
           />
 
+          {state.unavailableSections.length > 0 && (
+            <div className="flex flex-col gap-2 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between" role="status">
+              <p className="text-xs text-amber-200/90">Some operating data could not be loaded ({state.unavailableSections.join(', ')}). Those figures are omitted.</p>
+              <button type="button" onClick={() => refetch()} className="shrink-0 text-left text-xs font-semibold text-primary hover:underline">Retry data</button>
+            </div>
+          )}
+
           {/* Tab 1: Unified Mission Control Layout */}
           {activeTab === 'control' && (
             <div className="space-y-6 animate-fade-in">
-              {/* Interactive Graph Section embedded directly on dashboard */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold">
-                    Interactive Organization Map & Provenance Mesh
-                  </h2>
-                  <span className="text-[11px] font-mono text-primary cursor-pointer hover:underline" onClick={() => setActiveTab('graph')}>
-                    Expand Fullscreen View →
-                  </span>
-                </div>
-                <OrganizationalGraph
-                  companyName={activeCompany.name}
-                  departments={state.departments}
-                  agents={state.agents}
-                  projects={state.projects}
-                  tasks={state.tasks}
-                  decisions={state.decisions}
-                />
-              </div>
-
               {/* 15 Domains Operational Grid */}
               <div className="space-y-2 pt-2">
                 <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold">
-                  Organizational Activity & Governance Execution
+                  Organization activity & governance
                 </h2>
                 <OperationalGrid
                   companyId={companyId}
@@ -240,7 +256,8 @@ export default function ControlRoomPage() {
                   policies={state.policies}
                   memories={state.memories}
                   providers={state.providers}
-                  onDecideApproval={(approvalId, decision) =>
+                  previewMode={developmentBypass}
+                  onDecideApproval={developmentBypass ? undefined : (approvalId, decision) =>
                     approvalMutation.mutate({ approvalId, decision })
                   }
                 />
@@ -252,7 +269,8 @@ export default function ControlRoomPage() {
           {activeTab === 'graph' && (
             <div className="animate-fade-in space-y-4">
               <OrganizationalGraph
-                companyName={activeCompany.name}
+                companyName={displayCompany!.name}
+                companyStatus={displayCompany!.status}
                 departments={state.departments}
                 agents={state.agents}
                 projects={state.projects}

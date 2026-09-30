@@ -42,7 +42,7 @@ import {
   BuildMyCompanyProposal,
   InstantiateBlueprintResponse,
 } from '@/lib/api/blueprints';
-import { useAuthStore } from '@/store/auth';
+import { useOrganizationContext } from '@/lib/organizationContext';
 
 // Icons & category color mappings
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -110,7 +110,7 @@ export default function BlueprintsPage() {
   const [importError, setImportError] = useState<string | null>(null);
 
   // Save Company as Template State
-  const activeCompany = useAuthStore((s) => s.activeCompany);
+  const activeCompany = useOrganizationContext();
   const [templateName, setTemplateName] = useState('');
   const [templateKey, setTemplateKey] = useState('');
   const [templateDesc, setTemplateDesc] = useState('');

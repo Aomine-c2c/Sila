@@ -1080,4 +1080,12 @@ This architecture is implemented in phases as defined in `UI_ROADMAP.md`. The sh
 | Auth storage | HttpOnly cookie | Secure, protected from XSS, automatically sent with requests |
 | Type generation | openapi-typescript + orval | Zero manual type maintenance, always in sync |
 | Testing | Vitest + React Testing Library + Playwright | Unit, component, and e2e coverage |
+
+## 30. Visual system (2026-09)
+
+The current web shell uses a graphite canvas with lichen-lime action color, restrained hairline borders, and a mono uppercase eyebrow style for system labels. Authentication adds a CSS-only organizational constellation to explain the product without relying on stock art. Dashboard navigation is grouped by work area (Operate, Intelligence, Govern) and the active route is marked with a quiet inset rail. Shared CSS variables in `src/app/globals.css` remain the source of truth so all dashboard routes inherit the palette.
+
+Operational summary cards must derive status labels from loaded data. Do not claim a provider mesh, healthy execution, or ready council unless the corresponding live state supports it. The older `/intelligence` view now reads the active organization from auth state instead of a fixed demo UUID.
+
+The organizational map renders real records only, with links limited to relationships available in the API payload. Provider records map the intelligence API's `available_providers` health fields; request-level metrics remain blank when the API only supplies aggregate usage.
 | Build system | npm workspaces | Standard monorepo tooling, widely understood |

@@ -29,7 +29,8 @@ import {
   BarChart3,
   Scale,
 } from 'lucide-react';
-import { useAuthStore } from '@/store/auth';
+import { useOrganizationContext } from '@/lib/organizationContext';
+import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 import {
   evolutionApi,
   type OrganizationalAdaptation,
@@ -64,7 +65,8 @@ const STAGES = [
 
 export default function EvolutionLabPage() {
   const qc = useQueryClient();
-  const { activeCompany } = useAuthStore();
+  const previewMode = isDevelopmentAuthBypassEnabled();
+  const activeCompany = useOrganizationContext();
   const companyId = activeCompany?.id;
 
   type TabType = 'evolution-lab' | 'simulation-lab' | 'performance' | 'snapshots';
@@ -337,36 +339,45 @@ export default function EvolutionLabPage() {
             </div>
           </div>
 
-          {/* Current Live Organization Baseline Banner */}
+          {/* Preview data uses the scenario baseline; production uses the live organization baseline. */}
           <div className="p-4 rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
+            {(() => {
+              const baseline = simulationScenarios[0]?.baseline_config;
+              const agentCount = baseline?.agent_count ?? (previewMode ? 0 : 50);
+              const monthlyBudget = baseline?.intelligence_budget_monthly_usd ?? (previewMode ? 0 : 100);
+              const routing = baseline?.routing_strategy ?? (previewMode ? 'Not provided' : 'Standard Tier Routing');
+              const slots = baseline?.parallel_execution_slots ?? (previewMode ? 0 : 5);
+              return <>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
                 <Target className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <div className="text-xs font-mono uppercase text-muted-foreground">Current Live Organization</div>
-                <div className="text-sm font-bold text-foreground">Active Production Baseline</div>
+                <div className="text-xs font-mono uppercase text-muted-foreground">{previewMode ? 'Synthetic organization' : 'Current live organization'}</div>
+                <div className="text-sm font-bold text-foreground">{previewMode ? 'Sample operating baseline' : 'Active production baseline'}</div>
               </div>
             </div>
 
             <div className="flex items-center gap-6 text-xs font-mono">
               <div>
                 <span className="text-muted-foreground block text-[10px]">WORKFORCE</span>
-                <span className="font-bold text-foreground">50 Active Agents</span>
+                <span className="font-bold text-foreground">{agentCount} Active Agents</span>
               </div>
               <div>
                 <span className="text-muted-foreground block text-[10px]">MONTHLY BUDGET</span>
-                <span className="font-bold text-emerald-400">$100.00 / mo</span>
+                <span className="font-bold text-emerald-400">${Number(monthlyBudget).toFixed(2)} / mo</span>
               </div>
               <div>
                 <span className="text-muted-foreground block text-[10px]">ROUTING</span>
-                <span className="font-bold text-cyan-400">Standard Tier Routing</span>
+                <span className="font-bold text-cyan-400">{routing}</span>
               </div>
               <div>
                 <span className="text-muted-foreground block text-[10px]">PARALLEL SLOTS</span>
-                <span className="font-bold text-indigo-400">5 Slots</span>
+                <span className="font-bold text-indigo-400">{slots} Slots</span>
               </div>
             </div>
+              </>;
+            })()}
           </div>
 
           {/* Scenarios Grid */}
@@ -482,7 +493,7 @@ export default function EvolutionLabPage() {
                         className="btn btn-primary text-xs h-9 gap-1.5"
                       >
                         <CheckCircle2 className="h-3.5 w-3.5" />
-                        Promote to Real Organization
+                        {previewMode ? 'Promotion unavailable in preview' : 'Promote to Real Organization'}
                       </button>
                     )}
                   </div>
@@ -493,9 +504,9 @@ export default function EvolutionLabPage() {
                   <div className="p-4 rounded-xl border border-border bg-secondary/20 space-y-3 text-xs">
                     <div className="flex items-center justify-between pb-2 border-b border-border/60">
                       <span className="font-bold text-muted-foreground uppercase tracking-wider font-mono">
-                        Active Live Baseline
+                        {previewMode ? 'Sample Operating Baseline' : 'Active Live Baseline'}
                       </span>
-                      <span className="badge badge-outline text-[10px]">Real Org</span>
+                      <span className="badge badge-outline text-[10px]">{previewMode ? 'Sample' : 'Real Org'}</span>
                     </div>
                     <div className="space-y-2 font-mono">
                       <div className="flex justify-between">
@@ -654,7 +665,7 @@ export default function EvolutionLabPage() {
                   <div className="p-6 rounded-xl border border-dashed border-border text-center space-y-2">
                     <Zap className="h-8 w-8 text-muted-foreground/40 mx-auto" />
                     <p className="text-xs text-muted-foreground">
-                      No trial executed yet for this branch. Click &quot;Run Controlled Benchmark&quot; to test 50 tasks across parallel execution slots.
+                      No trial executed yet for this branch. Click &quot;Run Controlled Benchmark&quot; to test {simulationScenarios.find((scenario) => scenario.id === (selectedScenarioId || simulationScenarios[0]?.id))?.workload_profile?.tasks_count ?? 50} tasks across parallel execution slots.
                     </p>
                   </div>
                 )}

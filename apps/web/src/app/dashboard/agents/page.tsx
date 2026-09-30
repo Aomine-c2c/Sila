@@ -16,7 +16,7 @@ import {
   Circle,
 } from 'lucide-react';
 import { agentsApi, CreateAgentRequest, Agent } from '@/lib/api/agents';
-import { useAuthStore } from '@/store/auth';
+import { useOrganizationContext } from '@/lib/organizationContext';
 import { ApiError } from '@/lib/api/client';
 import { AgentProfileDrawer } from '@/components/AgentProfileDrawer';
 
@@ -140,7 +140,7 @@ function AgentCard({ agent, onSelect }: { agent: Agent; onSelect: () => void }) 
 
 export default function AgentsPage() {
   const qc = useQueryClient();
-  const { activeCompany } = useAuthStore();
+  const activeCompany = useOrganizationContext();
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState('');

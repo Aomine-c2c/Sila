@@ -59,6 +59,7 @@ interface OperationalGridProps {
   policies: Policy[];
   memories: MemoryItem[];
   providers: ModelProviderInfo[];
+  previewMode?: boolean;
   onDecideApproval?: (approvalId: string, decision: 'APPROVED' | 'REJECTED') => void;
 }
 
@@ -75,12 +76,13 @@ export function OperationalGrid({
   policies,
   memories,
   providers,
+  previewMode = false,
   onDecideApproval,
 }: OperationalGridProps) {
   const [filterDomain, setFilterDomain] = useState<'ALL' | 'EXECUTION' | 'GOVERNANCE' | 'RESOURCES'>('ALL');
 
   // Compute problems/alerts
-  const blockedTasks = tasks.filter((t) => t.status === 'BLOCKED' || t.status === 'WAITING_APPROVAL');
+  const blockedTasks = tasks.filter((t) => t.status === 'BLOCKED');
   const criticalApprovals = approvals.filter((a) => a.risk_level === 'CRITICAL' || a.risk_level === 'HIGH');
   const degradedProviders = providers.filter((p) => p.status !== 'ONLINE');
 
@@ -136,8 +138,8 @@ export function OperationalGrid({
                   <div className="text-xs font-semibold text-foreground">{d.name}</div>
                   <div className="text-[10px] text-muted-foreground mt-0.5 truncate max-w-[200px]">{d.purpose}</div>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary text-primary font-bold">
-                  ACTIVE
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary text-muted-foreground font-bold">
+                  {d.status}
                 </span>
               </div>
             ))}
@@ -186,7 +188,7 @@ export function OperationalGrid({
             ))}
             {agents.length === 0 && (
               <div className="text-center py-6 text-xs text-muted-foreground">
-                No autonomous agents active
+                No agents configured yet
               </div>
             )}
           </div>
@@ -208,19 +210,10 @@ export function OperationalGrid({
             {projects.slice(0, 3).map((p) => (
               <div key={p.id} className="rounded-xl border border-border/50 bg-secondary/30 p-3 space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-foreground truncate max-w-[190px]">{p.title}</span>
-                  <span className="text-[10px] font-mono font-bold text-emerald-400">{p.status}</span>
+                  <span className="font-semibold text-foreground truncate max-w-[190px]">{p.name}</span>
+                  <span className={`text-[10px] font-mono font-bold ${p.status === 'COMPLETED' || p.status === 'ACTIVE' ? 'text-primary' : p.status === 'ON_HOLD' || p.status === 'CANCELLED' ? 'text-amber-300' : 'text-muted-foreground'}`}>{p.status}</span>
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>Priority: {p.priority}</span>
-                  <span className="font-mono">{p.progress_pct}%</span>
-                </div>
-                <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden">
-                  <div
-                    className="bg-emerald-400 h-full rounded-full transition-all"
-                    style={{ width: `${p.progress_pct}%` }}
-                  />
-                </div>
+                <div className="text-[11px] text-muted-foreground">Priority: {p.priority}</div>
               </div>
             ))}
             {projects.length === 0 && (
@@ -251,14 +244,15 @@ export function OperationalGrid({
                   <div className="text-[10px] text-muted-foreground mt-0.5 font-mono">Priority: {t.priority}</div>
                 </div>
                 <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
-                  t.status === 'RUNNING' ? 'bg-amber-500/20 text-amber-300' :
-                  t.status === 'WAITING_APPROVAL' ? 'bg-rose-500/20 text-rose-300' :
+                  t.status === 'IN_PROGRESS' ? 'bg-amber-500/20 text-amber-300' :
+                  t.status === 'BLOCKED' ? 'bg-rose-500/20 text-rose-300' :
                   'bg-secondary text-foreground'
                 }`}>
                   {t.status}
                 </span>
               </div>
             ))}
+            {tasks.length === 0 && <p className="py-5 text-center text-xs text-muted-foreground">No tasks reported for these projects.</p>}
           </div>
         </div>
 
@@ -280,26 +274,24 @@ export function OperationalGrid({
             <div className="rounded-xl bg-secondary/30 p-3 border border-border/50">
               <div className="flex justify-between text-xs text-muted-foreground mb-1">
                 <span>Budget Spent</span>
-                <span className="font-mono text-foreground font-bold">
-                  ${resources.budget_spent_usd.toFixed(2)} / ${resources.budget_allocated_usd}
-                </span>
+                <span className="font-mono text-foreground font-bold">{resources.budget_spent_usd === null || resources.budget_allocated_usd === null ? 'Unavailable' : `$${resources.budget_spent_usd.toFixed(2)} / $${resources.budget_allocated_usd}`}</span>
               </div>
-              <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+              {resources.budget_spent_usd !== null && resources.budget_allocated_usd !== null && <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
                 <div
-                  className="bg-cyan-400 h-full rounded-full transition-all"
-                  style={{ width: `${Math.min(100, (resources.budget_spent_usd / resources.budget_allocated_usd) * 100)}%` }}
+                  className="bg-primary h-full rounded-full transition-all"
+                  style={{ width: `${resources.budget_allocated_usd > 0 ? Math.min(100, (resources.budget_spent_usd / resources.budget_allocated_usd) * 100) : 0}%` }}
                 />
-              </div>
+              </div>}
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-center text-xs">
               <div className="p-2.5 rounded-xl bg-secondary/20 border border-border/40">
                 <div className="text-[10px] text-muted-foreground font-mono">Tokens Used</div>
-                <div className="font-bold text-foreground mt-0.5">{(resources.token_usage_total / 1000).toFixed(1)}k</div>
+                <div className="font-bold text-foreground mt-0.5">{resources.token_usage_total === null ? '—' : `${(resources.token_usage_total / 1000).toFixed(1)}k`}</div>
               </div>
               <div className="p-2.5 rounded-xl bg-secondary/20 border border-border/40">
                 <div className="text-[10px] text-muted-foreground font-mono">Compute Load</div>
-                <div className="font-bold text-emerald-400 mt-0.5">{resources.compute_used_pct}%</div>
+                <div className="font-bold text-primary mt-0.5">{resources.compute_used_pct === null ? '—' : `${resources.compute_used_pct}%`}</div>
               </div>
             </div>
           </div>
@@ -324,19 +316,21 @@ export function OperationalGrid({
               <div key={p.id} className="rounded-xl border border-border/50 bg-secondary/20 p-2.5 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                    <span className={`h-2 w-2 rounded-full ${p.status === 'ONLINE' ? 'bg-primary' : p.status === 'DEGRADED' ? 'bg-amber-400' : 'bg-rose-400'}`} />
                     <span className="text-xs font-semibold text-foreground">{p.name}</span>
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">
-                    {p.avg_latency_ms}ms · {(p.total_tokens / 1000).toFixed(0)}k tok
+                    {p.avg_latency_ms === null ? 'Latency —' : `${p.avg_latency_ms}ms`} · {p.total_tokens === null ? 'Usage —' : `${(p.total_tokens / 1000).toFixed(0)}k tok`}
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-bold text-foreground font-mono">${p.cost_usd.toFixed(2)}</span>
-                  <div className="text-[9px] text-muted-foreground">{p.active_requests} in-flight</div>
+                  <span className={`text-[10px] font-bold font-mono ${p.status === 'ONLINE' ? 'text-primary' : p.status === 'DEGRADED' ? 'text-amber-300' : 'text-rose-300'}`}>{p.status}</span>
+                  <div className="text-xs font-bold text-foreground font-mono">{p.cost_usd === null ? 'Cost —' : `$${p.cost_usd.toFixed(2)}`}</div>
+                  <div className="text-[9px] text-muted-foreground">{p.active_requests === null ? 'Activity —' : `${p.active_requests} in-flight`}</div>
                 </div>
               </div>
             ))}
+            {providers.length === 0 && <p className="py-5 text-center text-xs text-muted-foreground">No provider telemetry returned.</p>}
           </div>
         </div>
 
@@ -403,14 +397,18 @@ export function OperationalGrid({
                     <button
                       type="button"
                       onClick={() => onDecideApproval?.(req.id, 'APPROVED')}
-                      className="px-3 py-1 rounded text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white flex-1 transition-colors"
+                      disabled={!onDecideApproval}
+                      title={!onDecideApproval ? 'Read-only synthetic preview' : undefined}
+                      className="px-3 py-1 rounded text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white flex-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Authorize
                     </button>
                     <button
                       type="button"
                       onClick={() => onDecideApproval?.(req.id, 'REJECTED')}
-                      className="px-3 py-1 rounded text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground flex-1 transition-colors"
+                      disabled={!onDecideApproval}
+                      title={!onDecideApproval ? 'Read-only synthetic preview' : undefined}
+                      className="px-3 py-1 rounded text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground flex-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Deny
                     </button>
@@ -454,7 +452,7 @@ export function OperationalGrid({
             ))}
             {memories.length === 0 && (
               <div className="text-center py-6 text-xs text-muted-foreground">
-                No memories synchronized
+                No organization memories recorded
               </div>
             )}
           </div>
@@ -503,10 +501,10 @@ export function OperationalGrid({
               <TrendingUp className="h-4 w-4 text-teal-400" />
               <h3 className="text-sm font-semibold text-foreground">11. Performance & SLAs</h3>
             </div>
-            <span className="text-xs font-mono text-emerald-400">99.8% Uptime</span>
+            {previewMode && <span className="text-[10px] font-mono text-amber-300">SAMPLE METRICS</span>}
           </div>
 
-          <div className="space-y-3 text-xs">
+          {previewMode ? <div className="space-y-3 text-xs">
             <div className="flex justify-between items-center p-2 rounded-lg bg-secondary/30">
               <span className="text-muted-foreground">Task Completion SLA</span>
               <span className="font-mono text-foreground font-bold">98.4% On Schedule</span>
@@ -519,7 +517,7 @@ export function OperationalGrid({
               <span className="text-muted-foreground">Policy Drift Index</span>
               <span className="font-mono text-emerald-400 font-bold">0.00% Zero Drift</span>
             </div>
-          </div>
+          </div> : <p className="py-4 text-center text-xs text-muted-foreground">Performance telemetry is not available from the connected organization API.</p>}
         </div>
 
         {/* ============================================================== */}

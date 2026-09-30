@@ -9,6 +9,7 @@ This roadmap prioritizes safe, incremental delivery. Readiness claims should be 
 3. **Organizational performance:** outcome metrics for agents, teams, workflows, and provider routes.
 4. **Validated evolution:** immutable configuration versions, simulation, human approval, deployment monitoring, and rollback.
 5. **Integration quality:** generated/shared API types, end-to-end workflow coverage, and operational runbooks.
+6. **Frontend quality:** complete keyboard/mobile review for all organization workflows, add browser-level visual coverage, and consolidate the duplicate intelligence experiences.
 
 ## Later opportunities
 

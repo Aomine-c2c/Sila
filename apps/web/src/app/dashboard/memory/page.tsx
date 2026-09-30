@@ -35,7 +35,7 @@ import {
   MemoryItemCreate,
   DecisionRecordCreate,
 } from '@/lib/api/memory';
-import { useAuthStore } from '@/store/auth';
+import { useOrganizationContext } from '@/lib/organizationContext';
 
 const MEMORY_DOMAINS: { id: MemoryDomain; label: string; desc: string }[] = [
   { id: 'COMPANY', label: 'Company', desc: 'Core mission, structure, principles' },
@@ -59,7 +59,7 @@ const SCOPE_BADGES: Record<string, { bg: string; text: string; border: string }>
 };
 
 export default function OrganizationalMemoryPage() {
-  const activeCompany = useAuthStore((s) => s.activeCompany);
+  const activeCompany = useOrganizationContext();
   const companyId = activeCompany?.id || '';
   const queryClient = useQueryClient();
 

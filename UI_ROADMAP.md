@@ -406,6 +406,12 @@ By the end of Phase 3 (replacing all 6 static HTML pages), we will measure:
 
 ## Next Steps
 
+## Frontend cycle update — 2026-09-30
+
+- **Completed:** established graphite/lime visual tokens, grouped and simplified navigation, added a responsive split authentication composition with an organization constellation, removed synthetic control-room tasks/providers/memory/resource numbers, made unavailable data explicit, replaced hard-coded operational status copy with data-derived state, and aligned the legacy intelligence page to the active organization.
+- **Verified:** lint, TypeScript, 10 Jest tests, and optimized Next.js production build pass.
+- **Next:** audit each workflow at narrow/mobile widths and with keyboard navigation; add visual regression coverage and measure real-user loading/accessibility performance. Current CUA preview verified the desktop login composition; dashboard authenticated preview still depends on valid local credentials.
+
 1. **Approve this roadmap** — confirms scope and priorities
 2. **Create `apps/web/` and `packages/`** — start Phase 0
 3. **Set up OpenAPI type generation** — ensures all subsequent work is type-safe from day 1

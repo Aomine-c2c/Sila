@@ -4,8 +4,9 @@ import { Sidebar } from './Sidebar';
 import { AuthGuard } from '@/components/AuthGuard';
 import { useAuthStore } from '@/store/auth';
 import { organizationsApi } from '@/lib/api/organizations';
-import { Building2, ChevronDown, LogOut, User } from 'lucide-react';
+import { Building2, ChevronDown, Eye, LogOut, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 
 export default function DashboardLayout({
   children,
@@ -14,17 +15,18 @@ export default function DashboardLayout({
 }) {
   const { user, activeCompany, setActiveCompany, logout } = useAuthStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const developmentBypass = isDevelopmentAuthBypassEnabled();
 
   useEffect(() => {
     // If no active company is loaded, automatically fetch and select the default company
-    if (!activeCompany) {
+    if (!activeCompany && !developmentBypass) {
       organizationsApi.list().then((companies) => {
         if (companies && companies.length > 0) {
           setActiveCompany(companies[0]);
         }
       }).catch(() => {});
     }
-  }, [activeCompany, setActiveCompany]);
+  }, [activeCompany, developmentBypass, setActiveCompany]);
 
   const handleLogout = () => {
     logout();
@@ -49,7 +51,7 @@ export default function DashboardLayout({
 
             <div className="flex items-center gap-4">
               {/* Active company */}
-              {activeCompany && (
+              {activeCompany && !developmentBypass && (
                 <div className="hidden sm:flex items-center gap-2 rounded-lg bg-secondary/50 px-3 py-1.5">
                   <Building2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                   <span className="text-sm font-medium text-foreground">
@@ -59,7 +61,11 @@ export default function DashboardLayout({
               )}
 
               {/* User menu */}
-              <div className="relative">
+              {developmentBypass ? (
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/5 px-3 py-1.5 text-[11px] font-medium text-primary">
+                  <Eye className="h-3.5 w-3.5" aria-hidden="true" /> UI preview
+                </div>
+              ) : <div className="relative">
                 <button
                   id="user-menu-trigger"
                   type="button"
@@ -117,12 +123,13 @@ export default function DashboardLayout({
                     </div>
                   </>
                 )}
-              </div>
+              </div>}
             </div>
           </header>
 
           {/* Page content */}
           <main className="p-4 lg:p-6" role="main">
+            {developmentBypass && <div className="mb-5 rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-200/90" role="status">Synthetic preview data · all dashboard pages show local sample records, not live data. Preview is read-only; writes are blocked and no API requests are sent.</div>}
             {children}
           </main>
         </div>

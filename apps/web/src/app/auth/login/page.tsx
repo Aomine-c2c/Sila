@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Bot, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/store/auth';
 import { ApiError } from '@/lib/api/client';
@@ -123,8 +123,8 @@ export default function LoginPage() {
         <div className="relative mx-auto w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/30">
-            <Bot className="h-7 w-7 text-primary" aria-hidden="true" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary font-mono text-2xl font-black text-primary-foreground shadow-[0_0_36px_hsl(var(--primary)/.14)]">
+            N
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">

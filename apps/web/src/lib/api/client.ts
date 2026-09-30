@@ -7,6 +7,9 @@
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
+import { getPreviewApiResponse } from './previewFixtures';
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -29,6 +32,18 @@ async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  if (isDevelopmentAuthBypassEnabled()) {
+    const method = (options.method ?? 'GET').toUpperCase();
+    if (method !== 'GET') {
+      throw new ApiError(403, { preview: true, read_only: true }, 'Local UI preview is read-only. This action was not sent to the API.');
+    }
+    const fixture = getPreviewApiResponse(path);
+    if (fixture === undefined) {
+      throw new ApiError(501, { preview: true, fixture_available: false }, `No synthetic preview fixture is available for ${path}. No API request was sent.`);
+    }
+    return fixture as T;
+  }
+
   const token = _getToken?.();
 
   const headers: Record<string, string> = {

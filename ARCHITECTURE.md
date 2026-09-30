@@ -18,3 +18,9 @@ The current default database is SQLite for local development; PostgreSQL support
 ## Known architectural gaps
 
 See [ROADMAP.md](ROADMAP.md), [KNOWN_ISSUES.md](KNOWN_ISSUES.md), and [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md). In particular, the security helpers are defensive checks, not an operating-system sandbox or a complete SSRF defense against DNS rebinding.
+
+## Frontend presentation boundary
+
+The frontend visual system is defined by shared CSS variables in `apps/web/src/app/globals.css` and Tailwind mappings. Its current graphite/lime palette, grouped command navigation, and CSS-only organization constellation express NEXORA's people/agents/governance model without coupling product meaning to one provider. Operational status copy should be computed from loaded API state; presentation must not invent health or provider availability.
+
+The control room reads tasks from each organization's real project task endpoints and memory from the organization memory API. Missing telemetry is nullable and surfaced as unavailable; successful empty responses are shown as empty states. Rejected domain requests are listed so empty data is not confused with missing data.

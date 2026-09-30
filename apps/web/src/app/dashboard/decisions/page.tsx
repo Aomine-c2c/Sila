@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { ApiError } from '@/lib/api/client';
 import { decisionsApi, DecisionRecord, DecisionStatus } from '@/lib/api/decisions';
-import { useAuthStore } from '@/store/auth';
+import { useOrganizationContext } from '@/lib/organizationContext';
 
 const STATUS_STYLE: Record<DecisionStatus, string> = {
   OPEN: 'border-sky-500/20 bg-sky-500/10 text-sky-300',
@@ -21,7 +21,7 @@ const STATUS_STYLE: Record<DecisionStatus, string> = {
 type DialogMode = 'create' | 'resolve' | 'outcome';
 
 export default function DecisionsPage() {
-  const company = useAuthStore((state) => state.activeCompany);
+  const company = useOrganizationContext();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | DecisionStatus>('ALL');

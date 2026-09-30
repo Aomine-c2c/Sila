@@ -37,7 +37,8 @@ import {
   ResourcePoolCreate,
   ResourceBudgetCreate,
 } from '@/lib/api/resources';
-import { useAuthStore } from '@/store/auth';
+import { useOrganizationContext } from '@/lib/organizationContext';
+import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 
 const DECISION_BADGES: Record<string, { bg: string; text: string; border: string }> = {
   APPROVE: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' },
@@ -56,7 +57,8 @@ const PRIORITY_BADGES: Record<string, string> = {
 };
 
 export default function ResourceControlCenterPage() {
-  const activeCompany = useAuthStore((s) => s.activeCompany);
+  const activeCompany = useOrganizationContext();
+  const previewMode = isDevelopmentAuthBypassEnabled();
   const companyId = activeCompany?.id || '';
   const queryClient = useQueryClient();
 
@@ -177,7 +179,9 @@ export default function ResourceControlCenterPage() {
               Finite Operational Asset Orchestration
             </h1>
             <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-              Resources are not limited to financial budgets. Compute (CPU, RAM, GPU, Storage), Intelligence (tokens, quotas), Financial (spend), and Operational capacity (slots, human approval, time) are evaluated and scheduled with real, non-faked telemetry.
+              {previewMode
+                ? 'Explore how compute, intelligence, budgets, and operational capacity fit together using synthetic preview values.'
+                : 'Resources are not limited to financial budgets. Compute (CPU, RAM, GPU, Storage), Intelligence (tokens, quotas), Financial (spend), and Operational capacity (slots, human approval, time) are evaluated and scheduled from connected telemetry.'}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -199,6 +203,11 @@ export default function ResourceControlCenterPage() {
 
       {/* Metric Distinction Legend */}
       <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl border border-border bg-card/50 text-[11px]">
+        {previewMode ? <>
+          <span className="font-semibold text-foreground mr-2">Preview Data Legend:</span>
+          <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-mono">SAMPLE</span>
+          <span className="text-muted-foreground">All host, capacity, provider, and cost figures on this page are synthetic design data.</span>
+        </> : <>
         <span className="font-semibold text-foreground mr-2">Telemetry Legend:</span>
         <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
           OBSERVED
@@ -224,6 +233,7 @@ export default function ResourceControlCenterPage() {
           AVAILABLE
         </span>
         <span className="text-muted-foreground">Limited - Allocated</span>
+        </>}
       </div>
 
       {/* KPI Telemetry Ribbon */}
@@ -236,7 +246,7 @@ export default function ResourceControlCenterPage() {
           <div className="mt-2 text-2xl font-bold text-foreground">
             {host?.cpu_cores_available ?? '—'}
           </div>
-          <div className="text-[10px] text-emerald-400 font-mono">OBSERVED Linux Core</div>
+          <div className="text-[10px] text-emerald-400 font-mono">{previewMode ? 'SAMPLE HOST PROFILE' : 'OBSERVED Linux Core'}</div>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4">

@@ -21,7 +21,7 @@ import {
   FileText,
   Zap,
 } from 'lucide-react';
-import { useAuthStore } from '@/store/auth';
+import { useOrganizationContext } from '@/lib/organizationContext';
 import {
   councilsApi,
   type AgentCouncil,
@@ -70,7 +70,7 @@ const CANONICAL_COUNCIL_MEMBERS: CouncilMember[] = [
 
 export default function CouncilsDashboardPage() {
   const qc = useQueryClient();
-  const { activeCompany } = useAuthStore();
+  const activeCompany = useOrganizationContext();
   const companyId = activeCompany?.id;
 
   const [selectedCouncil, setSelectedCouncil] = useState<AgentCouncil | null>(null);
