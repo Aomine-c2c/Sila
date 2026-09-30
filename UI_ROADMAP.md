@@ -408,9 +408,9 @@ By the end of Phase 3 (replacing all 6 static HTML pages), we will measure:
 
 ## Frontend cycle update — 2026-09-30
 
-- **Completed:** established graphite/lime visual tokens, grouped and simplified navigation, added a responsive split authentication composition with an organization constellation, removed synthetic control-room tasks/providers/memory/resource numbers, made unavailable data explicit, replaced hard-coded operational status copy with data-derived state, and aligned the legacy intelligence page to the active organization.
-- **Verified:** lint, TypeScript, 10 Jest tests, and optimized Next.js production build pass.
-- **Next:** audit each workflow at narrow/mobile widths and with keyboard navigation; add visual regression coverage and measure real-user loading/accessibility performance. Current CUA preview verified the desktop login composition; dashboard authenticated preview still depends on valid local credentials.
+- **Completed:** established graphite/lime visual tokens, grouped navigation, added a responsive authentication composition, populated the local-only UI preview across dashboard routes, and reframed the Control Room as an interactive isometric office with a distinct provider switchboard, memory archive, policy perimeter, and human review suite. Department names and employee locations follow organization records by ID; additional teams are clearly called out and remain available in the organization graph. The preview is read-only and API mode keeps data-led status and unavailable states.
+- **Verified:** lint, TypeScript, all 20 Jest tests (including room/person selection, keyboard inspection, and extra-department mapping), `git diff --check`, and optimized Next.js production build pass.
+- **Next:** audit every route at narrow/mobile widths, add browser-level visual coverage, and measure real-user loading/accessibility performance. Local dashboard preview uses the explicit development-only bypass and synthetic read-only fixtures.
 
 1. **Approve this roadmap** — confirms scope and priorities
 2. **Create `apps/web/` and `packages/`** — start Phase 0

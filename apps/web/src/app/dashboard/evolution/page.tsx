@@ -311,6 +311,8 @@ export default function EvolutionLabPage() {
           <button
             type="button"
             onClick={() => setShowProposeModal(true)}
+            disabled={previewMode}
+            title={previewMode ? 'Write actions are unavailable in synthetic preview mode' : undefined}
             className="btn btn-primary gap-1.5 text-xs h-9 px-3"
           >
             <Plus className="h-4 w-4" />
@@ -475,7 +477,8 @@ export default function EvolutionLabPage() {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      disabled={runSimulationMutation.isPending}
+                      disabled={previewMode || runSimulationMutation.isPending}
+                      title={previewMode ? 'Simulations are read-only in synthetic preview mode' : undefined}
                       onClick={() => runSimulationMutation.mutate(activeScenario.id)}
                       className="btn btn-secondary text-xs h-9 gap-1.5"
                     >
@@ -486,6 +489,8 @@ export default function EvolutionLabPage() {
                     {!activeScenario.is_promoted && (
                       <button
                         type="button"
+                        disabled={previewMode}
+                        title={previewMode ? 'Promotion is unavailable in synthetic preview mode' : undefined}
                         onClick={() => {
                           setSelectedScenarioId(activeScenario.id);
                           setShowPromoteModal(true);

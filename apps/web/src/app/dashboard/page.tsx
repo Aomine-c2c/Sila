@@ -20,7 +20,7 @@ import { controlRoomApi, type ControlRoomState } from '@/lib/api/controlRoom';
 import { OrganizationalGraph } from '@/components/OrganizationalGraph';
 import { OperationalPulseCards } from '@/components/OperationalPulseCards';
 import { OperationalGrid } from '@/components/OperationalGrid';
-import { OrganizationCore } from '@/components/OrganizationCore';
+import { OrganizationOffice } from '@/components/OrganizationOffice';
 import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 import { PREVIEW_COMPANY } from '@/lib/api/controlRoomPreview';
 
@@ -205,14 +205,17 @@ export default function ControlRoomPage() {
       {!isLoading && state && (
         <div className="space-y-6">
           {activeTab === 'control' && (
-            <OrganizationCore
+            <OrganizationOffice
               companyName={displayCompany!.name}
-              companyStatus={displayCompany!.status}
-              departments={state.departments.length}
-              agents={state.agents.length}
-              activeAgents={state.agents.filter((agent) => agent.status === 'WORKING').length}
-              activeTasks={state.tasks.filter((task) => task.status === 'IN_PROGRESS').length}
-              pendingApprovals={state.approvals.filter((approval) => approval.status === 'PENDING').length}
+              departments={state.departments}
+              agents={state.agents}
+              projects={state.projects}
+              tasks={state.tasks}
+              approvals={state.approvals}
+              providers={state.providers}
+              resources={state.resources}
+              memoryItems={state.memories.length}
+              activePolicies={state.policies.filter((policy) => policy.is_active).length}
               onOpenGraph={() => setActiveTab('graph')}
             />
           )}

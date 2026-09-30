@@ -7,6 +7,7 @@ import { organizationsApi } from '@/lib/api/organizations';
 import { Building2, ChevronDown, Eye, LogOut, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
+import { usePathname } from 'next/navigation';
 
 export default function DashboardLayout({
   children,
@@ -16,6 +17,8 @@ export default function DashboardLayout({
   const { user, activeCompany, setActiveCompany, logout } = useAuthStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const developmentBypass = isDevelopmentAuthBypassEnabled();
+  const pathname = usePathname();
+  const pageLabel = pathname === '/dashboard' ? 'COMMAND CENTER' : pathname.split('/').filter(Boolean).pop()?.replace(/-/g, ' ').toUpperCase() ?? 'WORKSPACE';
 
   useEffect(() => {
     // If no active company is loaded, automatically fetch and select the default company
@@ -40,14 +43,18 @@ export default function DashboardLayout({
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-nexora-dark">
+      <div className="dashboard-atmosphere min-h-screen bg-nexora-dark">
         <Sidebar />
 
         {/* Main content */}
         <div className="lg:pl-64">
           {/* Top bar */}
-          <header className="sticky top-0 z-30 flex h-16 items-center justify-between px-4 border-b border-border bg-nexora-surface/80 backdrop-blur-lg lg:px-6">
-            <div className="flex-1" />
+          <header className="nexora-topbar sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border px-4 pl-16 backdrop-blur-lg lg:px-6">
+            <div className="flex min-w-0 flex-1 items-center gap-2 text-[10px] font-mono tracking-[.15em]">
+              <span className="text-muted-foreground/60">NEXORA / ORGANIZATION OS</span>
+              <span className="text-primary/55">/</span>
+              <span className="truncate text-foreground/70">{pageLabel}</span>
+            </div>
 
             <div className="flex items-center gap-4">
               {/* Active company */}
@@ -128,7 +135,7 @@ export default function DashboardLayout({
           </header>
 
           {/* Page content */}
-          <main className="p-4 lg:p-6" role="main">
+          <main className="dashboard-canvas p-4 lg:p-6" role="main">
             {developmentBypass && <div className="mb-5 rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-200/90" role="status">Synthetic preview data · all dashboard pages show local sample records, not live data. Preview is read-only; writes are blocked and no API requests are sent.</div>}
             {children}
           </main>

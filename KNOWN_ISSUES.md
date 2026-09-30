@@ -6,3 +6,4 @@
 - Production readiness is incomplete: the default database is SQLite and durable distributed workflow workers are not yet present.
 - Ruff reports outstanding import-order, unused-import, and line-length violations across the current security, provider, and newly added test modules; the repository-wide lint baseline needs cleanup.
 - Existing workspace contains substantial uncommitted changes. Review and attribute those changes before release.
+- The isometric Control Room currently has three department rooms. Additional departments and their employees are disclosed as overflow and available in the full organization graph; a fully dynamic floor topology remains a frontend improvement.

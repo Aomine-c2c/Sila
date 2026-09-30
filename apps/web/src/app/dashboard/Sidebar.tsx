@@ -59,11 +59,11 @@ export function Sidebar() {
   return <>
     <button type="button" className="fixed left-4 top-4 z-40 flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-nexora-surface text-muted-foreground hover:text-foreground lg:hidden" onClick={() => setSidebarOpen(true)} aria-label="Open navigation"><Menu className="h-4 w-4" /></button>
     {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
-    <aside className={cn('fixed left-0 top-0 z-50 h-screen w-[252px] border-r border-border bg-nexora-surface transition-transform duration-300 ease-in-out', sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0')} aria-label="Main navigation">
+    <aside className={cn('nexora-sidebar fixed left-0 top-0 z-50 h-screen w-[252px] border-r border-border transition-transform duration-300 ease-in-out', sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0')} aria-label="Main navigation">
       <div className="flex h-full flex-col">
         <div className="flex h-[76px] items-center justify-between border-b border-border/80 px-5">
           <Link href="/dashboard" className="flex items-center gap-3" onClick={() => setSidebarOpen(false)}>
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <div className="nexora-mark relative flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <span className="font-mono text-base font-black tracking-tighter">N</span>
               <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full border-2 border-nexora-surface bg-primary" />
             </div>
