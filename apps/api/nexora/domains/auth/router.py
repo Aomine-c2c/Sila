@@ -5,20 +5,37 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.database import get_db
+from nexora.config import get_settings
+from nexora.domains.auth.models import User
 from nexora.domains.auth.schemas import TokenResponse, UserLogin, UserRegister, UserResponse
 from nexora.domains.auth.service import AuthService, create_access_token
+from nexora.exceptions import UnauthorizedError
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-_bearer = HTTPBearer()
+_bearer = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(_bearer),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
     db: AsyncSession = Depends(get_db),
 ):
-    """FastAPI dependency: extracts and validates Bearer token."""
+    """FastAPI dependency: extracts and validates Bearer token, or defaults to admin if DISABLE_AUTH is true."""
+    settings = get_settings()
     service = AuthService(db)
-    return await service.get_current_user(credentials.credentials)
+
+    if credentials and credentials.credentials:
+        return await service.get_current_user(credentials.credentials)
+
+    if settings.DISABLE_AUTH:
+        default_user = await service.repo.get_by_email("admin@furnitureco.com")
+        if not default_user:
+            from sqlalchemy import select
+            res = await db.execute(select(User))
+            default_user = res.scalars().first()
+        if default_user:
+            return default_user
+
+    raise UnauthorizedError("Authentication required.")
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)

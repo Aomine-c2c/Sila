@@ -11,16 +11,21 @@ Supports:
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from nexora.core.base import NexoraBase
+from nexora.core.base import UUIDTimestampBase
 from nexora.core.enums import CouncilType, DeliberationStage, DeliberationStatus
 
+if TYPE_CHECKING:
+    from nexora.domains.agents.models import Agent
+    from nexora.domains.decisions.models import Decision
+    from nexora.domains.organizations.models import Company
 
-class AgentCouncil(NexoraBase):
+
+class AgentCouncil(UUIDTimestampBase):
     """
     An Agent Council is a temporary or permanent group of agents assembled
     to deliberate on complex problems (e.g., Architecture Council, Security Board, Ethics Panel).
@@ -50,8 +55,8 @@ class AgentCouncil(NexoraBase):
     members: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
 
     # Relationships
-    company: Mapped["Company"] = relationship("Company", lazy="select")  # noqa: F821
-    synthesis_agent: Mapped["Agent | None"] = relationship("Agent", lazy="select")  # noqa: F821
+    company: Mapped["Company"] = relationship("Company", lazy="select")
+    synthesis_agent: Mapped["Agent | None"] = relationship("Agent", lazy="select")
     deliberations: Mapped[list["CouncilDeliberation"]] = relationship(
         "CouncilDeliberation",
         back_populates="council",
@@ -63,7 +68,7 @@ class AgentCouncil(NexoraBase):
         return f"<AgentCouncil id={self.id} name='{self.name}'>"
 
 
-class CouncilDeliberation(NexoraBase):
+class CouncilDeliberation(UUIDTimestampBase):
     """
     A specific deliberation instance run by a council addressing an organizational problem.
     Cycles through: PROPOSAL -> INDEPENDENT REVIEW -> OBJECTIONS -> DISCUSSION -> SYNTHESIS -> DECISION -> RECORD.
@@ -132,7 +137,7 @@ class CouncilDeliberation(NexoraBase):
 
     # Relationships
     council: Mapped["AgentCouncil"] = relationship("AgentCouncil", back_populates="deliberations")
-    decision: Mapped["Decision | None"] = relationship("Decision", lazy="select")  # noqa: F821
+    decision: Mapped["Decision | None"] = relationship("Decision", lazy="select")
 
     def __repr__(self) -> str:
         return f"<CouncilDeliberation id={self.id} title='{self.title}' status={self.status}>"

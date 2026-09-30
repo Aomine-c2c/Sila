@@ -12,6 +12,7 @@ from nexora.domains.intelligence.models import (
     Model,
     ModelProvider,
     ModelRequestLog,
+    ModelRoutingPolicy,
 )
 from nexora.domains.intelligence.router_service import IntelligenceRouter
 from nexora.domains.intelligence.schemas import (
@@ -170,6 +171,20 @@ class IntelligenceService:
         await self.db.flush()
         await self.db.refresh(m)
         return m
+
+    # ── Policy Management ──────────────────────────────────────────────────────
+
+    async def get_policy(self, company_id: uuid.UUID):
+        return await self.router.get_or_create_default_policy(company_id)
+
+    async def update_policy(self, company_id: uuid.UUID, data) -> ModelRoutingPolicy:
+        policy = await self.router.get_or_create_default_policy(company_id)
+        update_data = data.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(policy, key, value)
+        await self.db.flush()
+        await self.db.refresh(policy)
+        return policy
 
     # ── Routing Execution ──────────────────────────────────────────────────────
 

@@ -92,6 +92,18 @@ class ModelRoutingPolicyCreate(BaseModel):
     is_default: bool = False
 
 
+class ModelRoutingPolicyUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    strategy: str | None = None
+    max_cost_per_query_usd: float | None = None
+    max_acceptable_latency_ms: float | None = None
+    required_privacy_level: str | None = None
+    fallback_chain: list[str] | None = None
+    capability_preferences: dict[str, str] | None = None
+    is_default: bool | None = None
+
+
 class ModelRoutingPolicyResponse(BaseModel):
     model_config = {"from_attributes": True}
 

@@ -1,18 +1,22 @@
 """Workflow model — orchestrated multi-step processes."""
 
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, ForeignKey, String, Text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from nexora.core.base import NexoraBase
+from nexora.core.base import NexoraBase, UUIDCreatedAtBase, UUIDTimestampBase
 from nexora.core.enums import (
     WorkflowExecutionStatus,
     WorkflowStatus,
     WorkflowStepType,
     WorkflowTriggerType,
 )
+
+if TYPE_CHECKING:
+    from nexora.domains.organizations.models import Company
 
 
 class Workflow(NexoraBase):
@@ -87,7 +91,7 @@ class Workflow(NexoraBase):
     )
 
     # Relationships
-    company: Mapped["Company"] = relationship("Company", back_populates="workflows")  # noqa: F821
+    company: Mapped["Company"] = relationship("Company", back_populates="workflows")
     executions: Mapped[list["WorkflowExecution"]] = relationship(
         "WorkflowExecution", back_populates="workflow", cascade="all, delete-orphan"
     )
@@ -96,7 +100,7 @@ class Workflow(NexoraBase):
         return f"<Workflow id={self.id} name={self.name}>"
 
 
-class WorkflowExecution(NexoraBase):
+class WorkflowExecution(UUIDTimestampBase):
     """
     Stateful execution instance of a Workflow.
     Persists current step, state payload, history, resource usage, and observable telemetry.
@@ -164,7 +168,7 @@ class WorkflowExecution(NexoraBase):
     )
 
 
-class WorkflowExecutionStep(NexoraBase):
+class WorkflowExecutionStep(UUIDCreatedAtBase):
     """
     Detailed audit log for every step execution within a WorkflowExecution.
     Records agent involved, tools executed, decisions made, approval gates, retries, and errors.

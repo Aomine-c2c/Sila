@@ -1,16 +1,14 @@
 # CURRENT STATE — NEXORA Project Baseline
 
-**Audit Date:** 2026-09-25
-**Auditor:** Antigravity (Lead Architect / Autonomous CTO)
-**Project Root:** `/home/sila/Projects/Sila`
+**Audit Date:** 2026-09-29  
+**Auditor:** Antigravity (Lead Architect / Autonomous CTO)  
+**Project Root:** `/home/sila/Projects/Sila`  
 
 ---
 
 ## Executive Summary
 
-The `/home/sila/Projects/Sila` directory is a **complete greenfield**. It contains zero application code, zero infrastructure, and zero configuration. The only artifact present is a `.kilo/` IDE metadata folder created by the Kilo editor, containing an empty `worktrees/` directory.
-
-There is **nothing to preserve, nothing to migrate, and nothing to refactor**. NEXORA will be built entirely from scratch on this canvas.
+The NEXORA project has transitioned from an initial greenfield into an operational, test-validated, multi-agent operating system foundation. Both the backend (`apps/api`) and the frontend (`apps/web`) are active, verified with automated test suites (100 backend domain tests passing, frontend Jest tests passing, TypeScript compilation 0 errors), and wired together via REST APIs and real-time dashboard telemetry.
 
 ---
 
@@ -18,200 +16,97 @@ There is **nothing to preserve, nothing to migrate, and nothing to refactor**. N
 
 ```
 /home/sila/Projects/Sila/
-└── .kilo/
-    ├── .gitignore
-    └── worktrees/          ← empty
+├── apps/
+│   ├── api/                     # FastAPI async backend service
+│   │   ├── alembic/             # Database migrations (9 versions applied up to head)
+│   │   ├── nexora/              # Core domain package
+│   │   │   ├── core/            # Base models, Enums, Permissions
+│   │   │   ├── domains/         # 13 domain packages (agents, auth, blueprints, councils, decisions, governance, intelligence, memory, organizations, policies, projects, resources, workflows)
+│   │   │   ├── config.py        # Settings & CORS config
+│   │   │   ├── database.py      # Async SQLite / PostgreSQL session factory
+│   │   │   ├── main.py          # FastAPI application entry point
+│   │   │   └── middleware.py    # Request ID and tracing
+│   │   └── tests/               # 15 domain pytest suites (100 tests passing)
+│   └── web/                     # Next.js 14 App Router frontend
+│       ├── src/
+│       │   ├── app/             # App router pages (dashboard, agents, organizations, workflows, councils)
+│       │   ├── components/      # UI components (OrganizationalGraph, OperationalGrid, PulseCards, AuthGuard)
+│       │   ├── lib/api/         # API clients (client, auth, organizations, agents, controlRoom, workflows, councils)
+│       │   └── store/           # Zustand stores (auth, activeCompany)
+│       ├── jest.config.js       # Jest testing configuration (ts-jest)
+│       └── package.json         # Node dependencies
+├── docker-compose.yml           # Local dev services
+└── documentation/               # Architecture records
 ```
-
-- **No `package.json`** — no Node.js project initialized
-- **No `pyproject.toml` / `requirements.txt`** — no Python project initialized
-- **No `Cargo.toml`** — no Rust project initialized
-- **No `Dockerfile` / `docker-compose.yml`** — no containerization
-- **No `.env` files** — no configuration
-- **No `README.md`** — no documentation
-- **No `.git/`** — no version control initialized at the project root
 
 ---
 
 ## 2. Frontend Architecture
-
-**Status: DOES NOT EXIST**
-
-No frontend framework, component library, routing system, state management layer, design system, or static assets of any kind are present.
+- **Framework:** Next.js 14 (App Router) + React 18 + TypeScript.
+- **Styling:** TailwindCSS with modern dark palette (`#0a0d14` carbon base, cyber cyan primary accents, glassmorphic card overlays).
+- **State Management:** Zustand for client persistence (`useAuthStore`), TanStack React Query v5 for server query cache, background refetching, and mutations.
+- **Key Dashboards:**
+  - **Company Control Room (`/dashboard`):** Unified Mission Control with interactive Canvas/SVG organizational hierarchy graph and operational telemetry.
+  - **Workforce Management (`/dashboard/agents`):** Agent profile inspector, autonomy configuration, status indicators.
+  - **Workflow Observability (`/dashboard/workflows`):** Visual step pipelines with human-in-the-loop approval gating and step provenance tracking.
+  - **Agent Councils (`/dashboard/councils`):** Multi-model deliberation chamber, debate threads, and dissent knowledge capture.
 
 ---
 
 ## 3. Backend Architecture
-
-**Status: DOES NOT EXIST**
-
-No API server, framework, routing layer, middleware stack, or business logic exists.
+- **Framework:** FastAPI (Python 3.13 / AsyncIO) managed by `uv`.
+- **Domain Layering:** Clean domain separation across 13 bounded contexts.
+- **Service & Repository Pattern:** Clear segregation between routers, domain business services, and database repositories.
+- **Middleware:** Request ID correlation, CORS policies for dev ports (3000, 3001), structured logging via `structlog`.
 
 ---
 
 ## 4. Database Architecture
-
-**Status: DOES NOT EXIST**
-
-No database schema, migration system, ORM models, or seed data exists.
+- **ORM:** SQLAlchemy 2.0 Async (`AsyncSessionLocal`).
+- **Database Engine:** SQLite async (`sqlite+aiosqlite:///./nexora.db`) for lightweight local iteration, switchable to PostgreSQL via `DATABASE_URL`.
+- **Migrations:** Alembic versioned migrations up to revision `0009` (head).
 
 ---
 
 ## 5. Authentication & Authorization
-
-**Status: DOES NOT EXIST**
-
-No authentication mechanism, session management, JWT implementation, role-based access control, or permission system exists.
+- **Auth Scheme:** JWT Bearer tokens with bcrypt password hashing.
+- **RBAC Hierarchy:** `OWNER` > `ADMIN` > `MANAGER` > `MEMBER` > `VIEWER` enforced via declarative FastAPI dependency factories.
+- **Dev Mode Support:** `DISABLE_AUTH` switch allowing non-blocking UI exploration without requiring manual sign-in.
 
 ---
 
 ## 6. API Architecture
-
-**Status: DOES NOT EXIST**
-
-No REST, GraphQL, gRPC, or WebSocket API layer exists. No API versioning, schema documentation, or rate limiting is in place.
-
----
-
-## 7. Existing Agent / Model Integrations
-
-**Status: DOES NOT EXIST**
-
-No AI/ML integrations, LLM API clients, embedding pipelines, vector stores, agent frameworks, or inference endpoints exist.
+- RESTful JSON endpoints prefixed at `/api/v1/`.
+- OpenAPI documentation live at `/api/docs` and `/api/redoc`.
+- Error handling standardized with unified error schemas (`ApiError`, `ConflictError`, `NotFoundError`, `ForbiddenError`).
 
 ---
 
-## 8. Existing UI/UX
-
-**Status: DOES NOT EXIST**
-
-No design system, component library, layout system, theming, or user-facing interface exists.
+## 7. Model Integrations & Intelligence Exchange
+- **Multi-Model Abstraction:** Heterogeneous intelligence routing supporting Claude, Gemini, OpenAI, and local models.
+- **Capability-Based Routing:** Request routing based on architectural reasoning, context size, latency, and cost ceilings.
 
 ---
 
-## 9. State Management
-
-**Status: DOES NOT EXIST**
-
-No client-side state management or server-side session/cache layer exists.
+## 8. Governance & Autonomy Engine
+- **Constitutional Matrix:** Autonomy Levels 0 to 5 (Observe, Recommend, Execute with Approval, Execute within Policy, Autonomous, Adaptive).
+- **Audit Viewer:** Traceable consequential action log capturing actor, target, reason, result, and authority level.
 
 ---
 
-## 10. Configuration / Environment Management
-
-**Status: DOES NOT EXIST**
-
-No environment variable schema, secrets management strategy, multi-environment configuration, or feature-flag system exists.
-
----
-
-## 11. Logging & Observability
-
-**Status: DOES NOT EXIST**
-
-No structured logging, distributed tracing, metrics collection, error tracking, or health-check endpoints exist.
+## 9. Multi-Agent Organizational Platform
+- **Organizational Employee Model:** Agents are persistent organizational employees characterized by persona, organizational role, department, responsibilities, goals, capability-based permissions, intelligence provider configuration, and resource quotas.
+- **7-Stage Lifecycle State Machine:** Strict transitions across `CREATED` -> `CONFIGURED` -> `AVAILABLE` -> `WORKING` -> `BLOCKED` -> `PAUSED` -> `RETIRED`.
+- **Reporting Hierarchy & Collaboration:** Interservice agent hierarchy with direct manager assignments, delegation mechanics (`/delegate`), problem escalations (`/escalate`), and peer review request threads.
+- **10-Step Execution Engine:** Deterministic, fully observable lifecycle: `TASK_RECEIVED` -> `CONTEXT_ASSEMBLY` -> `PLAN` -> `RESOURCE_CHECK` -> `INTELLIGENCE_SELECTION` -> `TOOL_EXECUTION` -> `RESULT` -> `VALIDATION` -> `REPORT` -> `MEMORY_UPDATE`.
+- **Capability-Based Permissions:** Strict enforcement of authorized tools and daily budget quotas before tool invocation or intelligence generation.
+- **Agent Profile & Operations Drawer:** Comprehensive frontend drawer ([AgentProfileDrawer.tsx](file:///home/sila/Projects/Sila/apps/web/src/components/AgentProfileDrawer.tsx)) supporting live lifecycle status switching, interactive 10-step task execution, structured dispatches, delegation, escalation, multi-layer memory inspection, and consequential audit logs.
 
 ---
 
-## 12. Testing
+## 10. Verification & Quality Gates
+- **Backend Tests:** 100/100 tests passing across all 15 domain suites (`uv run pytest`), including all 14 multi-agent platform tests in `tests/test_agents.py`.
+- **Frontend Type Safety:** `tsc --noEmit` passing with 0 errors.
+- **Frontend Unit Tests:** Jest unit tests passing.
+- **Data Simulation:** Full realistic organizational dataset seeded with `faker` across all 15 domains.
 
-**Status: DOES NOT EXIST**
-
-No unit tests, integration tests, end-to-end tests, test fixtures, mock factories, or CI test configuration exist.
-
----
-
-## 13. Deployment
-
-**Status: DOES NOT EXIST**
-
-No Dockerfile, docker-compose, Kubernetes manifests, CI/CD pipelines, or web server configuration exists.
-
----
-
-## 14. Security
-
-**Status: DOES NOT EXIST**
-
-No security headers, CORS policy, CSP, rate limiting, input sanitization, or dependency audit tooling exists.
-
----
-
-## 15. Documentation
-
-**Status: DOES NOT EXIST**
-
-No README, API docs, architecture diagrams, ADRs, or onboarding guides exist.
-
----
-
-## 16. Existing Abstractions That Can Be Reused
-
-**None.** The repository contains no reusable code.
-
-> **Reference Note:** The developer's machine contains a separate mature project at
-> `/home/sila/Projects/swms` (Smart-Weigh Management System).
-> Its patterns (RBAC factory, audit mixin, service-layer separation, backup adapter)
-> are architecturally instructive and should inform NEXORA decisions — but must not be ported directly.
-
----
-
-## 17. Technical Debt
-
-**None inherited.** NEXORA starts with zero accumulated debt.
-All debt will be self-generated. Phase 1 architectural decisions are the highest-leverage moment.
-
----
-
-## 18. Missing Infrastructure (Priority Order)
-
-| Priority | Infrastructure Item |
-|----------|---------------------|
-| P0 | Git initialization + .gitignore + branch strategy |
-| P0 | Monorepo structure definition |
-| P0 | Backend API framework |
-| P0 | Database + ORM + migration system |
-| P0 | Authentication / JWT system |
-| P0 | Frontend framework + design system |
-| P1 | AI/LLM integration layer (provider-agnostic adapter) |
-| P1 | Agent orchestration framework |
-| P1 | Vector database / embedding store |
-| P1 | Background task / job queue |
-| P1 | WebSocket / real-time layer |
-| P1 | Containerization (Docker + docker-compose) |
-| P1 | CI/CD pipeline |
-| P2 | Observability stack (logging, tracing, metrics) |
-| P2 | OpenAPI schema + auto-generated TypeScript types |
-| P2 | Multi-tenancy layer |
-| P2 | Feature flag system |
-| P3 | E2E testing (Playwright) |
-| P3 | Performance monitoring (APM) |
-| P3 | Secrets management |
-
----
-
-## 19. Architectural Risks (Prospective)
-
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| Wrong framework selection | High | High | Choose async-first, AI-native-friendly stack from Day 1 |
-| AI complexity underestimated | High | High | Thin provider-agnostic LLM adapter; streaming early |
-| Multi-tenancy retrofitted late | Medium | Critical | Tenant isolation in data model from Day 1 |
-| Blocking AI calls (no async queue) | High | High | Queue infrastructure before first agent endpoint |
-| Frontend/backend schema drift | Medium | Medium | Generate TS types from OpenAPI in CI |
-| Agent security surface unconstrained | High | Critical | Input validation, output sanitization, rate limits from Phase 1 |
-| Over-engineering before product clarity | Medium | High | Thin vertical slices; abstract only after pattern repeats 3x |
-
----
-
-## 20. Features That Conflict With the NEXORA Vision
-
-**None** — there are no features. NEXORA's vision can be expressed without constraint.
-
----
-
-## Conclusion
-
-The project is a **perfect greenfield**. Every architectural decision in Phase 1
-cascades through the entire system lifetime. The audit is complete.
-See: ARCHITECTURE_AUDIT.md, TECHNICAL_DEBT.md, NEXORA_ROADMAP.md, MISSING_CAPABILITIES.md

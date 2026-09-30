@@ -167,6 +167,19 @@ class IntelligenceRouter:
             res = await self.db.execute(q)
             target_model = res.scalar_one_or_none()
 
+        if not target_model and request.preferred_provider:
+            # Filter candidates matching preferred provider name
+            q_p = select(ModelProvider).where(
+                ModelProvider.name == request.preferred_provider,
+                ModelProvider.is_active.is_(True),
+            )
+            res_p = await self.db.execute(q_p)
+            pref_provider = res_p.scalar_one_or_none()
+            if pref_provider:
+                matched_cand = next((m for m in candidates if m.provider_id == pref_provider.id), None)
+                if matched_cand:
+                    target_model = matched_cand
+
         if not target_model and candidates:
             # Check if policy has specific capability preference
             for cap in request.required_capabilities:
@@ -253,5 +266,26 @@ class IntelligenceRouter:
                 if provider.consecutive_failures >= 3:
                     provider.is_healthy = False
                 await self.db.flush()
+
+        # If all candidates/fallbacks failed, record failed attempt in ledger
+        fail_log = ModelRequestLog(
+            company_id=company_id,
+            agent_id=agent_id,
+            task_id=task_id,
+            requested_capability=",".join(request.required_capabilities),
+            selected_provider_name=execution_chain[0].model_identifier if execution_chain else "unknown",
+            selected_model_identifier="failed",
+            routed_via_fallback=routed_via_fallback,
+            fallback_reason=f"Execution exhausted fallback chain. Last error: {last_error}",
+            prompt_tokens=0,
+            completion_tokens=0,
+            total_tokens=0,
+            estimated_cost_usd=0.0,
+            latency_ms=0.0,
+            success=False,
+            error_message=last_error,
+        )
+        self.db.add(fail_log)
+        await self.db.flush()
 
         raise BusinessRuleError(f"All routed intelligence models failed. Last error: {last_error}")

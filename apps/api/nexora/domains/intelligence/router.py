@@ -18,6 +18,8 @@ from nexora.domains.intelligence.schemas import (
     ModelRequest,
     ModelResponse,
     ModelResponsePayload,
+    ModelRoutingPolicyResponse,
+    ModelRoutingPolicyUpdate,
 )
 from nexora.domains.intelligence.service import IntelligenceService
 
@@ -39,6 +41,32 @@ async def get_dashboard(
 ):
     """Retrieve the Intelligence Exchange metrics, costs, models, and routing decisions."""
     return await IntelligenceService(db).get_dashboard(company_id)
+
+
+# ── Policy Configuration ─────────────────────────────────────────────────────
+
+
+@router.get("/policy", response_model=ModelRoutingPolicyResponse)
+async def get_routing_policy(
+    company_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_viewer()),
+):
+    """Retrieve active routing policy for company."""
+    return await IntelligenceService(db).get_policy(company_id)
+
+
+@router.put("/policy", response_model=ModelRoutingPolicyResponse)
+async def update_routing_policy(
+    company_id: uuid.UUID,
+    body: ModelRoutingPolicyUpdate,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_admin()),
+):
+    """Update active routing policy strategy, budget caps, fallback chain, or capability preferences."""
+    return await IntelligenceService(db).update_policy(company_id, body)
 
 
 # ── Vendor Agnostic Generation & Capability Routing ─────────────────────────

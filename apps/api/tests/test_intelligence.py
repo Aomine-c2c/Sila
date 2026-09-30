@@ -119,3 +119,50 @@ class TestIntelligenceExchange:
         assert dash["providers_count"] >= 4
         assert dash["models_count"] >= 4
         assert len(dash["recent_routing_decisions"]) >= 1
+
+    async def test_policy_get_and_update(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
+        company_id = company_via_api["id"]
+        # 1. Get default policy
+        get_res = await client.get(
+            f"/api/v1/companies/{company_id}/intelligence/policy", headers=auth_headers
+        )
+        assert get_res.status_code == 200
+        pol = get_res.json()
+        assert pol["strategy"] == "BALANCED"
+        assert len(pol["fallback_chain"]) >= 3
+
+        # 2. Update policy to LOWEST_COST
+        put_res = await client.put(
+            f"/api/v1/companies/{company_id}/intelligence/policy",
+            json={
+                "strategy": "LOWEST_COST",
+                "max_cost_per_query_usd": 0.25,
+                "fallback_chain": ["gemini-1.5-pro", "local-deepseek-r1"],
+            },
+            headers=auth_headers,
+        )
+        assert put_res.status_code == 200
+        updated = put_res.json()
+        assert updated["strategy"] == "LOWEST_COST"
+        assert updated["max_cost_per_query_usd"] == 0.25
+        assert updated["fallback_chain"] == ["gemini-1.5-pro", "local-deepseek-r1"]
+
+    async def test_preferred_provider_routing(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
+        company_id = company_via_api["id"]
+        # Explicit provider preference: google_gemini
+        resp = await client.post(
+            f"/api/v1/companies/{company_id}/intelligence/generate",
+            json={
+                "prompt": "Summarize this strategy briefing",
+                "preferred_provider": "google_gemini",
+            },
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["provider_used"] == "google_gemini"
+        assert data["model_used"] == "gemini-1.5-pro"
