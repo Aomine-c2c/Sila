@@ -127,6 +127,7 @@ export function Sidebar() {
         'relative z-20 flex flex-col border-r border-border bg-card/60 backdrop-blur-xl transition-all duration-300 ease-in-out select-none',
         collapsed ? 'w-16' : 'w-64'
       )}
+      aria-label="Main navigation"
     >
       {/* Brand Header */}
       <div className="flex h-16 items-center justify-between px-3 border-b border-border/80">
@@ -164,7 +165,7 @@ export function Sidebar() {
                 {section.title}
               </h4>
             )}
-            <nav className="space-y-1">
+            <nav aria-label={section.title} className="space-y-1">
               {section.items.map((item) => {
                 const active = isActive(item.href);
                 const Icon = item.icon;
@@ -172,6 +173,8 @@ export function Sidebar() {
                   <Link
                     key={item.id}
                     href={item.href}
+                    aria-current={active ? 'page' : undefined}
+                    aria-label={collapsed ? item.name : undefined}
                     className={cn(
                       'group relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-150',
                       active
@@ -185,6 +188,7 @@ export function Sidebar() {
                         'h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110',
                         active ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
                       )}
+                      aria-hidden="true"
                     />
                     {!collapsed && (
                       <span className="truncate flex-1 tracking-tight">
@@ -195,13 +199,14 @@ export function Sidebar() {
                       <Badge
                         variant={active ? 'cyber' : 'outline'}
                         className="text-[9px] px-1.5 py-0 h-4 uppercase shrink-0"
+                        aria-label={`${item.name} - ${item.badge}`}
                       >
                         {item.badge}
                       </Badge>
                     )}
                     {/* Active Pip Indicator */}
                     {active && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 rounded-r-full bg-primary" />
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 rounded-r-full bg-primary" aria-hidden="true" />
                     )}
                   </Link>
                 );
@@ -217,10 +222,12 @@ export function Sidebar() {
           type="button"
           onClick={toggleCollapse}
           className={cn(
-            'flex h-8 items-center justify-center rounded-lg border border-border/60 bg-secondary/50 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground hover:border-primary/40 focus:outline-none',
+            'flex h-8 items-center justify-center rounded-lg border border-border/60 bg-secondary/50 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground hover:border-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             collapsed ? 'w-full' : 'w-full gap-2 px-3 text-xs'
           )}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? 'Expand navigation sidebar' : 'Collapse navigation sidebar'}
         >
           {collapsed ? (
             <ChevronRight className="h-4 w-4" />

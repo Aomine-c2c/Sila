@@ -11,13 +11,6 @@ export type {
   ActivityFilterQuery,
 } from '@neiman/events';
 import type { ActivityFilterQuery, ActivityEvent } from '@neiman/events';
-  agent?: string;
-  department?: string;
-  project?: string;
-  event?: string;
-  severity?: string;
-  limit?: number;
-}
 
 export const activityApi = {
   getRecentActivity: (companyId: string, params?: ActivityFilterQuery): Promise<ActivityEvent[]> => {

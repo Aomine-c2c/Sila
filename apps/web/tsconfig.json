@@ -23,7 +23,7 @@
       "@neiman/validation": ["../../packages/validation/index.ts"],
       "@neiman/auth": ["../../packages/auth/index.ts"],
       "@neiman/api": ["../../packages/api/index.ts"],
-      "@neiman/ui": ["../../packages/ui/index.ts"]
+      "@neiman/ui": ["../../packages/ui/index.tsx"]
     },
     "plugins": [
       {

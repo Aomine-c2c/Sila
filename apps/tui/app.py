@@ -338,7 +338,145 @@ class NeimanTUIApp:
             except curses.error:
                 pass
 
-        # Navigation Bar at bottom of box
+        # VIEW: WORKFLOWS
+        elif self.current_view == "workflows":
+            try:
+                self.stdscr.addstr(content_y, start_x + 2, f"{'WORKFLOW NAME':<36} {'STATUS':<12} {'TRIGGER':<22} {'STEPS':<6}", curses.color_pair(2) | curses.A_BOLD)
+                self.stdscr.addstr(content_y + 1, start_x, "├" + "─" * (box_w - 2) + "┤", curses.color_pair(2))
+                for idx, wf in enumerate(self.workflows_data[:box_h - 8]):
+                    row_y = content_y + 2 + idx
+                    is_sel = (idx == self.selected_index)
+                    attr = curses.color_pair(5) if is_sel else curses.A_NORMAL
+                    name = wf.get("name", "Workflow")[:34]
+                    st = wf.get("status", "ACTIVE")[:10]
+                    trigger = wf.get("trigger", "—")[:20]
+                    steps = str(wf.get("steps", wf.get("step_count", "—")))[:4]
+                    color = curses.color_pair(1) if st == "ACTIVE" else curses.color_pair(3)
+                    self.stdscr.addstr(row_y, start_x + 2, f"{name:<36} ", attr)
+                    self.stdscr.addstr(row_y, start_x + 38, f"{st:<12}", color)
+                    self.stdscr.addstr(row_y, start_x + 50, f"{trigger:<22} {steps:<6}", attr)
+            except curses.error:
+                pass
+
+        # VIEW: RESOURCES
+        elif self.current_view == "resources":
+            try:
+                res = self.resources_data
+                pools = res.get("pools", []) if isinstance(res, dict) else []
+                # Top metrics header
+                cpu_pct = res.get("cpu_pct", 0) if isinstance(res, dict) else 0
+                ram_pct = res.get("ram_pct", 0) if isinstance(res, dict) else 0
+                tok_pct = res.get("tok_pct", 0) if isinstance(res, dict) else 0
+                bar_w = min(24, box_w - 30)
+                self.stdscr.addstr(content_y, start_x + 2, "SYSTEM RESOURCE UTILIZATION", curses.color_pair(2) | curses.A_BOLD)
+                self.draw_progress_bar(content_y + 1, start_x + 4, bar_w, cpu_pct, "CPU")
+                self.draw_progress_bar(content_y + 2, start_x + 4, bar_w, ram_pct, "RAM")
+                self.draw_progress_bar(content_y + 3, start_x + 4, bar_w, tok_pct, "TOK")
+                self.stdscr.addstr(content_y + 4, start_x, "├" + "─" * (box_w - 2) + "┤", curses.color_pair(2))
+
+                # Resource pools table
+                tbl_y = content_y + 5
+                self.stdscr.addstr(tbl_y, start_x + 2, f"{'POOL NAME':<30} {'TYPE':<14} {'USED %':<8} {'BUDGET':<12}", curses.color_pair(2) | curses.A_BOLD)
+                for idx, pool in enumerate(pools[:box_h - 16]):
+                    row_y = tbl_y + 1 + idx
+                    pname = pool.get("name", "Pool")[:28]
+                    ptype = pool.get("pool_type", pool.get("resource_type", "—"))[:12]
+                    used = pool.get("used_percentage", pool.get("utilization_pct", 0))
+                    budget = f"${pool.get('budget_usd', pool.get('total_budget', 0)):.0f}"[:10]
+                    u_color = curses.color_pair(4) if used > 80 else (curses.color_pair(3) if used > 65 else curses.color_pair(1))
+                    self.stdscr.addstr(row_y, start_x + 2, f"{pname:<30} {ptype:<14} ", curses.A_NORMAL)
+                    self.stdscr.addstr(row_y, start_x + 46, f"{used:>5.0f}%  ", u_color)
+                    self.stdscr.addstr(row_y, start_x + 54, f"{budget:<12}")
+            except curses.error:
+                pass
+
+        # VIEW: INTELLIGENCE (Model Providers & Routing)
+        elif self.current_view == "intelligence":
+            try:
+                intel = self.intelligence_data
+                providers = intel.get("providers", []) if isinstance(intel, dict) else []
+                routing = intel.get("routing", {}) if isinstance(intel, dict) else {}
+                self.stdscr.addstr(content_y, start_x + 2, "INTELLIGENCE PROVIDERS & MODEL ROUTING MESH", curses.color_pair(2) | curses.A_BOLD)
+                self.stdscr.addstr(content_y + 1, start_x, "├" + "─" * (box_w - 2) + "┤", curses.color_pair(2))
+                self.stdscr.addstr(content_y + 2, start_x + 2, f"{'PROVIDER':<20} {'MODEL':<28} {'STATUS':<12} {'LATENCY':<10}", curses.color_pair(2) | curses.A_BOLD)
+
+                if providers:
+                    for idx, prov in enumerate(providers[:box_h - 12]):
+                        row_y = content_y + 3 + idx
+                        pname = prov.get("name", prov.get("provider_name", "Provider"))[:18]
+                        model = prov.get("default_model", prov.get("model", "—"))[:26]
+                        st = prov.get("status", "ACTIVE")[:10]
+                        lat = f"{prov.get('avg_latency_ms', prov.get('latency_ms', 0)):.0f}ms"[:8]
+                        color = curses.color_pair(1) if st == "ACTIVE" else curses.color_pair(4)
+                        self.stdscr.addstr(row_y, start_x + 2, f"{pname:<20} {model:<28} ", curses.A_NORMAL)
+                        self.stdscr.addstr(row_y, start_x + 50, f"{st:<12}", color)
+                        self.stdscr.addstr(row_y, start_x + 62, f"{lat:<10}")
+                else:
+                    # Offline/simulation fallback
+                    fallback = [
+                        ("anthropic", "claude-sonnet-4-5", "ACTIVE", "312ms"),
+                        ("google", "gemini-2.5-pro", "ACTIVE", "198ms"),
+                        ("openai", "gpt-4.1", "ACTIVE", "445ms"),
+                        ("ollama-local", "llama3.3:70b", "STANDBY", "67ms"),
+                    ]
+                    for idx, (pname, model, st, lat) in enumerate(fallback):
+                        row_y = content_y + 3 + idx
+                        color = curses.color_pair(1) if st == "ACTIVE" else curses.color_pair(3)
+                        self.stdscr.addstr(row_y, start_x + 2, f"{pname:<20} {model:<28} ", curses.A_NORMAL)
+                        self.stdscr.addstr(row_y, start_x + 50, f"{st:<12}", color)
+                        self.stdscr.addstr(row_y, start_x + 62, f"{lat:<10}")
+
+                # Routing policy summary
+                rp_y = content_y + 3 + max(len(providers), 4) + 1
+                if rp_y < start_y + box_h - 4:
+                    self.stdscr.addstr(rp_y, start_x, "├" + "─" * (box_w - 2) + "┤", curses.color_pair(2))
+                    policy = routing.get("active_policy", "COST_OPTIMIZED_WITH_FAILOVER")
+                    self.stdscr.addstr(rp_y + 1, start_x + 2, f"ROUTING POLICY: {policy}", curses.color_pair(6) | curses.A_BOLD)
+            except curses.error:
+                pass
+
+        # VIEW: EVOLUTION (Autonomous Self-Improvement Proposals)
+        elif self.current_view == "evolution":
+            try:
+                evo = self.evolution_data
+                proposals = evo.get("proposals", []) if isinstance(evo, dict) else (evo if isinstance(evo, list) else [])
+                self.stdscr.addstr(content_y, start_x + 2, "AUTONOMOUS EVOLUTION & SELF-IMPROVEMENT PROPOSALS", curses.color_pair(2) | curses.A_BOLD)
+                self.stdscr.addstr(content_y + 1, start_x, "├" + "─" * (box_w - 2) + "┤", curses.color_pair(2))
+                self.stdscr.addstr(content_y + 2, start_x + 2, f"{'PROPOSAL TITLE':<38} {'TYPE':<16} {'RISK':<8} {'STATUS':<12}", curses.color_pair(2) | curses.A_BOLD)
+
+                if proposals:
+                    for idx, prop in enumerate(proposals[:box_h - 12]):
+                        row_y = content_y + 3 + idx
+                        is_sel = (idx == self.selected_index)
+                        attr = curses.color_pair(5) if is_sel else curses.A_NORMAL
+                        title = prop.get("title", prop.get("name", "Proposal"))[:36]
+                        ptype = prop.get("proposal_type", prop.get("type", "PROCESS"))[:14]
+                        risk = prop.get("risk_level", "LOW")[:6]
+                        st = prop.get("status", "PENDING")[:10]
+                        risk_color = curses.color_pair(4) if risk in ("HIGH", "CRITICAL") else (curses.color_pair(3) if risk == "MEDIUM" else curses.color_pair(1))
+                        self.stdscr.addstr(row_y, start_x + 2, f"{title:<38} {ptype:<16} ", attr)
+                        self.stdscr.addstr(row_y, start_x + 56, f"{risk:<8}", risk_color)
+                        self.stdscr.addstr(row_y, start_x + 64, f"{st:<12}", attr)
+                else:
+                    # Offline demo proposals
+                    demo = [
+                        ("Optimize token budget allocation across providers", "RESOURCE_STRATEGY", "LOW", "APPROVED"),
+                        ("Implement cross-agent memory deduplication", "MEMORY_ARCHITECTURE", "MEDIUM", "PENDING"),
+                        ("Adopt Gemini 2.5 Flash for batch summarization", "MODEL_ROUTING", "LOW", "SIMULATING"),
+                        ("Reduce approval latency for medium-risk actions", "GOVERNANCE_POLICY", "HIGH", "REJECTED"),
+                    ]
+                    for idx, (title, ptype, risk, st) in enumerate(demo):
+                        row_y = content_y + 3 + idx
+                        risk_color = curses.color_pair(4) if risk in ("HIGH", "CRITICAL") else (curses.color_pair(3) if risk == "MEDIUM" else curses.color_pair(1))
+                        t = title[:36]
+                        pt = ptype[:14]
+                        self.stdscr.addstr(row_y, start_x + 2, f"{t:<38} {pt:<16} ")
+                        self.stdscr.addstr(row_y, start_x + 56, f"{risk:<8}", risk_color)
+                        self.stdscr.addstr(row_y, start_x + 64, f"{st:<12}")
+            except curses.error:
+                pass
+
+
         nav_y = start_y + box_h - 2
         try:
             self.stdscr.addstr(nav_y - 1, start_x, "├" + "─" * (box_w - 2) + "┤", curses.color_pair(2))
