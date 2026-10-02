@@ -10,10 +10,10 @@ import httpx
 from nexora.config import Settings
 
 from nexora.domains.intelligence.adapters.base import (
-    OpenAIMockAdapter,
-    AnthropicMockAdapter,
-    GeminiMockAdapter,
-    LocalModelMockAdapter,
+    OpenAILiveAdapter,
+    AnthropicLiveAdapter,
+    GeminiLiveAdapter,
+    LocalModelLiveAdapter,
     ProviderRateLimitError,
 )
 from nexora.domains.intelligence.schemas import ModelRequest
@@ -21,7 +21,7 @@ from nexora.domains.intelligence.schemas import ModelRequest
 
 @pytest.mark.asyncio
 async def test_openai_adapter_simulated_fallback_when_no_key():
-    adapter = OpenAIMockAdapter()
+    adapter = OpenAILiveAdapter()
     req = ModelRequest(
         prompt="Synthesize organizational policy",
         required_capabilities=["reasoning"],
@@ -38,7 +38,7 @@ async def test_openai_adapter_simulated_fallback_when_no_key():
 
 @pytest.mark.asyncio
 async def test_openai_adapter_live_execution_mocked_http():
-    adapter = OpenAIMockAdapter()
+    adapter = OpenAILiveAdapter()
     req = ModelRequest(
         prompt="Analyze revenue trend",
         required_capabilities=["reasoning"],
@@ -62,7 +62,7 @@ async def test_openai_adapter_live_execution_mocked_http():
 
 @pytest.mark.asyncio
 async def test_anthropic_adapter_live_execution_mocked_http():
-    adapter = AnthropicMockAdapter()
+    adapter = AnthropicLiveAdapter()
     req = ModelRequest(
         prompt="Review system architecture",
         required_capabilities=["reasoning"],
@@ -86,7 +86,7 @@ async def test_anthropic_adapter_live_execution_mocked_http():
 
 @pytest.mark.asyncio
 async def test_gemini_adapter_live_execution_mocked_http():
-    adapter = GeminiMockAdapter()
+    adapter = GeminiLiveAdapter()
     req = ModelRequest(
         prompt="Process large enterprise dataset",
         required_capabilities=["large_context"],

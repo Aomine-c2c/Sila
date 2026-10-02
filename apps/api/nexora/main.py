@@ -27,6 +27,7 @@ import nexora.domains.projects.models  # noqa: F401
 import nexora.domains.resources.models  # noqa: F401
 import nexora.domains.workflows.models  # noqa: F401
 from nexora.config import get_settings
+from nexora.database import AsyncSessionLocal
 from nexora.domains.agents.router import router as agent_router
 
 # Domain routers
@@ -44,7 +45,7 @@ from nexora.domains.projects.router import router as project_router
 from nexora.domains.resources.router import router as resource_router
 from nexora.domains.workflows.router import router as workflow_router
 from nexora.exceptions import register_exception_handlers
-from nexora.middleware import RequestIDMiddleware
+from nexora.middleware import RateLimitMiddleware, RequestIDMiddleware, SecurityHeadersMiddleware
 
 settings = get_settings()
 logger = structlog.get_logger(__name__)
@@ -74,13 +75,15 @@ def create_app() -> FastAPI:
 
     # ── Middleware ─────────────────────────────────────────────────────────
     app.add_middleware(RequestIDMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
     )
+    app.add_middleware(RateLimitMiddleware, path_prefixes=["/api/v1/auth/"])
 
     # ── Exception Handlers ─────────────────────────────────────────────────
     register_exception_handlers(app)
@@ -154,11 +157,41 @@ def create_app() -> FastAPI:
     # ── Health Check ───────────────────────────────────────────────────────
     @app.get("/health", tags=["System"], summary="Health check")
     async def health():
+        import asyncio
+        import urllib.parse
+
+        from sqlalchemy import text
+
+        components: dict[str, str] = {}
+
+        # Database check
+        try:
+            async with AsyncSessionLocal() as session:
+                await session.execute(text("SELECT 1"))
+                components["database"] = "ok"
+        except Exception as e:
+            components["database"] = f"error: {e}"
+
+        # Redis check
+        try:
+            redis_url = urllib.parse.urlparse(settings.REDIS_URL)
+            host = redis_url.hostname or "localhost"
+            port = redis_url.port or 6379
+            reader, writer = await asyncio.open_connection(host, port)
+            writer.close()
+            await writer.wait_closed()
+            components["redis"] = "ok"
+        except Exception as e:
+            components["redis"] = f"error: {e}"
+
+        overall = "ok" if all(v == "ok" for v in components.values()) else "degraded"
+
         return {
-            "status": "ok",
+            "status": overall,
             "service": settings.APP_NAME,
             "version": settings.APP_VERSION,
             "environment": settings.ENVIRONMENT,
+            "components": components,
         }
 
     @app.get("/", include_in_schema=False)

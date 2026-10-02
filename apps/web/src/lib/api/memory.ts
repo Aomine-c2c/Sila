@@ -15,7 +15,9 @@ export type MemoryDomain =
   | 'POLICY'
   | 'EXPERIMENT'
   | 'FAILURE'
-  | 'KNOWLEDGE_BASE';
+  | 'KNOWLEDGE_BASE'
+  | 'DOCUMENT'
+  | 'LESSON';
 
 export type MemoryScope = 'PUBLIC' | 'INTERNAL' | 'CONFIDENTIAL' | 'RESTRICTED' | 'PRIVATE';
 export type ProvenanceType = 'HUMAN_INPUT' | 'AGENT_OBSERVATION' | 'SYSTEM_EVENT' | 'DOCUMENT_INGESTION' | 'COUNCIL_RESOLUTION';

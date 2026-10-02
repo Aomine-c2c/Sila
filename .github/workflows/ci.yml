@@ -39,15 +39,15 @@ jobs:
 
       - name: Run Ruff
         working-directory: ./apps/api
-        run: uv run ruff check NEIMAN/ tests/
+        run: uv run ruff check nexora/ tests/
 
       - name: Run MyPy
         working-directory: ./apps/api
-        run: uv run mypy NEIMAN/
+        run: uv run mypy nexora/
 
       - name: Run Ruff format check
         working-directory: ./apps/api
-        run: uv run ruff format --check NEIMAN/ tests/
+        run: uv run ruff format --check nexora/ tests/
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -272,7 +272,8 @@ jobs:
     needs: [build-api, build-web]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: staging
+    environment:
+      name: staging
     permissions:
       contents: read
       packages: read
@@ -292,7 +293,8 @@ jobs:
     needs: [build-api, build-web]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    environment: production
+    environment:
+      name: production
     permissions:
       contents: read
       packages: read

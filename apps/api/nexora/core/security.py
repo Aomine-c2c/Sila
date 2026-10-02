@@ -25,6 +25,7 @@ from enum import Enum
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from nexora.config import get_settings
 from nexora.exceptions import ForbiddenError, ValidationError
 
 
@@ -304,6 +305,11 @@ class AuditIntegrityChamber:
     SECRET_SALT = b"NEIMAN_audit_cryptographic_anchor_v1"
 
     @classmethod
+    def _get_audit_salt(cls) -> bytes:
+        salt = get_settings().AUDIT_SECRET_SALT
+        return salt.encode("utf-8") if isinstance(salt, str) else salt
+
+    @classmethod
     def _canonical_timestamp(cls, timestamp: str) -> str:
         # Standardize timestamp string: normalize +00:00 or Z
         if not timestamp:
@@ -325,7 +331,7 @@ class AuditIntegrityChamber:
     ) -> str:
         canonical_ts = cls._canonical_timestamp(timestamp)
         canonical_str = f"{audit_id}:{company_id}:{actor_id}:{action}:{target}:{result}:{canonical_ts}:{previous_signature}"
-        return hmac.new(cls.SECRET_SALT, canonical_str.encode("utf-8"), hashlib.sha256).hexdigest()
+        return hmac.new(cls._get_audit_salt(), canonical_str.encode("utf-8"), hashlib.sha256).hexdigest()
 
     @classmethod
     def verify_record_signature(

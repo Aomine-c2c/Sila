@@ -171,7 +171,7 @@ class BaseModelAdapter(ABC):
         pass
 
 
-class OpenAIMockAdapter(BaseModelAdapter):
+class OpenAILiveAdapter(BaseModelAdapter):
     """Adapter for OpenAI models (GPT-4o, o1, o3-mini) with failure simulation & normalization."""
 
     def get_provider_name(self) -> str:
@@ -308,7 +308,7 @@ class OpenAIMockAdapter(BaseModelAdapter):
         return self.circuit_breaker.can_execute()
 
 
-class AnthropicMockAdapter(BaseModelAdapter):
+class AnthropicLiveAdapter(BaseModelAdapter):
     """Adapter for Anthropic Claude models (Claude 3.5 Sonnet, Haiku, Opus)."""
 
     def get_provider_name(self) -> str:
@@ -429,7 +429,7 @@ class AnthropicMockAdapter(BaseModelAdapter):
         return self.circuit_breaker.can_execute()
 
 
-class GeminiMockAdapter(BaseModelAdapter):
+class GeminiLiveAdapter(BaseModelAdapter):
     """Adapter for Google Gemini models (Gemini 1.5 Pro, Flash, Gemini 2.0)."""
 
     def get_provider_name(self) -> str:
@@ -543,7 +543,7 @@ class GeminiMockAdapter(BaseModelAdapter):
         return self.circuit_breaker.can_execute()
 
 
-class LocalModelMockAdapter(BaseModelAdapter):
+class LocalModelLiveAdapter(BaseModelAdapter):
     """Adapter for local / self-hosted models (Ollama, vLLM, DeepSeek-R1). Zero API Cost & Air-gapped fallback."""
 
     def get_provider_name(self) -> str:
@@ -658,10 +658,10 @@ class ModelAdapterRegistry:
     def __init__(self) -> None:
         self._adapters: dict[str, BaseModelAdapter] = {}
         # Register core initial providers
-        self.register(OpenAIMockAdapter())
-        self.register(AnthropicMockAdapter())
-        self.register(GeminiMockAdapter())
-        self.register(LocalModelMockAdapter())
+        self.register(OpenAILiveAdapter())
+        self.register(AnthropicLiveAdapter())
+        self.register(GeminiLiveAdapter())
+        self.register(LocalModelLiveAdapter())
 
     def register(self, adapter: BaseModelAdapter) -> None:
         self._adapters[adapter.get_provider_name()] = adapter

@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     DISABLE_AUTH: bool = False
+    AUDIT_SECRET_SALT: str = "NEIMAN_audit_cryptographic_anchor_v1"
+
+    # Rate Limiting
+    RATE_LIMIT_REQUESTS: int = 100
+    RATE_LIMIT_WINDOW: int = 60
 
     # CORS
     CORS_ORIGINS: list[str] = [

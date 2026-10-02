@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+- Implemented NEIMAN Agent Council Visual Deliberation Workspace (`/dashboard/councils`):
+  - Visual Deliberation Topology: Interactive deliberation mesh visualizing the cross-perspective counter-balancing architecture: `CTO (OpenAI)` $\longleftrightarrow$ `Architect (Claude 3.5 Sonnet)` over `Security (Claude Haiku)` $\longleftrightarrow$ `Backend (Gemini 1.5 Pro)` converging downwards into `SYNTHESIS & RATIFIED CONSENSUS`.
+  - 5-Field Participant Rigor: Every council participant card models the complete deliberation structure: `Position` (mandate & orientation), `Evidence` (empirical logs, benchmark MTTR metrics, and simulations), `Confidence` (self-assessed model certainty percentage), `Concerns` (identified technical and operational risks), and `Recommendation` (concrete actionable stance).
+  - Explicit Disagreement Preservation: Surfaces technical divergences prominently under dedicated dissent registers with arguments, counter-arguments, and acceptable mitigations, recorded immutably to organizational memory rather than forced consensus.
+  - 6 Structured Deliberation Stages: Non-chat structured progression navigating `Proposals`, `Evidence Matrix`, `Objections & Dissent`, `Discussion Threads`, `Consensus Synthesis`, and permanent `Decision Record`.
+  - Executive Ratification: Allows human supervisory authority to review synthesized consensus and commit final ratification directly into organizational decision records and memory.
+  - Production verification: Tested across 13 test suites (51 tests) and verified Next.js production build cleanly compiled (28/28 routes).
+
+- Implemented NEIMAN Human-in-the-Loop Approval Center (`/dashboard/approvals`):
+  - 8-Field Operational Governance Matrix: Every approval item explicitly surfaces `WHAT`, `WHO`, `WHY`, `RISK`, `RESOURCES`, `EVIDENCE`, `EXPECTED RESULT`, and `PROPOSED ACTION` directly in the card layout for rapid decision-making without hiding critical context.
+  - 5 Concrete Operator Actions: Interactive handling for `APPROVE`, `REJECT`, `REQUEST CHANGES`, `DELEGATE` (with organizational agent directory target selection), and `ESCALATE` (to high-authority governance councils).
+  - High-Risk Context Grounding: Expandable verified evidence and telemetry grounding drawers for `HIGH` and `CRITICAL` risk operations with telemetry logs, parameter inspections, and safety boundaries.
+  - Dual-View Architecture: Seamless toggling between `Active Approval Queue` (with count indicators and severity filters) and `Approval History & Audit Trail` (with reviewer signatures, decision timestamps, and executive directive logs).
+  - 7 Structured Filter Ribbons: One-click filtering across `Urgent`, `Financial`, `Security`, `Deployment`, `Data`, `Policy`, and `Evolution` operational domains.
+  - Production verification: Tested across unit suites and verified cleanly compiled in Next.js production bundle (28/28 routes).
+
+- Implemented NEIMAN Organizational Memory & Decision Explorer (`/dashboard/memory`):
+  - 8 Primary Memory Domains: Integrated `Knowledge`, `Decisions`, `Experiments`, `Lessons`, `Documents`, `Agent Memory`, `Project Memory`, and `Policies` with quick-chip filters, scope badges, confidence ratings, and access counters.
+  - Global Organizational Search: Unified multi-domain search across `projects`, `agents`, `decisions`, `documents`, `tasks`, `workflows`, `policies`, and `knowledge`.
+  - Comprehensive Provenance Tracking: Every search result explicitly surfaces `Provenance Source`, `Originating Actor`, `Classification / Scope`, and timestamp lineage.
+  - 8-Stage Decision Explorer: Interactive lineage explorer allowing users to inspect the exact progression of consequential company decisions: `Problem` $\to$ `Evidence` $\to$ `Proposals` $\to$ `Discussion` $\to$ `Decision` $\to$ `Expected Outcome` $\to$ `Actual Outcome` $\to$ `Lesson`.
+  - Retrospective Feedback Loop: Interactive submission form to record actual measured outcomes and catalogue permanent lessons learned for future agent generations.
+  - Full production build verification with zero regressions across all 28 Next.js routes.
+
 - Implemented NEIMAN Resource Command Center (`/dashboard/resources`):
   - 11 Primary Telemetry Dimensions: CPU, RAM, GPU, Storage, Network, Tokens, API Calls, Provider Quotas, Budget, Agent Capacity, and Human Approval Queue with live telemetry pills.
   - Multi-Dimensional Resource Cards: Structured with the 5 explicit state metrics (`CURRENT` observed telemetry, `ALLOCATED` commitments, `AVAILABLE` headroom, `LIMIT` hard quota ceiling, and `FORECAST` projected consumption).

@@ -67,7 +67,7 @@ const NAV_SECTIONS: NavSection[] = [
       { id: 'intelligence', name: 'Router & Models', href: '/dashboard/intelligence', icon: Zap, badge: 'Engine' },
       { id: 'memory', name: 'Org Memory', href: '/dashboard/memory', icon: Brain },
       { id: 'simulation', name: 'Simulation Lab', href: '/dashboard/simulation', icon: FlaskConical },
-      { id: 'evolution', name: 'Evolution Lab', href: '/dashboard/evolution', icon: Sparkles },
+      { id: 'evolution', name: 'Evolution Center', href: '/dashboard/evolution', icon: Sparkles },
     ],
   },
   {
