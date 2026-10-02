@@ -1,5 +1,6 @@
 /**
  * NEXORA Workflows API Client
+ * Enterprise-grade multi-step orchestration across organizational agents, tools, conditions, and human gates.
  */
 
 import { api } from './client';
@@ -11,17 +12,44 @@ export type WorkflowExecutionStatus =
   | 'RUNNING'
   | 'WAITING_APPROVAL'
   | 'WAITING_RETRY'
+  | 'WAITING_RESOURCE'
   | 'ESCALATED'
   | 'COMPLETED'
   | 'FAILED'
-  | 'CANCELLED';
+  | 'CANCELLED'
+  | 'TIMED_OUT';
+
+export type WorkflowNodeType =
+  | 'TRIGGER'
+  | 'AGENT'
+  | 'TASK'
+  | 'TOOL'
+  | 'CONDITION'
+  | 'PARALLEL'
+  | 'APPROVAL'
+  | 'HUMAN_REVIEW'
+  | 'RESOURCE_REQUEST'
+  | 'MODEL_SELECTION'
+  | 'DELAY'
+  | 'WEBHOOK'
+  | 'ESCALATION'
+  | 'VALIDATION'
+  | 'SUCCESS'
+  | 'FAILURE';
+
+export interface WorkflowNodePosition {
+  x: number;
+  y: number;
+}
 
 export interface WorkflowStep {
   id: string;
   name: string;
-  type: 'AGENT' | 'TOOL' | 'APPROVAL' | 'RESOURCE_REQUEST' | 'DECISION' | 'ESCALATION' | 'PARALLEL';
+  type: WorkflowNodeType | string;
   config: Record<string, unknown>;
   next_step_id?: string;
+  next_step_ids?: string[]; // for parallel splits
+  position?: WorkflowNodePosition;
   condition?: {
     expression: string;
     true_step?: string;
@@ -43,6 +71,7 @@ export interface Workflow {
   approvals: Record<string, unknown>;
   completion_criteria: Record<string, unknown>;
   status: WorkflowStatus;
+  version?: number;
   created_at: string;
   updated_at: string;
 }
@@ -99,6 +128,8 @@ export interface WorkflowExecution {
   max_retries: number;
   timeout_seconds: number;
   duration_ms: number;
+  tokens_consumed?: number;
+  cost_usd?: number;
   pending_approval_id?: string | null;
   pending_escalation_id?: string | null;
   step_records: WorkflowExecutionStepRecord[];

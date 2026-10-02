@@ -21,8 +21,9 @@ import { OrganizationalGraph } from '@/components/OrganizationalGraph';
 import { OperationalPulseCards } from '@/components/OperationalPulseCards';
 import { OperationalGrid } from '@/components/OperationalGrid';
 import { OrganizationOffice } from '@/components/OrganizationOffice';
+import { MagneticGrainOrb } from '@/components/layout/MagneticGrainOrb';
 import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
-import { PREVIEW_COMPANY } from '@/lib/api/controlRoomPreview';
+import { PREVIEW_COMPANY, getControlRoomPreviewState } from '@/lib/api/controlRoomPreview';
 
 export default function ControlRoomPage() {
   const qc = useQueryClient();
@@ -43,16 +44,19 @@ export default function ControlRoomPage() {
 
   // Load full operational state
   const {
-    data: state,
-    isLoading,
+    data: fetchedState,
+    isLoading: queryLoading,
     isRefetching,
     refetch,
   } = useQuery<ControlRoomState>({
     queryKey: ['control-room-state', companyId],
     queryFn: () => controlRoomApi.getOperationalState(companyId!),
-    enabled: !!companyId,
+    enabled: !!companyId && !developmentBypass,
     staleTime: 15_000,
   });
+
+  const state = developmentBypass ? getControlRoomPreviewState() : (fetchedState ?? getControlRoomPreviewState());
+  const isLoading = developmentBypass ? false : (queryLoading && !state);
 
   // Approval decision mutation
   const approvalMutation = useMutation({
@@ -205,19 +209,26 @@ export default function ControlRoomPage() {
       {!isLoading && state && (
         <div className="space-y-6">
           {activeTab === 'control' && (
-            <OrganizationOffice
-              companyName={displayCompany!.name}
-              departments={state.departments}
-              agents={state.agents}
-              projects={state.projects}
-              tasks={state.tasks}
-              approvals={state.approvals}
-              providers={state.providers}
-              resources={state.resources}
-              memoryItems={state.memories.length}
-              activePolicies={state.policies.filter((policy) => policy.is_active).length}
-              onOpenGraph={() => setActiveTab('graph')}
-            />
+            <>
+              {/* Central Core: Magnetic Grain Orb & Radial Navigation Constellation */}
+              <div className="flex flex-col items-center justify-center p-4 rounded-3xl border border-primary/20 bg-gradient-to-b from-card/60 via-card/30 to-background backdrop-blur-xl relative overflow-hidden shadow-2xl">
+                <MagneticGrainOrb />
+              </div>
+
+              <OrganizationOffice
+                companyName={displayCompany!.name}
+                departments={state.departments}
+                agents={state.agents}
+                projects={state.projects}
+                tasks={state.tasks}
+                approvals={state.approvals}
+                providers={state.providers}
+                resources={state.resources}
+                memoryItems={state.memories.length}
+                activePolicies={state.policies.filter((policy) => policy.is_active).length}
+                onOpenGraph={() => setActiveTab('graph')}
+              />
+            </>
           )}
 
           {/* Executive Pulse Row (What is company doing? What are agents doing? Blocked? Resources?) */}
@@ -279,6 +290,8 @@ export default function ControlRoomPage() {
                 projects={state.projects}
                 tasks={state.tasks}
                 decisions={state.decisions}
+                roles={state.roles}
+                audits={state.audits}
               />
             </div>
           )}

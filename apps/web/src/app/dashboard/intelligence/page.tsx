@@ -20,6 +20,7 @@ import {
   Cloud,
   Check,
   RotateCw,
+  Eye,
 } from 'lucide-react';
 import {
   intelligenceApi,
@@ -29,6 +30,11 @@ import {
   ModelRoutingPolicyUpdate,
 } from '@/lib/api/intelligence';
 import { useOrganizationContext } from '@/lib/organizationContext';
+import { IntelligenceFlowDiagram } from '@/components/intelligence/IntelligenceFlowDiagram';
+import { ModelComparisonMatrix } from '@/components/intelligence/ModelComparisonMatrix';
+import { ProviderDirectory } from '@/components/intelligence/ProviderDirectory';
+import { RoutingPolicyEditor } from '@/components/intelligence/RoutingPolicyEditor';
+import { ModelDetailsModal } from '@/components/intelligence/ModelDetailsModal';
 
 const STRATEGY_DESCRIPTIONS: Record<string, string> = {
   BALANCED: 'Optimizes across cost, latency, and capability matching based on company priorities.',
@@ -44,7 +50,10 @@ export default function IntelligenceExchangePage() {
   const queryClient = useQueryClient();
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<'matrix' | 'simulator' | 'policy' | 'decisions'>('matrix');
+  const [activeTab, setActiveTab] = useState<'architecture' | 'matrix' | 'providers' | 'simulator' | 'policy' | 'decisions'>('architecture');
+
+  // Selected Model for modal view
+  const [selectedModel, setSelectedModel] = useState<Model | null>(null);
 
   // Simulator State
   const [prompt, setPrompt] = useState('Draft an incident mitigation plan for a cascading queue blockage');
@@ -135,12 +144,8 @@ export default function IntelligenceExchangePage() {
     });
   };
 
-  const handleSavePolicy = (e: React.FormEvent) => {
-    e.preventDefault();
-    updatePolicyMutation.mutate({
-      strategy: policyStrategy,
-      max_cost_per_query_usd: parseFloat(maxCostCeiling) || 0.5,
-    });
+  const handleSavePolicy = (update: ModelRoutingPolicyUpdate) => {
+    updatePolicyMutation.mutate(update);
   };
 
   const providers = dashboard?.available_providers || [];
@@ -256,151 +261,138 @@ export default function IntelligenceExchangePage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-border gap-6">
+      <div className="flex border-b border-border gap-6 overflow-x-auto scrollbar-hide">
         <button
+          type="button"
+          onClick={() => setActiveTab('architecture')}
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
+            activeTab === 'architecture'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Zap className="h-4 w-4" />
+          Architecture & Routing Topology
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab('matrix')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'matrix'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           <Cpu className="h-4 w-4" />
-          Provider & Model Catalog ({models.length})
+          Model Comparison Benchmark ({models.length})
         </button>
 
         <button
-          onClick={() => setActiveTab('simulator')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
-            activeTab === 'simulator'
+          type="button"
+          onClick={() => setActiveTab('providers')}
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
+            activeTab === 'providers'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
-          <Sparkles className="h-4 w-4" />
-          Capability Routing Simulator
+          <Cloud className="h-4 w-4" />
+          Provider Health & Adapters ({providers.length})
         </button>
 
         <button
+          type="button"
           onClick={() => setActiveTab('policy')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'policy'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           <Sliders className="h-4 w-4" />
-          Routing Policy & Failovers
+          Routing Policy & Fallbacks
         </button>
 
         <button
+          type="button"
+          onClick={() => setActiveTab('simulator')}
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
+            activeTab === 'simulator'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Sparkles className="h-4 w-4" />
+          Capability Simulator & Resiliency
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab('decisions')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'decisions'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           <ArrowRightLeft className="h-4 w-4" />
-          Routing Decision Ledger ({decisions.length})
+          Decision Audit Ledger ({decisions.length})
         </button>
       </div>
 
-      {/* TAB 1: MODEL MATRIX & PROVIDERS */}
-      {activeTab === 'matrix' && (
+      {/* TAB 1: ARCHITECTURE FLOW TOPOLOGY */}
+      {activeTab === 'architecture' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {providers.map((p) => (
-              <div key={p.id} className="rounded-xl border border-border bg-card p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-foreground flex items-center gap-2">
-                    {p.is_local ? <Server className="h-4 w-4 text-emerald-400" /> : <Cloud className="h-4 w-4 text-blue-400" />}
-                    {p.display_name}
-                  </span>
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                      p.is_healthy ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
-                    }`}
-                  >
-                    {p.is_healthy ? 'HEALTHY' : 'DEGRADED'}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground line-clamp-2">{p.description}</p>
-                <div className="text-[11px] text-muted-foreground flex justify-between border-t border-border pt-2">
-                  <span>Type: {p.is_local ? 'Self-Hosted / Local' : 'Cloud API'}</span>
-                  <span>Failures: {p.consecutive_failures}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
-            <div className="p-4 border-b border-border flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">Registered Intelligence Models</h2>
-              <span className="text-xs text-muted-foreground">Universal Adapter Compatible</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-muted/30 text-muted-foreground border-b border-border">
-                  <tr>
-                    <th className="p-3">Model</th>
-                    <th className="p-3">Capabilities</th>
-                    <th className="p-3">Context Window</th>
-                    <th className="p-3">Input / 1M</th>
-                    <th className="p-3">Output / 1M</th>
-                    <th className="p-3">Avg Latency</th>
-                    <th className="p-3">Privacy Tier</th>
-                    <th className="p-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {models.map((m: Model) => (
-                    <tr key={m.id} className="hover:bg-muted/20 transition-colors">
-                      <td className="p-3 font-semibold text-foreground">
-                        <div>{m.display_name}</div>
-                        <div className="text-[10px] text-muted-foreground font-mono">{m.model_identifier}</div>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex flex-wrap gap-1 max-w-xs">
-                          {m.capabilities.map((cap) => (
-                            <span key={cap} className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px]">
-                              {cap}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="p-3 text-foreground font-mono">
-                        {(m.context_capacity / 1000).toLocaleString()}k tokens
-                      </td>
-                      <td className="p-3 text-muted-foreground font-mono">${m.input_cost_per_million.toFixed(2)}</td>
-                      <td className="p-3 text-muted-foreground font-mono">${m.output_cost_per_million.toFixed(2)}</td>
-                      <td className="p-3 text-foreground font-mono">{m.avg_latency_ms} ms</td>
-                      <td className="p-3">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-medium ${
-                            m.privacy_classification === 'ON_PREMISE_ZERO_RETENTION'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-muted text-muted-foreground'
-                          }`}
-                        >
-                          {m.privacy_classification}
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
-                          <CheckCircle2 className="h-3 w-3" /> Ready
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <IntelligenceFlowDiagram
+            providers={providers}
+            activeStrategy={policy?.strategy || 'BALANCED'}
+            maxCostCeiling={policy?.max_cost_per_query_usd ?? 0.5}
+            routingMode={policy?.routing_mode || 'AUTOMATIC'}
+            onSelectProvider={(pName) => {
+              setActiveTab('providers');
+            }}
+          />
         </div>
       )}
 
-      {/* TAB 2: ROUTING SIMULATOR */}
+      {/* TAB 2: MODEL COMPARISON BENCHMARK */}
+      {activeTab === 'matrix' && (
+        <div className="space-y-6">
+          <ModelComparisonMatrix
+            models={models}
+            onSelectModel={(m) => setSelectedModel(m)}
+            selectedModelId={selectedModel?.id}
+          />
+        </div>
+      )}
+
+      {/* TAB 3: PROVIDER DIRECTORY & ADAPTER HEALTH */}
+      {activeTab === 'providers' && (
+        <div className="space-y-6">
+          <ProviderDirectory
+            providers={providers}
+            models={models}
+            onResetBreakers={() => resetBreakersMutation.mutate()}
+            isResetting={resetBreakersMutation.isPending}
+          />
+        </div>
+      )}
+
+      {/* TAB 4: ROUTING POLICY & FAILOVER EDITOR */}
+      {activeTab === 'policy' && (
+        <div className="space-y-6">
+          <RoutingPolicyEditor
+            policy={policy || null}
+            providers={providers}
+            models={models}
+            onSavePolicy={handleSavePolicy}
+            isSaving={updatePolicyMutation.isPending}
+          />
+        </div>
+      )}
+
+      {/* TAB 5: ROUTING SIMULATOR */}
       {activeTab === 'simulator' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Simulator Form */}
@@ -679,126 +671,7 @@ export default function IntelligenceExchangePage() {
         </div>
       )}
 
-      {/* TAB 3: POLICY & FALLBACKS */}
-      {activeTab === 'policy' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="rounded-xl border border-border bg-card p-6 space-y-6">
-            <div>
-              <h2 className="text-base font-semibold text-foreground">Global Routing Policy</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Configure organizational arbitration rules for capability matching, budget limits, and failover chains.
-              </p>
-            </div>
-
-            <form onSubmit={handleSavePolicy} className="space-y-5">
-              <div>
-                <label className="text-xs font-medium text-foreground block mb-1.5">Optimization Strategy</label>
-                <div className="grid grid-cols-1 gap-2">
-                  {(
-                    ['BALANCED', 'LOWEST_COST', 'LOWEST_LATENCY', 'HIGHEST_CAPABILITY', 'STRICT_PRIVACY'] as const
-                  ).map((strat) => (
-                    <label
-                      key={strat}
-                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        policyStrategy === strat
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border bg-background hover:border-primary/40'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="strategy"
-                        value={strat}
-                        checked={policyStrategy === strat}
-                        onChange={() => setPolicyStrategy(strat)}
-                        className="mt-0.5 text-primary"
-                      />
-                      <div>
-                        <div className="text-xs font-semibold text-foreground">{strat.replace('_', ' ')}</div>
-                        <div className="text-[11px] text-muted-foreground">{STRATEGY_DESCRIPTIONS[strat]}</div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-foreground block mb-1">
-                  Max Cost Ceiling per Query ($ USD)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={maxCostCeiling}
-                  onChange={(e) => setMaxCostCeiling(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="submit"
-                  disabled={updatePolicyMutation.isPending}
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-                >
-                  Save Policy Configuration
-                </button>
-                {policySaved && (
-                  <span className="text-xs text-emerald-400 flex items-center gap-1">
-                    <Check className="h-4 w-4" /> Updated successfully
-                  </span>
-                )}
-              </div>
-            </form>
-          </div>
-
-          {/* Active Fallback Chain Visualizer */}
-          <div className="rounded-xl border border-border bg-card p-6 space-y-6">
-            <div>
-              <h2 className="text-base font-semibold text-foreground">Failover & Emergency Chain</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                When upstream providers experience rate-limiting, latency spikes, or 5xx outages, requests cascade sequentially.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {(policy?.fallback_chain ?? []).map(
-                (ident, idx) => (
-                  <div
-                    key={ident}
-                    className="flex items-center gap-4 p-3.5 rounded-xl border border-border bg-background"
-                  >
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-bold font-mono">
-                      {idx + 1}
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-xs font-semibold text-foreground font-mono">{ident}</div>
-                      <div className="text-[11px] text-muted-foreground">
-                        {idx === 0 ? 'Primary route target' : 'Fallback route target'}
-                      </div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-secondary text-muted-foreground">
-                      Configured
-                    </span>
-                  </div>
-                )
-              )}
-              {(policy?.fallback_chain ?? []).length === 0 && <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">No fallback chain is configured in this routing policy.</p>}
-            </div>
-
-            <div className="rounded-lg border border-border p-4 bg-muted/20 space-y-2">
-              <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5 text-primary" /> Circuit Breaker Protection
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Adapter circuit breakers open after three consecutive failures. The default recovery window is 30 seconds, after which a probe request can move the breaker to half-open. The live provider registry reports its own health state.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: ROUTING DECISIONS LEDGER */}
+      {/* TAB 6: ROUTING DECISIONS LEDGER */}
       {activeTab === 'decisions' && (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="p-4 border-b border-border flex items-center justify-between">
@@ -902,6 +775,12 @@ export default function IntelligenceExchangePage() {
           </div>
         </div>
       )}
+
+      {/* Selected Model Details Modal */}
+      <ModelDetailsModal
+        model={selectedModel}
+        onClose={() => setSelectedModel(null)}
+      />
     </div>
   );
 }

@@ -45,6 +45,7 @@ import type {
   ResourceSummary,
   Task,
 } from '@/lib/api/controlRoom';
+import { OrganizationActivityTimeline } from '@/components/OrganizationActivityTimeline';
 
 interface OperationalGridProps {
   companyId: string;
@@ -529,32 +530,12 @@ export function OperationalGrid({
               <History className="h-4 w-4 text-cyan-400" />
               <h3 className="text-sm font-semibold text-foreground">12. Activity Timeline</h3>
             </div>
-            <Link href="/dashboard/governance" className="text-xs text-primary hover:underline flex items-center gap-1 font-mono">
-              Audits <ArrowRight className="h-3 w-3" />
+            <Link href="/dashboard/activity" className="text-xs text-primary hover:underline flex items-center gap-1 font-mono">
+              Feed <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
 
-          <div className="space-y-3">
-            {audits.slice(0, 4).map((log) => (
-              <div key={log.id} className="flex items-start gap-2.5 text-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="font-semibold text-foreground truncate">{log.action}</span>
-                    <span className="text-[10px] font-mono text-muted-foreground">{log.result ?? 'OK'}</span>
-                  </div>
-                  {log.reason && (
-                    <p className="text-[11px] text-muted-foreground truncate">{log.reason}</p>
-                  )}
-                </div>
-              </div>
-            ))}
-            {audits.length === 0 && (
-              <div className="text-center py-6 text-xs text-muted-foreground">
-                No consequential actions logged
-              </div>
-            )}
-          </div>
+          <OrganizationActivityTimeline audits={audits} maxItems={4} />
         </div>
       </div>
     </div>

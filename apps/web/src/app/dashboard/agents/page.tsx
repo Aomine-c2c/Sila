@@ -14,8 +14,19 @@ import {
   Shield,
   ChevronRight,
   Circle,
+  Filter,
+  Sliders,
+  LayoutGrid,
+  List,
+  Building2,
+  Briefcase,
+  Users,
+  Cpu,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
 import { agentsApi, CreateAgentRequest, Agent } from '@/lib/api/agents';
+import { organizationsApi } from '@/lib/api/organizations';
 import { useOrganizationContext } from '@/lib/organizationContext';
 import { ApiError } from '@/lib/api/client';
 import { AgentProfileDrawer } from '@/components/AgentProfileDrawer';
@@ -30,20 +41,24 @@ const AUTONOMY_LABELS: Record<string, string> = {
 const STATUS_COLORS: Record<string, string> = {
   CREATED: 'text-muted-foreground',
   CONFIGURED: 'text-blue-400',
-  AVAILABLE: 'text-green-400',
-  WORKING: 'text-yellow-400',
-  BLOCKED: 'text-red-400',
-  PAUSED: 'text-orange-400',
+  AVAILABLE: 'text-emerald-400',
+  WORKING: 'text-amber-400',
+  BLOCKED: 'text-rose-400',
+  PAUSED: 'text-slate-400',
+  WAITING: 'text-purple-400',
+  OFFLINE: 'text-zinc-500',
   RETIRED: 'text-muted-foreground',
 };
 
 const STATUS_BG: Record<string, string> = {
   CREATED: 'bg-muted/50',
   CONFIGURED: 'bg-blue-500/10',
-  AVAILABLE: 'bg-green-500/10',
-  WORKING: 'bg-yellow-500/10',
-  BLOCKED: 'bg-red-500/10',
-  PAUSED: 'bg-orange-500/10',
+  AVAILABLE: 'bg-emerald-500/10',
+  WORKING: 'bg-amber-500/10',
+  BLOCKED: 'bg-rose-500/10',
+  PAUSED: 'bg-slate-500/10',
+  WAITING: 'bg-purple-500/10',
+  OFFLINE: 'bg-zinc-800/50',
   RETIRED: 'bg-muted/30',
 };
 
@@ -54,15 +69,32 @@ const AUTONOMY_COLORS: Record<string, string> = {
   FULLY_AUTONOMOUS: 'badge-destructive',
 };
 
-function AgentCard({ agent, onSelect }: { agent: Agent; onSelect: () => void }) {
+function AgentCard({
+  agent,
+  departmentName,
+  roleTitle,
+  onSelect,
+}: {
+  agent: Agent;
+  departmentName?: string;
+  roleTitle?: string;
+  onSelect: () => void;
+}) {
   const statusColor = STATUS_COLORS[agent.status] ?? 'text-muted-foreground';
   const statusBg = STATUS_BG[agent.status] ?? 'bg-muted/50';
   const autonomyClass = AUTONOMY_COLORS[agent.autonomy] ?? 'badge-default';
+  const intConfig = (agent.intelligence_config || {}) as { provider?: string; model?: string };
 
   return (
     <div
       onClick={onSelect}
-      className="group rounded-2xl border border-border bg-card p-5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200 cursor-pointer"
+      className={`group rounded-2xl border bg-card p-5 transition-all duration-200 cursor-pointer ${
+        agent.status === 'WORKING'
+          ? 'border-amber-500/40 hover:border-amber-400 shadow-md shadow-amber-500/5'
+          : agent.status === 'BLOCKED'
+          ? 'border-rose-500/40 hover:border-rose-400 shadow-md shadow-rose-500/5'
+          : 'border-border hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5'
+      }`}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
@@ -74,7 +106,7 @@ function AgentCard({ agent, onSelect }: { agent: Agent; onSelect: () => void }) 
         </span>
       </div>
 
-      {/* Name & status */}
+      {/* Name, Role & Status */}
       <div className="mt-3">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
@@ -82,44 +114,64 @@ function AgentCard({ agent, onSelect }: { agent: Agent; onSelect: () => void }) 
           </h3>
           <Circle className={`h-2 w-2 fill-current ${statusColor} flex-shrink-0`} aria-hidden="true" />
         </div>
-        <p className={`text-xs font-medium mt-0.5 ${statusColor}`}>{agent.status}</p>
+        <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
+          <span className="truncate">{roleTitle || 'Autonomous Employee'}</span>
+          {departmentName && (
+            <>
+              <span>•</span>
+              <span className="text-primary truncate">{departmentName}</span>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Instructions preview */}
-      {agent.system_instructions && (
-        <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+      {/* Intelligence & Model Provider Tag */}
+      <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground">
+        <Zap className="h-3 w-3 text-amber-400" />
+        <span>{intConfig.provider || 'anthropic'}</span>
+        <span>·</span>
+        <span className="text-foreground">{intConfig.model || 'claude-sonnet'}</span>
+      </div>
+
+      {/* Mission / Goal / Instructions preview */}
+      {agent.goals && agent.goals.length > 0 ? (
+        <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
+          Mission: {agent.goals[0]}
+        </p>
+      ) : agent.system_instructions ? (
+        <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
           {agent.system_instructions}
         </p>
-      )}
+      ) : null}
 
-      {/* Capabilities */}
-      {agent.capabilities.length > 0 && (
+      {/* Capabilities Whitelist */}
+      {agent.capabilities && agent.capabilities.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {agent.capabilities.slice(0, 4).map((cap) => (
+          {agent.capabilities.slice(0, 3).map((cap) => (
             <span
               key={cap}
-              className="inline-flex items-center rounded-md bg-secondary/50 px-2 py-0.5 text-xs text-muted-foreground"
+              className="inline-flex items-center rounded-md bg-secondary/70 border border-border/50 px-2 py-0.5 text-[10px] font-mono text-muted-foreground"
             >
               {cap}
             </span>
           ))}
-          {agent.capabilities.length > 4 && (
-            <span className="inline-flex items-center rounded-md bg-secondary/50 px-2 py-0.5 text-xs text-muted-foreground">
-              +{agent.capabilities.length - 4}
+          {agent.capabilities.length > 3 && (
+            <span className="inline-flex items-center rounded-md bg-secondary/50 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+              +{agent.capabilities.length - 3}
             </span>
           )}
         </div>
       )}
 
-      {/* Footer metrics */}
-      <div className="mt-4 flex items-center gap-4 border-t border-border pt-4 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5">
+      {/* Footer telemetry */}
+      <div className="mt-4 flex items-center gap-4 border-t border-border pt-3.5 text-xs text-muted-foreground font-mono">
+        <div className="flex items-center gap-1">
           <Activity className="h-3.5 w-3.5" aria-hidden="true" />
-          <span>{(agent.performance_metadata as { tasks_completed?: number })?.tasks_completed ?? 0} tasks</span>
+          <span>{(agent.performance_metadata as { tasks_completed?: number })?.tasks_completed ?? 0}</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <Zap className="h-3.5 w-3.5" aria-hidden="true" />
-          <span>${((agent.resource_usage as { total_cost_usd?: number })?.total_cost_usd ?? 0).toFixed(4)}</span>
+          <span>${((agent.resource_usage as { total_cost_usd?: number })?.total_cost_usd ?? 0).toFixed(2)}</span>
         </div>
         <button
           type="button"
@@ -141,22 +193,64 @@ function AgentCard({ agent, onSelect }: { agent: Agent; onSelect: () => void }) 
 export default function AgentsPage() {
   const qc = useQueryClient();
   const activeCompany = useOrganizationContext();
+  const companyId = activeCompany?.id;
+
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [createMode, setCreateMode] = useState<'simple' | 'advanced'>('simple');
+  const [viewLayout, setViewLayout] = useState<'grid' | 'list'>('grid');
+
+  // Filter state
   const [search, setSearch] = useState('');
-  const [form, setForm] = useState<CreateAgentRequest>({
+  const [departmentFilter, setDepartmentFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+
+  // Dual-mode creation form state
+  const [form, setForm] = useState<{
+    name: string;
+    role_id: string;
+    department_id: string;
+    manager_agent_id: string;
+    mission: string;
+    autonomy: string;
+    preferred_intelligence: string;
+    model: string;
+    system_instructions: string;
+    capabilities: string[];
+    tools: string[];
+    permissions: {
+      approval_required: boolean;
+      max_actions_per_task: number;
+    };
+    daily_budget_usd: number;
+    max_tokens_per_call: number;
+    memory_scope: string;
+    escalation_rule: string;
+    evaluation_setting: string;
+  }>({
     name: '',
-    system_instructions: '',
-    responsibilities: [],
-    goals: [],
-    capabilities: [],
+    role_id: '',
+    department_id: '',
+    manager_agent_id: '',
+    mission: '',
     autonomy: 'SUPERVISED',
+    preferred_intelligence: 'anthropic',
+    model: 'claude-sonnet',
+    system_instructions: '',
+    capabilities: ['reasoning', 'research'],
+    tools: ['file_operations', 'web_search'],
+    permissions: { approval_required: true, max_actions_per_task: 10 },
+    daily_budget_usd: 10,
+    max_tokens_per_call: 8192,
+    memory_scope: 'department',
+    escalation_rule: 'SUPERVISOR_REVIEW',
+    evaluation_setting: 'AUTOMATED_BENCHMARK',
   });
+
   const [capInput, setCapInput] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
-  const companyId = activeCompany?.id;
-
+  // Queries
   const { data: agents = [], isLoading, error } = useQuery({
     queryKey: ['agents', companyId],
     queryFn: () => agentsApi.list(companyId!),
@@ -164,14 +258,46 @@ export default function AgentsPage() {
     staleTime: 30_000,
   });
 
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments', companyId],
+    queryFn: () => organizationsApi.listDepartments(companyId!),
+    enabled: !!companyId,
+    staleTime: 60_000,
+  });
+
+  const { data: roles = [] } = useQuery({
+    queryKey: ['org-roles', companyId],
+    queryFn: () => organizationsApi.listRoles(companyId!),
+    enabled: !!companyId,
+    staleTime: 60_000,
+  });
+
+  // Creation mutation
   const createMutation = useMutation({
     mutationFn: (body: CreateAgentRequest) => agentsApi.create(companyId!, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['agents', companyId] });
       setShowCreate(false);
-      setForm({ name: '', system_instructions: '', responsibilities: [], goals: [], capabilities: [], autonomy: 'SUPERVISED' });
-      setCapInput('');
       setFormError(null);
+      setForm({
+        name: '',
+        role_id: '',
+        department_id: '',
+        manager_agent_id: '',
+        mission: '',
+        autonomy: 'SUPERVISED',
+        preferred_intelligence: 'anthropic',
+        model: 'claude-sonnet',
+        system_instructions: '',
+        capabilities: ['reasoning', 'research'],
+        tools: ['file_operations', 'web_search'],
+        permissions: { approval_required: true, max_actions_per_task: 10 },
+        daily_budget_usd: 10,
+        max_tokens_per_call: 8192,
+        memory_scope: 'department',
+        escalation_rule: 'SUPERVISOR_REVIEW',
+        evaluation_setting: 'AUTOMATED_BENCHMARK',
+      });
     },
     onError: (err) => {
       setFormError(err instanceof ApiError ? err.message : 'Failed to create agent.');
@@ -180,26 +306,66 @@ export default function AgentsPage() {
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name?.trim()) { setFormError('Agent name is required.'); return; }
+    if (!form.name.trim()) {
+      setFormError('Agent name is required.');
+      return;
+    }
     setFormError(null);
-    createMutation.mutate(form);
+
+    const payload: CreateAgentRequest = {
+      name: form.name.trim(),
+      role_id: form.role_id || undefined,
+      department_id: form.department_id || undefined,
+      manager_agent_id: form.manager_agent_id || undefined,
+      autonomy: form.autonomy,
+      goals: form.mission ? [form.mission] : [],
+      intelligence_config: {
+        provider: form.preferred_intelligence,
+        model: form.model,
+      },
+      system_instructions: form.system_instructions || undefined,
+      capabilities: form.capabilities,
+      permissions: form.permissions,
+      resource_limits: {
+        daily_budget_usd: form.daily_budget_usd,
+        max_tokens_per_call: form.max_tokens_per_call,
+        memory_scope: form.memory_scope,
+        escalation_rule: form.escalation_rule,
+        evaluation_setting: form.evaluation_setting,
+      },
+    };
+
+    createMutation.mutate(payload);
   };
 
   const addCapability = () => {
     const cap = capInput.trim();
     if (!cap) return;
-    setForm((f) => ({ ...f, capabilities: [...(f.capabilities ?? []), cap] }));
+    setForm((f) => ({ ...f, capabilities: [...f.capabilities, cap] }));
     setCapInput('');
   };
 
   const removeCapability = (cap: string) => {
-    setForm((f) => ({ ...f, capabilities: (f.capabilities ?? []).filter((c) => c !== cap) }));
+    setForm((f) => ({ ...f, capabilities: f.capabilities.filter((c) => c !== cap) }));
   };
 
-  const filtered = agents.filter((a) =>
-    a.name.toLowerCase().includes(search.toLowerCase()) ||
-    (a.system_instructions ?? '').toLowerCase().includes(search.toLowerCase())
-  );
+  // Filter pipeline
+  const filtered = agents.filter((a) => {
+    if (departmentFilter !== 'ALL' && a.department_id !== departmentFilter) {
+      return false;
+    }
+    if (statusFilter !== 'ALL' && a.status.toUpperCase() !== statusFilter.toUpperCase()) {
+      return false;
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const matchName = a.name.toLowerCase().includes(q);
+      const matchInst = (a.system_instructions ?? '').toLowerCase().includes(q);
+      const matchGoal = (a.goals ?? []).some((g) => g.toLowerCase().includes(q));
+      if (!matchName && !matchInst && !matchGoal) return false;
+    }
+    return true;
+  });
 
   if (!companyId) {
     return (
@@ -208,7 +374,7 @@ export default function AgentsPage() {
         <div className="text-center">
           <h3 className="text-lg font-semibold text-foreground">No active organization</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Select an organization first to manage its agents.
+            Select an organization first to manage its AI workforce.
           </p>
         </div>
       </div>
@@ -217,14 +383,20 @@ export default function AgentsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
+      {/* 1. DIRECTORY HEADER & PRIMARY ACTION */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">AI Workforce</h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-bold text-foreground">AI Workforce</h1>
+            <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+              Autonomous Directory
+            </span>
+          </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Organizational agents — your AI employees
+            Enterprise agents, reporting lines, intelligence configuration, and operational state
           </p>
         </div>
+
         <button
           id="create-agent-btn"
           type="button"
@@ -236,38 +408,98 @@ export default function AgentsPage() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
-        <input
-          type="search"
-          className="input pl-9"
-          placeholder="Search agents…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          aria-label="Search agents"
-        />
-      </div>
-
-      {/* Summary cards */}
+      {/* 2. FLEET METRICS COUNTERS */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Total', value: agents.length, color: 'text-foreground', icon: Bot },
-          { label: 'Available', value: agents.filter(a => a.status === 'AVAILABLE').length, color: 'text-green-400', icon: Activity },
-          { label: 'Working', value: agents.filter(a => a.status === 'WORKING').length, color: 'text-yellow-400', icon: Zap },
-          { label: 'Blocked', value: agents.filter(a => a.status === 'BLOCKED').length, color: 'text-red-400', icon: Shield },
+          { label: 'Total Fleet', value: agents.length, color: 'text-foreground', icon: Bot },
+          { label: 'Available', value: agents.filter((a) => a.status === 'AVAILABLE').length, color: 'text-emerald-400', icon: Activity },
+          { label: 'Working', value: agents.filter((a) => a.status === 'WORKING').length, color: 'text-amber-400', icon: Zap },
+          { label: 'Blocked', value: agents.filter((a) => a.status === 'BLOCKED').length, color: 'text-rose-400', icon: Shield },
         ].map(({ label, value, color, icon: Icon }) => (
           <div key={label} className="rounded-xl border border-border bg-card p-4">
             <div className="flex items-center gap-2">
               <Icon className={`h-4 w-4 ${color}`} aria-hidden="true" />
               <span className="text-xs text-muted-foreground">{label}</span>
             </div>
-            <p className={`text-2xl font-bold mt-1 ${color}`}>{value}</p>
+            <p className={`text-2xl font-bold font-mono mt-1 ${color}`}>{value}</p>
           </div>
         ))}
       </div>
 
-      {/* Loading/Error */}
+      {/* 3. SEARCH & DIRECTORY CONTROLS */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-border bg-card/60">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1">
+          {/* Search Bar */}
+          <div className="relative min-w-[220px] flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            <input
+              type="search"
+              className="input pl-9 text-xs h-9"
+              placeholder="Search agents by name, mission, role..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search agents"
+            />
+          </div>
+
+          {/* Department Filter */}
+          <select
+            value={departmentFilter}
+            onChange={(e) => setDepartmentFilter(e.target.value)}
+            aria-label="Filter by department"
+            className="input text-xs h-9 w-auto min-w-[150px]"
+          >
+            <option value="ALL">All Departments</option>
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label="Filter by status"
+            className="input text-xs h-9 w-auto min-w-[140px]"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="AVAILABLE">Available</option>
+            <option value="WORKING">Working</option>
+            <option value="BLOCKED">Blocked</option>
+            <option value="WAITING">Waiting</option>
+            <option value="PAUSED">Paused</option>
+            <option value="OFFLINE">Offline</option>
+          </select>
+        </div>
+
+        {/* View Toggle */}
+        <div className="flex items-center gap-1 border border-border/80 rounded-lg p-0.5 bg-secondary/40">
+          <button
+            type="button"
+            onClick={() => setViewLayout('grid')}
+            className={`p-1.5 rounded-md ${
+              viewLayout === 'grid' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+            title="Grid View"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewLayout('list')}
+            className={`p-1.5 rounded-md ${
+              viewLayout === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+            title="List View"
+          >
+            <List className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* 4. LOADING / ERROR / EMPTY STATES */}
       {isLoading && (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading agents" />
@@ -275,176 +507,503 @@ export default function AgentsPage() {
       )}
 
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-red-400" role="alert">
+        <div className="flex items-center gap-3 rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-rose-400" role="alert">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <p>{error instanceof ApiError ? error.message : 'Failed to load agents.'}</p>
         </div>
       )}
 
-      {/* Empty state */}
-      {!isLoading && !error && agents.length === 0 && (
+      {!isLoading && !error && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border py-20">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary/50">
             <Brain className="h-8 w-8 text-muted-foreground" />
           </div>
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-foreground">No agents yet</h3>
+            <h3 className="text-lg font-semibold text-foreground">
+              {agents.length === 0 ? 'No agents created yet' : 'No matching agents found'}
+            </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Create your first AI employee to start automating work.
+              {agents.length === 0
+                ? 'Create your first AI employee to start autonomous operations.'
+                : 'Try adjusting your search query or filter criteria.'}
             </p>
           </div>
-          <button type="button" className="btn btn-primary gap-2" onClick={() => setShowCreate(true)}>
-            <Plus className="h-4 w-4" />
-            Create Agent
-          </button>
+          {agents.length === 0 && (
+            <button type="button" className="btn btn-primary gap-2" onClick={() => setShowCreate(true)}>
+              <Plus className="h-4 w-4" />
+              Create Agent
+            </button>
+          )}
         </div>
       )}
 
-      {/* Agent grid */}
-      {filtered.length > 0 && (
+      {/* 5. AGENT DIRECTORY (GRID & LIST VIEWS) */}
+      {filtered.length > 0 && viewLayout === 'grid' && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((agent) => (
-            <AgentCard
-              key={agent.id}
-              agent={agent}
-              onSelect={() => setSelectedAgentId(agent.id)}
-            />
-          ))}
+          {filtered.map((agent) => {
+            const dept = departments.find((d) => d.id === agent.department_id);
+            const role = roles.find((r) => r.id === agent.role_id);
+            return (
+              <AgentCard
+                key={agent.id}
+                agent={agent}
+                departmentName={dept?.name}
+                roleTitle={role?.title}
+                onSelect={() => setSelectedAgentId(agent.id)}
+              />
+            );
+          })}
         </div>
       )}
 
-      {/* Agent Profile & Operations Drawer */}
+      {filtered.length > 0 && viewLayout === 'list' && (
+        <div className="rounded-2xl border border-border bg-card overflow-hidden">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-secondary/40 text-muted-foreground uppercase font-mono tracking-wider border-b border-border">
+              <tr>
+                <th className="py-3 px-4">Employee</th>
+                <th className="py-3 px-4">Role & Dept</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4">Autonomy</th>
+                <th className="py-3 px-4">Intelligence</th>
+                <th className="py-3 px-4">Resource Cost</th>
+                <th className="py-3 px-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              {filtered.map((agent) => {
+                const dept = departments.find((d) => d.id === agent.department_id);
+                const role = roles.find((r) => r.id === agent.role_id);
+                const int = (agent.intelligence_config || {}) as { provider?: string; model?: string };
+                return (
+                  <tr
+                    key={agent.id}
+                    onClick={() => setSelectedAgentId(agent.id)}
+                    className="hover:bg-secondary/30 cursor-pointer transition-colors"
+                  >
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-7 w-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                          <Bot className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">{agent.name}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono">{agent.id.slice(0, 8)}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <p className="font-medium text-foreground">{role?.title || 'Employee'}</p>
+                      <p className="text-[11px] text-muted-foreground">{dept?.name || 'Unassigned'}</p>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full border ${STATUS_BG[agent.status]} ${STATUS_COLORS[agent.status]}`}>
+                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                        {agent.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 font-mono text-[11px]">
+                      {agent.autonomy}
+                    </td>
+                    <td className="py-3 px-4 font-mono text-[11px]">
+                      {int.provider || 'anthropic'} • {int.model || 'claude-sonnet'}
+                    </td>
+                    <td className="py-3 px-4 font-mono">
+                      ${((agent.resource_usage as { total_cost_usd?: number })?.total_cost_usd ?? 0).toFixed(4)}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedAgentId(agent.id);
+                        }}
+                        className="btn btn-outline h-7 px-2.5 text-xs text-primary"
+                      >
+                        Inspect
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* 6. AGENT PROFILE & OPERATIONS DRAWER */}
       {selectedAgentId && companyId && (
         <AgentProfileDrawer
           companyId={companyId}
           agentId={selectedAgentId}
           allAgents={agents.map((a) => ({ id: a.id, name: a.name }))}
+          departments={departments.map((d) => ({ id: d.id, name: d.name }))}
+          roles={roles.map((r) => ({ id: r.id, title: r.title }))}
           onClose={() => setSelectedAgentId(null)}
         />
       )}
 
-      {/* Create modal */}
+      {/* 7. DUAL-MODE AGENT CREATION MODAL */}
       {showCreate && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
           role="dialog"
           aria-modal="true"
           aria-labelledby="create-agent-title"
         >
-          <div className="w-full max-w-lg glass rounded-2xl p-6 ring-1 ring-border shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h2 id="create-agent-title" className="text-lg font-semibold text-foreground mb-4">
-              Create AI Agent
-            </h2>
+          <div className="w-full max-w-xl glass rounded-2xl p-6 ring-1 ring-border shadow-2xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header & Mode Switcher */}
+            <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
+              <div>
+                <h2 id="create-agent-title" className="text-lg font-bold text-foreground">
+                  Create Autonomous Agent
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Configure identity, role, mission, and operational guardrails
+                </p>
+              </div>
+
+              {/* Mode Toggle Buttons */}
+              <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
+                <button
+                  type="button"
+                  onClick={() => setCreateMode('simple')}
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                    createMode === 'simple'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Simple Mode
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCreateMode('advanced')}
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                    createMode === 'advanced'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Advanced Mode
+                </button>
+              </div>
+            </div>
 
             <form onSubmit={handleCreate} className="space-y-4">
+              {/* Name */}
               <div>
-                <label htmlFor="agent-name" className="mb-1.5 block text-sm font-medium text-foreground">
-                  Name <span className="text-red-400">*</span>
+                <label htmlFor="agent-name" className="mb-1 block text-xs font-medium text-foreground">
+                  Agent Identity Name <span className="text-rose-400">*</span>
                 </label>
                 <input
                   id="agent-name"
                   type="text"
-                  className="input"
-                  placeholder="e.g. Engineering Lead"
+                  className="input text-xs"
+                  placeholder="e.g. Lead Architecture Steward"
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 />
               </div>
 
+              {/* SIMPLE MODE FIELDS: role, mission, autonomy, preferred intelligence */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="agent-role" className="mb-1 block text-xs font-medium text-foreground">
+                    Organizational Role
+                  </label>
+                  <select
+                    id="agent-role"
+                    className="input text-xs"
+                    value={form.role_id}
+                    onChange={(e) => setForm((f) => ({ ...f, role_id: e.target.value }))}
+                  >
+                    <option value="">Select organizational role…</option>
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="agent-autonomy" className="mb-1 block text-xs font-medium text-foreground">
+                    Autonomy Level
+                  </label>
+                  <select
+                    id="agent-autonomy"
+                    className="input text-xs font-mono"
+                    value={form.autonomy}
+                    onChange={(e) => setForm((f) => ({ ...f, autonomy: e.target.value }))}
+                  >
+                    <option value="SUPERVISED">SUPERVISED — All actions reviewed</option>
+                    <option value="SEMI_AUTONOMOUS">SEMI_AUTONOMOUS — Routine tasks automated</option>
+                    <option value="AUTONOMOUS">AUTONOMOUS — Autonomous within policy</option>
+                    <option value="FULLY_AUTONOMOUS">FULLY_AUTONOMOUS — Adaptive goal pursuit</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
-                <label htmlFor="agent-instructions" className="mb-1.5 block text-sm font-medium text-foreground">
-                  System Instructions
+                <label htmlFor="agent-mission" className="mb-1 block text-xs font-medium text-foreground">
+                  Current Mission & Objectives
                 </label>
                 <textarea
-                  id="agent-instructions"
-                  rows={4}
-                  className="input h-auto resize-none"
-                  placeholder="You are a senior engineering lead responsible for…"
-                  value={form.system_instructions ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, system_instructions: e.target.value }))}
+                  id="agent-mission"
+                  rows={2}
+                  className="input text-xs resize-none"
+                  placeholder="e.g. Ensure high system availability and coordinate automated microservice deployments"
+                  value={form.mission}
+                  onChange={(e) => setForm((f) => ({ ...f, mission: e.target.value }))}
                 />
               </div>
 
+              {/* Preferred Intelligence Selection */}
               <div>
-                <label htmlFor="agent-autonomy" className="mb-1.5 block text-sm font-medium text-foreground">
-                  Autonomy Level
+                <label className="mb-1.5 block text-xs font-medium text-foreground">
+                  Preferred Intelligence Mesh
                 </label>
-                <select
-                  id="agent-autonomy"
-                  className="input"
-                  value={form.autonomy ?? 'SUPERVISED'}
-                  onChange={(e) => setForm((f) => ({ ...f, autonomy: e.target.value }))}
-                >
-                  <option value="SUPERVISED">Supervised — every action approved</option>
-                  <option value="SEMI_AUTONOMOUS">Semi-Autonomous — low-risk actions auto</option>
-                  <option value="AUTONOMOUS">Autonomous — within policy</option>
-                  <option value="FULLY_AUTONOMOUS">Fully Autonomous — adaptive</option>
-                </select>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { id: 'anthropic', label: 'Claude', model: 'claude-sonnet' },
+                    { id: 'google', label: 'Gemini', model: 'gemini-2.5-pro' },
+                    { id: 'openai', label: 'OpenAI', model: 'gpt-4o' },
+                    { id: 'local', label: 'Local', model: 'qwen3-8b' },
+                  ].map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() =>
+                        setForm((f) => ({ ...f, preferred_intelligence: p.id, model: p.model }))
+                      }
+                      className={`p-2.5 rounded-xl border text-center transition-all ${
+                        form.preferred_intelligence === p.id
+                          ? 'border-primary bg-primary/10 font-bold shadow-sm'
+                          : 'border-border/60 bg-secondary/30 hover:border-border'
+                      }`}
+                    >
+                      <span className="text-xs text-foreground block">{p.label}</span>
+                      <span className="text-[10px] font-mono text-muted-foreground block mt-0.5">
+                        {p.model}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
-                  Capabilities
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    className="input flex-1"
-                    placeholder="e.g. code_review"
-                    value={capInput}
-                    onChange={(e) => setCapInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCapability(); }}}
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-outline shrink-0"
-                    onClick={addCapability}
-                  >
-                    Add
-                  </button>
-                </div>
-                {(form.capabilities ?? []).length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {(form.capabilities ?? []).map((cap) => (
-                      <button
-                        key={cap}
-                        type="button"
-                        className="flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary hover:bg-red-500/10 hover:text-red-400 transition-colors"
-                        onClick={() => removeCapability(cap)}
-                        title="Click to remove"
-                      >
-                        {cap} ×
-                      </button>
-                    ))}
+              {/* ADVANCED MODE FIELDS: system instructions, tools, permissions, routing, resource limits, memory scope, escalation rules, evaluation settings */}
+              {createMode === 'advanced' && (
+                <div className="space-y-4 pt-3 border-t border-border animate-fade-in">
+                  <span className="text-[11px] font-mono font-bold tracking-wider text-primary uppercase block">
+                    Advanced Operational Controls
+                  </span>
+
+                  <div>
+                    <label htmlFor="agent-instructions" className="mb-1 block text-xs font-medium text-foreground">
+                      System Instructions & Constraints
+                    </label>
+                    <textarea
+                      id="agent-instructions"
+                      rows={3}
+                      className="input text-xs font-mono resize-none leading-relaxed"
+                      placeholder="You are an autonomous engineering steward. Follow security policies, maintain traceability..."
+                      value={form.system_instructions}
+                      onChange={(e) => setForm((f) => ({ ...f, system_instructions: e.target.value }))}
+                    />
                   </div>
-                )}
-              </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-foreground">
+                        Department Assignment
+                      </label>
+                      <select
+                        className="input text-xs"
+                        value={form.department_id}
+                        onChange={(e) => setForm((f) => ({ ...f, department_id: e.target.value }))}
+                      >
+                        <option value="">Select department…</option>
+                        {departments.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-foreground">
+                        Reporting Manager
+                      </label>
+                      <select
+                        className="input text-xs"
+                        value={form.manager_agent_id}
+                        onChange={(e) => setForm((f) => ({ ...f, manager_agent_id: e.target.value }))}
+                      >
+                        <option value="">Executive Direct (No manager)</option>
+                        {agents.map((ag) => (
+                          <option key={ag.id} value={ag.id}>
+                            {ag.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-foreground">
+                        Daily Budget (USD)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={form.daily_budget_usd}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, daily_budget_usd: Number(e.target.value) }))
+                        }
+                        className="input text-xs font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-foreground">
+                        Max Tokens / Call
+                      </label>
+                      <input
+                        type="number"
+                        min="1024"
+                        value={form.max_tokens_per_call}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, max_tokens_per_call: Number(e.target.value) }))
+                        }
+                        className="input text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-foreground">
+                        Memory Scope
+                      </label>
+                      <select
+                        className="input text-xs font-mono"
+                        value={form.memory_scope}
+                        onChange={(e) => setForm((f) => ({ ...f, memory_scope: e.target.value }))}
+                      >
+                        <option value="company">Enterprise</option>
+                        <option value="department">Department</option>
+                        <option value="agent">Agent Private</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-foreground">
+                        Escalation Target
+                      </label>
+                      <select
+                        className="input text-xs font-mono"
+                        value={form.escalation_rule}
+                        onChange={(e) => setForm((f) => ({ ...f, escalation_rule: e.target.value }))}
+                      >
+                        <option value="SUPERVISOR_REVIEW">Manager</option>
+                        <option value="HUMAN_APPROVAL">Human Review</option>
+                        <option value="FAIL_FAST">Fail Fast</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-foreground">
+                        Evaluation Setting
+                      </label>
+                      <select
+                        className="input text-xs font-mono"
+                        value={form.evaluation_setting}
+                        onChange={(e) => setForm((f) => ({ ...f, evaluation_setting: e.target.value }))}
+                      >
+                        <option value="AUTOMATED_BENCHMARK">Standard</option>
+                        <option value="SAMPLING_AUDIT">10% Sample</option>
+                        <option value="STRICT_SAFETY">Strict Safety</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Capabilities Builder */}
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-foreground">
+                      Capabilities Whitelist
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        className="input flex-1 text-xs"
+                        placeholder="e.g. data_synthesis, code_review"
+                        value={capInput}
+                        onChange={(e) => setCapInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addCapability();
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline shrink-0 text-xs"
+                        onClick={addCapability}
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {form.capabilities.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {form.capabilities.map((cap) => (
+                          <button
+                            key={cap}
+                            type="button"
+                            className="flex items-center gap-1 rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs text-primary hover:bg-rose-500/10 hover:text-rose-400 transition-colors"
+                            onClick={() => removeCapability(cap)}
+                            title="Click to remove"
+                          >
+                            {cap} ×
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {formError && (
-                <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400" role="alert">
+                <div className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-xs text-rose-400" role="alert">
                   <AlertCircle className="h-4 w-4 shrink-0" />
                   {formError}
                 </div>
               )}
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-3 border-t border-border">
                 <button
                   type="button"
-                  className="btn btn-outline flex-1"
-                  onClick={() => { setShowCreate(false); setFormError(null); }}
+                  className="btn btn-outline flex-1 text-xs"
+                  onClick={() => {
+                    setShowCreate(false);
+                    setFormError(null);
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   id="create-agent-submit"
                   type="submit"
-                  className="btn btn-primary flex-1"
+                  className="btn btn-primary flex-1 text-xs"
                   disabled={createMutation.isPending}
                 >
                   {createMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Creating…
+                      Creating Employee…
                     </>
                   ) : (
                     'Create Agent'
@@ -458,3 +1017,4 @@ export default function AgentsPage() {
     </div>
   );
 }
+

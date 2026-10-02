@@ -30,9 +30,9 @@ NEXORA is structured as a modular, domain-driven organization operating system.
 
 ## 2. Empirical Verification
 
-- **Test Suite Status:** 118 / 118 unit and integration tests passing.
+- **Test Suite Status:** 125 / 125 unit and integration tests passing.
 - **Security Penetration Suite:** 9 / 9 dedicated adversarial tests passing.
-- **Frontend Type Checking:** Clean build with zero TypeScript compilation errors.
+- **Frontend Type Checking & Tests:** 3 / 3 test suites passing (8 / 8 tests), clean TypeScript build.
 - **Failure Domains:**
   - Individual agent failures isolate cleanly without blocking organizational progress.
   - Model provider timeouts trigger immediate fallback through the four-tier hierarchy.

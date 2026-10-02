@@ -22,28 +22,39 @@ export interface Model {
   provider_id: string;
   model_identifier: string;
   display_name: string;
+  description?: string | null;
   capabilities: string[];
   modalities: string[];
   context_capacity: number;
-  supports_tools: boolean;
-  supports_structured_output: boolean;
+  max_output_tokens?: number;
+  supports_tools?: boolean;
+  tool_support?: boolean;
+  supports_structured_output?: boolean;
+  structured_output_support?: boolean;
   input_cost_per_million: number;
   output_cost_per_million: number;
   avg_latency_ms: number;
+  availability_rate?: number;
   privacy_classification: string;
   is_active: boolean;
   created_at: string;
 }
+
+export type RoutingMode = 'AUTOMATIC' | 'MANUAL' | 'AGENT_PREFERENCE' | 'COMPANY_POLICY';
 
 export interface ModelRoutingPolicy {
   id: string;
   company_id: string;
   name: string;
   description?: string | null;
+  routing_mode?: RoutingMode;
+  preferred_provider?: string | null;
+  fallback_provider?: string | null;
   strategy: 'BALANCED' | 'LOWEST_COST' | 'LOWEST_LATENCY' | 'HIGHEST_CAPABILITY' | 'STRICT_PRIVACY';
   max_cost_per_query_usd: number;
   max_acceptable_latency_ms: number;
   required_privacy_level?: string | null;
+  required_capability?: string | null;
   fallback_chain: string[];
   capability_preferences: Record<string, string>;
   is_default: boolean;
@@ -53,10 +64,14 @@ export interface ModelRoutingPolicy {
 export interface ModelRoutingPolicyUpdate {
   name?: string;
   description?: string;
+  routing_mode?: RoutingMode;
+  preferred_provider?: string | null;
+  fallback_provider?: string | null;
   strategy?: 'BALANCED' | 'LOWEST_COST' | 'LOWEST_LATENCY' | 'HIGHEST_CAPABILITY' | 'STRICT_PRIVACY';
   max_cost_per_query_usd?: number;
   max_acceptable_latency_ms?: number;
   required_privacy_level?: string | null;
+  required_capability?: string | null;
   fallback_chain?: string[];
   capability_preferences?: Record<string, string>;
   is_default?: boolean;

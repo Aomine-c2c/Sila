@@ -10,7 +10,7 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 API_DIR="${ROOT_DIR}/apps/api"
 WEB_DIR="${ROOT_DIR}/apps/web"
 
@@ -84,4 +84,6 @@ fi
 # ------------------------------------------------------------------------------
 echo "[*] Launching Tauri Desktop runtime..."
 cd "${WEB_DIR}"
+# WebKitGTK stability flags for Linux / Wayland to prevent WebKitWebProcess crashes:
+export WEBKIT_DISABLE_COMPOSITING_MODE=1
 npx --yes @tauri-apps/cli dev

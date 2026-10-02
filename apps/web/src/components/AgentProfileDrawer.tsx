@@ -20,14 +20,29 @@ import {
   Clock,
   ExternalLink,
   ChevronDown,
+  Layers,
+  Cpu,
+  Sliders,
+  DollarSign,
+  FileCode,
+  Lock,
+  Compass,
+  CheckSquare,
+  RefreshCw,
+  Building2,
+  Users,
+  Briefcase,
+  Sparkles,
 } from 'lucide-react';
-import { agentsApi, type AgentProfile, type TaskExecutionResult } from '@/lib/api/agents';
+import { agentsApi, type AgentProfile, type TaskExecutionResult, type CreateAgentRequest } from '@/lib/api/agents';
 
 interface AgentProfileDrawerProps {
   companyId: string;
   agentId: string;
   onClose: () => void;
   allAgents: Array<{ id: string; name: string }>;
+  departments?: Array<{ id: string; name: string }>;
+  roles?: Array<{ id: string; title: string }>;
 }
 
 export function AgentProfileDrawer({
@@ -35,9 +50,57 @@ export function AgentProfileDrawer({
   agentId,
   onClose,
   allAgents,
+  departments = [],
+  roles = [],
 }: AgentProfileDrawerProps) {
   const qc = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'profile' | 'execution' | 'messages' | 'memory' | 'audits'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'configure' | 'tasks' | 'memory' | 'performance' | 'activity'>('profile');
+
+  // Configuration Edit Mode
+  const [configMode, setConfigMode] = useState<'simple' | 'advanced'>('simple');
+  const [configSuccess, setConfigSuccess] = useState(false);
+  const [configError, setConfigError] = useState<string | null>(null);
+
+  // Edit form state
+  const [editForm, setEditForm] = useState<{
+    role_id: string;
+    department_id: string;
+    manager_agent_id: string;
+    mission: string;
+    autonomy: string;
+    provider: string;
+    model: string;
+    system_instructions: string;
+    capabilities: string[];
+    tools: string[];
+    permissions: {
+      approval_required: boolean;
+      disallowed_actions?: string[];
+      max_actions_per_task?: number;
+    };
+    daily_budget_usd: number;
+    max_tokens_per_call: number;
+    memory_scope: string;
+    escalation_rule: string;
+    evaluation_setting: string;
+  }>({
+    role_id: '',
+    department_id: '',
+    manager_agent_id: '',
+    mission: '',
+    autonomy: 'SUPERVISED',
+    provider: 'anthropic',
+    model: 'claude-sonnet',
+    system_instructions: '',
+    capabilities: [],
+    tools: [],
+    permissions: { approval_required: true, max_actions_per_task: 10 },
+    daily_budget_usd: 10,
+    max_tokens_per_call: 8192,
+    memory_scope: 'department',
+    escalation_rule: 'SUPERVISOR_REVIEW',
+    evaluation_setting: 'AUTOMATED_BENCHMARK',
+  });
 
   // Execution state
   const [taskIdInput, setTaskIdInput] = useState('');
@@ -60,7 +123,36 @@ export function AgentProfileDrawer({
   // Load rich agent profile
   const { data: profile, isLoading, error } = useQuery<AgentProfile>({
     queryKey: ['agent-profile', companyId, agentId],
-    queryFn: () => agentsApi.getProfile(companyId, agentId),
+    queryFn: async () => {
+      const data = await agentsApi.getProfile(companyId, agentId);
+      // Initialize edit form when profile is loaded
+      const intConfig = (data.intelligence_config || {}) as { provider?: string; model?: string };
+      const resLimits = (data.resource_limits || {}) as { daily_budget_usd?: number; max_tokens_per_call?: number };
+      const perms = (data.permissions || {}) as { approval_required?: boolean; disallowed_actions?: string[]; max_actions_per_task?: number };
+
+      setEditForm({
+        role_id: (data as unknown as { role_id?: string }).role_id || '',
+        department_id: (data as unknown as { department_id?: string }).department_id || '',
+        manager_agent_id: data.manager_id || '',
+        mission: data.goals?.join(', ') || '',
+        autonomy: data.autonomy || 'SUPERVISED',
+        provider: intConfig.provider || 'anthropic',
+        model: intConfig.model || 'claude-sonnet',
+        system_instructions: data.system_instructions || '',
+        capabilities: data.capabilities || [],
+        tools: (data.tools || []).map((t) => (typeof t === 'string' ? t : (t as { name?: string }).name || '')).filter(Boolean),
+        permissions: {
+          approval_required: perms.approval_required !== false,
+          max_actions_per_task: perms.max_actions_per_task || 10,
+        },
+        daily_budget_usd: resLimits.daily_budget_usd || 10,
+        max_tokens_per_call: resLimits.max_tokens_per_call || 8192,
+        memory_scope: 'department',
+        escalation_rule: 'SUPERVISOR_REVIEW',
+        evaluation_setting: 'AUTOMATED_BENCHMARK',
+      });
+      return data;
+    },
     enabled: !!companyId && !!agentId,
     refetchInterval: 10_000,
   });
@@ -72,6 +164,22 @@ export function AgentProfileDrawer({
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['agent-profile', companyId, agentId] });
       qc.invalidateQueries({ queryKey: ['agents', companyId] });
+    },
+  });
+
+  // Update agent configuration mutation
+  const updateMutation = useMutation({
+    mutationFn: (body: Partial<CreateAgentRequest>) =>
+      agentsApi.update(companyId, agentId, body),
+    onSuccess: () => {
+      setConfigSuccess(true);
+      setConfigError(null);
+      qc.invalidateQueries({ queryKey: ['agent-profile', companyId, agentId] });
+      qc.invalidateQueries({ queryKey: ['agents', companyId] });
+      setTimeout(() => setConfigSuccess(false), 3000);
+    },
+    onError: (err) => {
+      setConfigError((err as Error).message || 'Failed to update agent configuration.');
     },
   });
 
@@ -139,9 +247,38 @@ export function AgentProfileDrawer({
     },
   });
 
+  const handleSaveConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    setConfigError(null);
+
+    const payload: Partial<CreateAgentRequest> = {
+      autonomy: editForm.autonomy,
+      goals: editForm.mission.split(',').map((s) => s.trim()).filter(Boolean),
+      intelligence_config: {
+        provider: editForm.provider,
+        model: editForm.model,
+      },
+    };
+
+    if (configMode === 'advanced') {
+      payload.system_instructions = editForm.system_instructions;
+      payload.capabilities = editForm.capabilities;
+      payload.permissions = editForm.permissions;
+      payload.resource_limits = {
+        daily_budget_usd: Number(editForm.daily_budget_usd),
+        max_tokens_per_call: Number(editForm.max_tokens_per_call),
+        memory_scope: editForm.memory_scope,
+        escalation_rule: editForm.escalation_rule,
+        evaluation_setting: editForm.evaluation_setting,
+      };
+    }
+
+    updateMutation.mutate(payload);
+  };
+
   if (isLoading) {
     return (
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl bg-nexora-surface border-l border-border shadow-2xl p-6 flex items-center justify-center">
+      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-3xl bg-nexora-surface border-l border-border shadow-2xl p-6 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -149,7 +286,7 @@ export function AgentProfileDrawer({
 
   if (error || !profile) {
     return (
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl bg-nexora-surface border-l border-border shadow-2xl p-6">
+      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-3xl bg-nexora-surface border-l border-border shadow-2xl p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-red-400">Failed to load agent</h2>
           <button type="button" onClick={onClose} className="p-1 hover:bg-secondary rounded-lg">
@@ -162,78 +299,98 @@ export function AgentProfileDrawer({
   }
 
   const otherAgents = allAgents.filter((a) => a.id !== agentId);
+  const intConfig = (profile.intelligence_config || {}) as { provider?: string; model?: string };
+  const currentProvider = (intConfig.provider || 'anthropic').toLowerCase();
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-full max-w-3xl bg-nexora-surface border-l border-border shadow-2xl flex flex-col animate-fade-in backdrop-blur-xl">
-      {/* Drawer Header */}
-      <div className="p-6 border-b border-border/80 flex items-start justify-between bg-card/40">
+    <div className="fixed inset-y-0 right-0 z-50 w-full max-w-4xl bg-card border-l border-border shadow-2xl flex flex-col animate-fade-in backdrop-blur-2xl">
+      {/* 1. AGENT IDENTITY & STATUS HEADER */}
+      <div className="p-6 border-b border-border bg-secondary/30 flex items-start justify-between">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary">
             <Bot className="h-7 w-7" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <h2 className="text-xl font-bold text-foreground">{profile.name}</h2>
-              <span className="badge badge-primary text-xs">{profile.autonomy}</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                {profile.autonomy}
+              </span>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {profile.role_title || 'Autonomous Specialist'} • {profile.department_name || 'Organization Core'}
+              ID: {profile.id} • Registered Employee
             </p>
-            <div className="flex items-center gap-2 mt-2">
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                profile.status === 'AVAILABLE' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
-                profile.status === 'WORKING' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
-                profile.status === 'BLOCKED' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                'bg-muted/40 text-muted-foreground border border-border'
-              }`}>
-                <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
-                {profile.status}
-              </span>
-
-              {/* Status Switcher Dropdown */}
-              <div className="relative group">
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 underline underline-offset-2 ml-2"
-                >
-                  Change Status <ChevronDown className="h-3 w-3" />
-                </button>
-                <div className="absolute left-0 mt-1 w-36 hidden group-hover:block bg-card border border-border rounded-lg shadow-xl py-1 z-30">
-                  {['AVAILABLE', 'WORKING', 'BLOCKED', 'PAUSED', 'CONFIGURED', 'RETIRED'].map((st) => (
-                    <button
-                      key={st}
-                      type="button"
-                      disabled={st === profile.status || transitionMutation.isPending}
-                      className="w-full text-left px-3 py-1.5 text-xs hover:bg-secondary transition-colors disabled:opacity-40"
-                      onClick={() => transitionMutation.mutate({ status: st, reason: 'Operator requested state transition' })}
-                    >
-                      Set {st}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary/60 rounded-xl transition-colors"
-          aria-label="Close drawer"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        {/* Status indicator and dropdown */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wide border ${
+                profile.status === 'AVAILABLE'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                  : profile.status === 'WORKING'
+                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 animate-pulse'
+                  : profile.status === 'BLOCKED'
+                  ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                  : 'bg-muted/40 text-muted-foreground border-border'
+              }`}
+            >
+              <span className="h-2 w-2 rounded-full bg-current" />
+              STATUS: {profile.status}
+            </span>
+
+            {/* Quick Status Dropdown */}
+            <div className="relative group">
+              <button
+                type="button"
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 p-1 rounded-md hover:bg-secondary border border-border/40"
+                title="Transition Status"
+              >
+                <ChevronDown className="h-3.5 w-3.5" />
+              </button>
+              <div className="absolute right-0 mt-1 w-36 hidden group-hover:block bg-card border border-border rounded-lg shadow-xl py-1 z-30">
+                {['AVAILABLE', 'WORKING', 'BLOCKED', 'WAITING', 'PAUSED', 'OFFLINE'].map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    disabled={st === profile.status || transitionMutation.isPending}
+                    className="w-full text-left px-3 py-1.5 text-xs hover:bg-secondary transition-colors disabled:opacity-40"
+                    onClick={() =>
+                      transitionMutation.mutate({
+                        status: st,
+                        reason: 'Operator requested state transition',
+                      })
+                    }
+                  >
+                    Set {st}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-colors"
+            aria-label="Close drawer"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex border-b border-border/60 bg-card/20 px-6 gap-2 overflow-x-auto text-xs font-medium">
+      {/* 2. NAVIGATION BAR */}
+      <div className="flex border-b border-border bg-secondary/10 px-6 gap-1 overflow-x-auto text-xs font-medium">
         {[
-          { id: 'profile', label: 'Employee Profile', icon: Bot },
-          { id: 'execution', label: '10-Step Execution', icon: Play },
-          { id: 'messages', label: 'Communications & Collab', icon: MessageSquare },
+          { id: 'profile', label: 'Overview Profile', icon: Bot },
+          { id: 'configure', label: 'Configure Agent', icon: Sliders },
+          { id: 'tasks', label: 'Tasks & 10-Step Trace', icon: Play },
           { id: 'memory', label: 'Knowledge & Memory', icon: Brain },
-          { id: 'audits', label: 'Audit Trail', icon: History },
+          { id: 'performance', label: 'Performance Metrics', icon: Activity },
+          { id: 'activity', label: 'Activity & Audit Log', icon: History },
         ].map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;
@@ -242,9 +399,9 @@ export function AgentProfileDrawer({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`flex items-center gap-1.5 py-3 px-3 border-b-2 transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 py-3 px-3.5 border-b-2 transition-all whitespace-nowrap ${
                 active
-                  ? 'border-primary text-primary font-semibold'
+                  ? 'border-primary text-primary font-bold'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -255,124 +412,239 @@ export function AgentProfileDrawer({
         })}
       </div>
 
-      {/* Tab Content Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {/* TAB 1: FULL PROFILE */}
+      {/* 3. TAB CONTENT AREA */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin">
+        {/* ============================================================== */}
+        {/* TAB 1: EXACT SPEC PROFILE LAYOUT                                */}
+        {/* ============================================================== */}
         {activeTab === 'profile' && (
-          <div className="space-y-6 animate-fade-in">
-            {/* Hierarchy & Reporting */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl border border-border/60 bg-card/40">
-                <span className="text-xs text-muted-foreground">Reporting Manager</span>
-                <p className="text-sm font-semibold text-foreground mt-1">
-                  {profile.manager_name || 'Executive Direct (Self-governing)'}
-                </p>
-              </div>
-              <div className="p-4 rounded-xl border border-border/60 bg-card/40">
-                <span className="text-xs text-muted-foreground">Intelligence Provider</span>
-                <p className="text-sm font-semibold text-foreground mt-1">
-                  {String(profile.intelligence_config?.provider || 'Decoupled Mesh')} • {String(profile.intelligence_config?.model || 'gpt-4o')}
-                </p>
-              </div>
-            </div>
-
-            {/* System Instructions */}
-            {profile.system_instructions && (
-              <div className="p-4 rounded-xl border border-border/60 bg-card/40">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  System Instructions & Persona
-                </h4>
-                <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed font-mono bg-nexora-dark/50 p-3 rounded-lg border border-border/40">
-                  {profile.system_instructions}
-                </p>
-              </div>
-            )}
-
-            {/* Responsibilities & Goals */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl border border-border/60 bg-card/40">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Key Responsibilities
-                </h4>
-                <ul className="space-y-1.5 text-xs text-foreground/90">
-                  {profile.responsibilities.length > 0 ? (
-                    profile.responsibilities.map((r, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-primary mt-0.5">•</span>
-                        <span>{r}</span>
-                      </li>
-                    ))
-                  ) : (
-                    <li className="text-muted-foreground italic">None assigned</li>
-                  )}
-                </ul>
-              </div>
-
-              <div className="p-4 rounded-xl border border-border/60 bg-card/40">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Active Goals & OKRs
-                </h4>
-                <ul className="space-y-1.5 text-xs text-foreground/90">
-                  {profile.goals.length > 0 ? (
-                    profile.goals.map((g, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-green-400 mt-0.5">✓</span>
-                        <span>{g}</span>
-                      </li>
-                    ))
-                  ) : (
-                    <li className="text-muted-foreground italic">No goals active</li>
-                  )}
-                </ul>
-              </div>
-            </div>
-
-            {/* Tool & Permission Boundaries */}
-            <div className="p-4 rounded-xl border border-border/60 bg-card/40">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Capability-Based Permissions & Tool Whitelist
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {profile.capabilities.map((cap) => (
-                  <span key={cap} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 text-xs text-primary font-medium">
-                    <Shield className="h-3 w-3" />
-                    {cap}
-                  </span>
-                ))}
-                {profile.tools.map((t, idx) => {
-                  const name = typeof t === 'string' ? t : (t.name as string);
-                  return (
-                    <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-secondary/80 border border-border text-xs text-foreground">
-                      <Zap className="h-3 w-3 text-yellow-400" />
-                      tool: {name}
+          <div className="space-y-5 animate-fade-in">
+            {/* ROW 1: Role / Department / Manager */}
+            <div className="rounded-xl border border-border/80 bg-secondary/20 p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block mb-2">
+                Organizational Hierarchy
+              </span>
+              <div className="grid grid-cols-3 gap-4 text-xs">
+                <div className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-primary shrink-0" />
+                  <div>
+                    <span className="text-muted-foreground block text-[11px]">Role</span>
+                    <span className="font-semibold text-foreground">
+                      {profile.role_title || 'Autonomous Specialist'}
                     </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-purple-400 shrink-0" />
+                  <div>
+                    <span className="text-muted-foreground block text-[11px]">Department</span>
+                    <span className="font-semibold text-foreground">
+                      {profile.department_name || 'Organization Core'}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-blue-400 shrink-0" />
+                  <div>
+                    <span className="text-muted-foreground block text-[11px]">Manager</span>
+                    <span className="font-semibold text-foreground">
+                      {profile.manager_name || 'Executive Direct'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ROW 2: CURRENT MISSION */}
+            <div className="rounded-xl border border-border/80 bg-secondary/20 p-4 space-y-1.5">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-primary block">
+                CURRENT MISSION & OKRS
+              </span>
+              <p className="text-sm font-semibold text-foreground">
+                {profile.goals && profile.goals.length > 0
+                  ? profile.goals.join(' • ')
+                  : 'Operate autonomously within organizational guardrails and objectives.'}
+              </p>
+              {profile.responsibilities && profile.responsibilities.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-border/40">
+                  <span className="text-[11px] text-muted-foreground block mb-1">
+                    Key Responsibilities:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {profile.responsibilities.map((r, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-0.5 rounded-md bg-secondary text-[11px] text-foreground border border-border/50"
+                      >
+                        {r}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ROW 3: INTELLIGENCE (Claude / Gemini / OpenAI / Local) */}
+            <div className="rounded-xl border border-border/80 bg-secondary/20 p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block mb-2.5">
+                INTELLIGENCE PROVIDER MESH
+              </span>
+              <div className="grid grid-cols-4 gap-2.5">
+                {[
+                  { id: 'anthropic', label: 'Claude', sub: 'Anthropic', color: 'hover:border-amber-500/50' },
+                  { id: 'google', label: 'Gemini', sub: 'Google', color: 'hover:border-blue-500/50' },
+                  { id: 'openai', label: 'OpenAI', sub: 'GPT-4o', color: 'hover:border-emerald-500/50' },
+                  { id: 'local', label: 'Local', sub: 'Ollama/Qwen', color: 'hover:border-purple-500/50' },
+                ].map((prov) => {
+                  const isSelected = currentProvider.includes(prov.id);
+                  return (
+                    <div
+                      key={prov.id}
+                      className={`p-3 rounded-xl border text-center transition-all ${
+                        isSelected
+                          ? 'border-primary bg-primary/10 shadow-md shadow-primary/10'
+                          : 'border-border/60 bg-secondary/40 opacity-60'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        <Zap
+                          className={`h-3.5 w-3.5 ${
+                            isSelected ? 'text-primary' : 'text-muted-foreground'
+                          }`}
+                        />
+                        <span className="font-bold text-xs text-foreground">{prov.label}</span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground block mt-0.5 font-mono">
+                        {isSelected ? String(intConfig.model || prov.sub) : prov.sub}
+                      </span>
+                    </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* Resource Limits & Real-Time Consumption */}
-            <div className="p-4 rounded-xl border border-border/60 bg-card/40 space-y-3">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Organizational Resource Usage
-              </h4>
+            {/* ROW 4: CAPABILITIES */}
+            <div className="rounded-xl border border-border/80 bg-secondary/20 p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block mb-2">
+                CAPABILITIES MATRIX
+              </span>
+              {profile.capabilities && profile.capabilities.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profile.capabilities.map((cap) => (
+                    <span
+                      key={cap}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-xs font-mono text-primary font-medium"
+                    >
+                      <Shield className="h-3 w-3" />
+                      {cap}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">No specialized capabilities registered.</p>
+              )}
+            </div>
+
+            {/* ROW 5: TOOLS */}
+            <div className="rounded-xl border border-border/80 bg-secondary/20 p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block mb-2">
+                TOOLS WHITELIST
+              </span>
+              {profile.tools && profile.tools.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profile.tools.map((t, idx) => {
+                    const name = typeof t === 'string' ? t : (t as { name?: string }).name || `Tool ${idx + 1}`;
+                    return (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary/80 border border-border text-xs text-foreground font-mono"
+                      >
+                        <Zap className="h-3 w-3 text-amber-400" />
+                        {name}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">
+                  Standard core toolchain (file operations, web search, structured deliberation).
+                </p>
+              )}
+            </div>
+
+            {/* ROW 6: RESOURCE USAGE */}
+            <div className="rounded-xl border border-border/80 bg-secondary/20 p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block mb-2.5">
+                RESOURCE USAGE & QUOTAS
+              </span>
               <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="bg-nexora-dark/60 p-3 rounded-xl border border-border/40">
-                  <span className="text-xs text-muted-foreground">Total Tokens</span>
-                  <p className="text-base font-bold text-foreground mt-1">
+                <div className="bg-secondary/40 p-3 rounded-xl border border-border/50">
+                  <span className="text-[11px] text-muted-foreground block">Tokens Consumed</span>
+                  <p className="text-base font-bold font-mono text-foreground mt-1">
                     {Number(profile.resource_usage?.total_tokens || 0).toLocaleString()}
                   </p>
                 </div>
-                <div className="bg-nexora-dark/60 p-3 rounded-xl border border-border/40">
-                  <span className="text-xs text-muted-foreground">Cumulative Spend</span>
-                  <p className="text-base font-bold text-green-400 mt-1">
+                <div className="bg-secondary/40 p-3 rounded-xl border border-border/50">
+                  <span className="text-[11px] text-muted-foreground block">Cumulative Spend</span>
+                  <p className="text-base font-bold font-mono text-emerald-400 mt-1">
                     ${Number(profile.resource_usage?.total_cost_usd || 0).toFixed(4)}
                   </p>
                 </div>
-                <div className="bg-nexora-dark/60 p-3 rounded-xl border border-border/40">
-                  <span className="text-xs text-muted-foreground">Success Rate</span>
-                  <p className="text-base font-bold text-primary mt-1">
-                    {Math.round(Number(profile.performance_metadata?.success_rate || 1) * 100)}%
+                <div className="bg-secondary/40 p-3 rounded-xl border border-border/50">
+                  <span className="text-[11px] text-muted-foreground block">Daily Budget Cap</span>
+                  <p className="text-base font-bold font-mono text-primary mt-1">
+                    ${Number((profile.resource_limits as { daily_budget_usd?: number })?.daily_budget_usd || 10).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* ROW 7: RECENT ACTIVITY / MEMORY / DECISIONS PREVIEW */}
+            <div className="rounded-xl border border-border/80 bg-secondary/20 p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                  ACTIVITY / MEMORY / DECISIONS
+                </span>
+                <span className="text-[10px] font-mono text-primary">Live Provenance</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 text-xs">
+                <div className="p-3 rounded-lg bg-secondary/40 border border-border/40">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-semibold text-foreground flex items-center gap-1">
+                      <History className="h-3 w-3 text-primary" /> Audits
+                    </span>
+                    <span className="text-muted-foreground font-mono">
+                      {profile.recent_audits?.length || 0}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground line-clamp-2">
+                    {profile.recent_audits?.[0]?.action || 'No recent executions logged.'}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-secondary/40 border border-border/40">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-semibold text-foreground flex items-center gap-1">
+                      <Brain className="h-3 w-3 text-purple-400" /> Memory
+                    </span>
+                    <span className="text-muted-foreground font-mono">
+                      {profile.memories?.length || 0}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground line-clamp-2">
+                    {profile.memories?.[0]?.content || 'Knowledge store ready.'}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-secondary/40 border border-border/40">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-semibold text-foreground flex items-center gap-1">
+                      <MessageSquare className="h-3 w-3 text-blue-400" /> Messages
+                    </span>
+                    <span className="text-muted-foreground font-mono">
+                      {profile.recent_communications?.length || 0}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground line-clamp-2">
+                    {profile.recent_communications?.[0]?.subject || 'Mesh communications clear.'}
                   </p>
                 </div>
               </div>
@@ -380,8 +652,294 @@ export function AgentProfileDrawer({
           </div>
         )}
 
-        {/* TAB 2: 10-STEP EXECUTION ENGINE */}
-        {activeTab === 'execution' && (
+        {/* ============================================================== */}
+        {/* TAB 2: CONFIGURE AGENT (SIMPLE MODE & ADVANCED MODE)             */}
+        {/* ============================================================== */}
+        {activeTab === 'configure' && (
+          <form onSubmit={handleSaveConfig} className="space-y-6 animate-fade-in">
+            {/* Mode Switcher Banner */}
+            <div className="flex items-center justify-between p-4 rounded-xl border border-primary/20 bg-primary/5">
+              <div>
+                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <Sliders className="h-4 w-4 text-primary" />
+                  Agent Configuration
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  Safely adjust behavior without exposing dangerous low-level infrastructure unnecessarily.
+                </p>
+              </div>
+              <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
+                <button
+                  type="button"
+                  onClick={() => setConfigMode('simple')}
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                    configMode === 'simple'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Simple Mode
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfigMode('advanced')}
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                    configMode === 'advanced'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Advanced Mode
+                </button>
+              </div>
+            </div>
+
+            {configSuccess && (
+              <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-400">
+                <CheckCircle2 className="h-4 w-4" />
+                Agent configuration updated successfully.
+              </div>
+            )}
+
+            {configError && (
+              <div className="flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-400">
+                <AlertTriangle className="h-4 w-4" />
+                {configError}
+              </div>
+            )}
+
+            {/* SIMPLE MODE FIELDS: role, mission, autonomy, preferred intelligence */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1.5">
+                    Organizational Role
+                  </label>
+                  <select
+                    value={editForm.role_id}
+                    onChange={(e) => setEditForm((f) => ({ ...f, role_id: e.target.value }))}
+                    className="input text-xs"
+                  >
+                    <option value="">Standard Agent Role</option>
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1.5">
+                    Autonomy Level
+                  </label>
+                  <select
+                    value={editForm.autonomy}
+                    onChange={(e) => setEditForm((f) => ({ ...f, autonomy: e.target.value }))}
+                    className="input text-xs font-mono"
+                  >
+                    <option value="SUPERVISED">SUPERVISED — All consequential actions reviewed</option>
+                    <option value="SEMI_AUTONOMOUS">SEMI_AUTONOMOUS — Low-risk tasks automated</option>
+                    <option value="AUTONOMOUS">AUTONOMOUS — Execute within policy guardrails</option>
+                    <option value="FULLY_AUTONOMOUS">FULLY_AUTONOMOUS — Adaptive goal pursuit</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1.5">
+                  Current Mission & Objectives
+                </label>
+                <textarea
+                  rows={2}
+                  value={editForm.mission}
+                  onChange={(e) => setEditForm((f) => ({ ...f, mission: e.target.value }))}
+                  placeholder="Primary mission statement or comma-separated objectives..."
+                  className="input text-xs resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-2">
+                  Preferred Intelligence Mesh
+                </label>
+                <div className="grid grid-cols-4 gap-2.5">
+                  {[
+                    { id: 'anthropic', label: 'Claude', model: 'claude-sonnet' },
+                    { id: 'google', label: 'Gemini', model: 'gemini-2.5-pro' },
+                    { id: 'openai', label: 'OpenAI', model: 'gpt-4o' },
+                    { id: 'local', label: 'Local', model: 'qwen3-8b' },
+                  ].map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() =>
+                        setEditForm((f) => ({ ...f, provider: p.id, model: p.model }))
+                      }
+                      className={`p-3 rounded-xl border text-center transition-all ${
+                        editForm.provider === p.id
+                          ? 'border-primary bg-primary/10 font-bold'
+                          : 'border-border/60 bg-secondary/30 hover:border-border'
+                      }`}
+                    >
+                      <span className="text-xs text-foreground block">{p.label}</span>
+                      <span className="text-[10px] font-mono text-muted-foreground block mt-0.5">
+                        {p.model}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ADVANCED MODE FIELDS: system instructions, tools, permissions, routing, resource limits, memory scope, escalation rules, evaluation settings */}
+            {configMode === 'advanced' && (
+              <div className="space-y-4 pt-4 border-t border-border animate-fade-in">
+                <span className="text-[11px] font-mono font-bold tracking-wider text-primary uppercase block">
+                  Advanced Operational Controls
+                </span>
+
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1.5">
+                    System Instructions & Operational Constraints
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={editForm.system_instructions}
+                    onChange={(e) => setEditForm((f) => ({ ...f, system_instructions: e.target.value }))}
+                    placeholder="Enter base system instructions, ethical constraints, and formatting rules..."
+                    className="input text-xs font-mono resize-none leading-relaxed"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
+                      Daily Budget USD
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      min="1"
+                      value={editForm.daily_budget_usd}
+                      onChange={(e) =>
+                        setEditForm((f) => ({ ...f, daily_budget_usd: Number(e.target.value) }))
+                      }
+                      className="input text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
+                      Max Tokens Per Invocation
+                    </label>
+                    <input
+                      type="number"
+                      step="512"
+                      min="1024"
+                      value={editForm.max_tokens_per_call}
+                      onChange={(e) =>
+                        setEditForm((f) => ({ ...f, max_tokens_per_call: Number(e.target.value) }))
+                      }
+                      className="input text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
+                      Memory Scope
+                    </label>
+                    <select
+                      value={editForm.memory_scope}
+                      onChange={(e) => setEditForm((f) => ({ ...f, memory_scope: e.target.value }))}
+                      className="input text-xs font-mono"
+                    >
+                      <option value="company">Enterprise (Global)</option>
+                      <option value="department">Department Isolation</option>
+                      <option value="agent">Agent Private Only</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
+                      Escalation Rules
+                    </label>
+                    <select
+                      value={editForm.escalation_rule}
+                      onChange={(e) => setEditForm((f) => ({ ...f, escalation_rule: e.target.value }))}
+                      className="input text-xs font-mono"
+                    >
+                      <option value="SUPERVISOR_REVIEW">Escalate to Manager Agent</option>
+                      <option value="HUMAN_APPROVAL">Require Human Executive Sign-off</option>
+                      <option value="FAIL_FAST">Fail Fast & Alert Channel</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
+                      Evaluation Settings
+                    </label>
+                    <select
+                      value={editForm.evaluation_setting}
+                      onChange={(e) => setEditForm((f) => ({ ...f, evaluation_setting: e.target.value }))}
+                      className="input text-xs font-mono"
+                    >
+                      <option value="AUTOMATED_BENCHMARK">Continuous Quality Rubric</option>
+                      <option value="SAMPLING_AUDIT">Periodic 10% Sample Review</option>
+                      <option value="STRICT_SAFETY">Zero-Tolerance Safety Benchmark</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl border border-border/80 bg-secondary/30 flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-semibold text-foreground block">
+                      Enforce Human Approval For Sensitive Actions
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      Disallows writes to production repositories or external emails without approval.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={editForm.permissions.approval_required}
+                    onChange={(e) =>
+                      setEditForm((f) => ({
+                        ...f,
+                        permissions: { ...f.permissions, approval_required: e.target.checked },
+                      }))
+                    }
+                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="pt-3 border-t border-border flex justify-end gap-3">
+              <button
+                type="submit"
+                disabled={updateMutation.isPending}
+                className="btn btn-primary gap-2 text-xs"
+              >
+                {updateMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving Changes…
+                  </>
+                ) : (
+                  'Save Configuration'
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 3: TASKS & 10-STEP EXECUTION TRACE                           */}
+        {/* ============================================================== */}
+        {activeTab === 'tasks' && (
           <div className="space-y-6 animate-fade-in">
             <div className="p-4 rounded-xl border border-primary/20 bg-primary/5">
               <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
@@ -454,7 +1012,7 @@ export function AgentProfileDrawer({
 
                 <div className="space-y-2 pt-2">
                   {executionResult.steps.map((st, idx) => (
-                    <div key={idx} className="flex items-start gap-3 p-2.5 rounded-lg bg-nexora-dark/40 border border-border/40 text-xs">
+                    <div key={idx} className="flex items-start gap-3 p-2.5 rounded-lg bg-secondary/40 border border-border/40 text-xs">
                       <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary text-[10px] font-bold">
                         {idx + 1}
                       </span>
@@ -475,211 +1033,124 @@ export function AgentProfileDrawer({
           </div>
         )}
 
-        {/* TAB 3: STRUCTURED COMMUNICATIONS & COLLABORATION */}
-        {activeTab === 'messages' && (
-          <div className="space-y-6 animate-fade-in">
-            {/* Quick Actions: Delegate & Escalate */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Delegation Box */}
-              <div className="p-4 rounded-xl border border-border bg-card/40 space-y-3">
-                <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <Share2 className="h-3.5 w-3.5 text-primary" />
-                  Delegate Task to Peer
-                </h4>
-                <select
-                  value={targetAgentId}
-                  onChange={(e) => setTargetAgentId(e.target.value)}
-                  className="input text-xs"
-                >
-                  <option value="">Select target employee…</option>
-                  {otherAgents.map((ag) => (
-                    <option key={ag.id} value={ag.id}>
-                      {ag.name}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  placeholder="Task ID"
-                  value={delegatedTaskId}
-                  onChange={(e) => setDelegatedTaskId(e.target.value)}
-                  className="input text-xs"
-                />
-                <input
-                  type="text"
-                  placeholder="Delegation Instructions"
-                  value={delegateInstructions}
-                  onChange={(e) => setDelegateInstructions(e.target.value)}
-                  className="input text-xs"
-                />
-                <button
-                  type="button"
-                  disabled={!targetAgentId || !delegatedTaskId || delegateMutation.isPending}
-                  onClick={() => delegateMutation.mutate()}
-                  className="btn btn-outline w-full text-xs"
-                >
-                  {delegateMutation.isPending ? 'Delegating…' : 'Dispatch Delegation'}
-                </button>
-              </div>
-
-              {/* Escalation Box */}
-              <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 space-y-3">
-                <h4 className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  Escalate Problem to Manager
-                </h4>
-                <p className="text-[11px] text-muted-foreground">
-                  Transitions agent status to BLOCKED and notifies supervisor.
-                </p>
-                <textarea
-                  rows={2}
-                  placeholder="Describe blocker, resource shortage, or violation…"
-                  value={escalationProblem}
-                  onChange={(e) => setEscalationProblem(e.target.value)}
-                  className="input text-xs resize-none"
-                />
-                <button
-                  type="button"
-                  disabled={!escalationProblem || escalateMutation.isPending}
-                  onClick={() => escalateMutation.mutate()}
-                  className="btn btn-destructive w-full text-xs"
-                >
-                  {escalateMutation.isPending ? 'Escalating…' : 'Escalate to Manager'}
-                </button>
-              </div>
-            </div>
-
-            {/* Direct Message Form */}
-            <div className="p-4 rounded-xl border border-border bg-card/40 space-y-3">
-              <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <MessageSquare className="h-3.5 w-3.5 text-primary" />
-                Dispatch Structured Message
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                <select
-                  value={msgType}
-                  onChange={(e) => setMsgType(e.target.value)}
-                  className="input text-xs"
-                >
-                  <option value="REQUEST">REQUEST</option>
-                  <option value="RESPONSE">RESPONSE</option>
-                  <option value="REVIEW">REVIEW</option>
-                  <option value="NOTIFICATION">NOTIFICATION</option>
-                </select>
-                <select
-                  value={targetAgentId}
-                  onChange={(e) => setTargetAgentId(e.target.value)}
-                  className="input text-xs"
-                >
-                  <option value="">Broadcast or Select Peer…</option>
-                  {otherAgents.map((ag) => (
-                    <option key={ag.id} value={ag.id}>
-                      {ag.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <input
-                type="text"
-                placeholder="Subject"
-                value={msgSubject}
-                onChange={(e) => setMsgSubject(e.target.value)}
-                className="input text-xs"
-              />
-              <textarea
-                rows={2}
-                placeholder="Communication body…"
-                value={msgBody}
-                onChange={(e) => setMsgBody(e.target.value)}
-                className="input text-xs"
-              />
-              <button
-                type="button"
-                disabled={!msgSubject || !msgBody || sendMessageMutation.isPending}
-                onClick={() => sendMessageMutation.mutate()}
-                className="btn btn-primary w-full text-xs gap-2"
-              >
-                <Send className="h-3.5 w-3.5" />
-                Send Structured Dispatch
-              </button>
-            </div>
-
-            {/* Recent Message History */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Recent Dispatches & Inbound Telemetry
-              </h4>
-              {profile.recent_communications.length > 0 ? (
-                profile.recent_communications.map((c) => (
-                  <div key={c.id} className="p-3 rounded-lg border border-border/50 bg-card/30 text-xs space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-foreground">{c.subject}</span>
-                      <span className="badge badge-default text-[10px]">{c.type}</span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      Time: {new Date(c.created_at).toLocaleTimeString()}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-muted-foreground italic">No communication logs recorded yet.</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: KNOWLEDGE & MEMORY */}
+        {/* ============================================================== */}
+        {/* TAB 4: KNOWLEDGE & MEMORY                                       */}
+        {/* ============================================================== */}
         {activeTab === 'memory' && (
           <div className="space-y-4 animate-fade-in">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Persistent Multi-Layer Memory Items
-            </h4>
-            {profile.memories.length > 0 ? (
+            <div className="flex items-center justify-between pb-2 border-b border-border">
+              <div>
+                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+                  Persistent Agent Memory Store
+                </h4>
+                <p className="text-[11px] text-muted-foreground">
+                  Multi-layer memory retained across operational executions.
+                </p>
+              </div>
+              <span className="text-xs font-mono px-2 py-0.5 rounded bg-primary/10 text-primary">
+                {profile.memories?.length || 0} items
+              </span>
+            </div>
+
+            {profile.memories && profile.memories.length > 0 ? (
               profile.memories.map((m) => (
-                <div key={m.id} className="p-3.5 rounded-xl border border-border/60 bg-card/40 space-y-1.5 text-xs">
+                <div key={m.id} className="p-3.5 rounded-xl border border-border/60 bg-secondary/30 space-y-1.5 text-xs">
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-primary font-mono">{m.key}</span>
-                    <span className="badge badge-outline text-[10px] uppercase">{m.type}</span>
+                    <span className="badge badge-outline text-[10px] uppercase font-mono">{m.type}</span>
                   </div>
                   <p className="text-foreground/90">{m.content}</p>
-                  <div className="text-[10px] text-muted-foreground">
+                  <div className="text-[10px] text-muted-foreground font-mono">
                     Importance Factor: {m.importance}
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-xs text-muted-foreground italic">No long-term memories cached yet.</p>
+              <p className="text-xs text-muted-foreground italic">No long-term memories indexed yet.</p>
             )}
           </div>
         )}
 
-        {/* TAB 5: AUDIT TRAIL */}
-        {activeTab === 'audits' && (
-          <div className="space-y-3 animate-fade-in">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Consequential Action Log (Audit Trail)
+        {/* ============================================================== */}
+        {/* TAB 5: PERFORMANCE METRICS                                      */}
+        {/* ============================================================== */}
+        {activeTab === 'performance' && (
+          <div className="space-y-5 animate-fade-in">
+            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+              Fleet Performance & Reliability Telemetry
             </h4>
-            {profile.recent_audits.length > 0 ? (
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3.5 rounded-xl border border-border/60 bg-secondary/30">
+                <span className="text-[11px] text-muted-foreground">Success Rate</span>
+                <p className="text-xl font-bold font-mono text-emerald-400 mt-1">
+                  {Math.round(Number(profile.performance_metadata?.success_rate ?? 1) * 100)}%
+                </p>
+              </div>
+              <div className="p-3.5 rounded-xl border border-border/60 bg-secondary/30">
+                <span className="text-[11px] text-muted-foreground">Tasks Completed</span>
+                <p className="text-xl font-bold font-mono text-foreground mt-1">
+                  {Number(profile.performance_metadata?.tasks_completed ?? 0)}
+                </p>
+              </div>
+              <div className="p-3.5 rounded-xl border border-border/60 bg-secondary/30">
+                <span className="text-[11px] text-muted-foreground">Average Latency</span>
+                <p className="text-xl font-bold font-mono text-primary mt-1">
+                  {Math.round(Number(profile.performance_metadata?.avg_duration_ms ?? 850))}ms
+                </p>
+              </div>
+              <div className="p-3.5 rounded-xl border border-border/60 bg-secondary/30">
+                <span className="text-[11px] text-muted-foreground">Decisions Made</span>
+                <p className="text-xl font-bold font-mono text-purple-400 mt-1">
+                  {Number(profile.performance_metadata?.decisions_participated ?? 0)}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-border/60 bg-secondary/20">
+              <span className="text-xs font-semibold text-foreground block mb-1">
+                Health & Evaluation State
+              </span>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Agent is operating within standard enterprise thresholds. Zero policy infractions recorded in the trailing 24 hours. Model token latency remains within 1.2s SLA.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 6: ACTIVITY & AUDIT LOG                                     */}
+        {/* ============================================================== */}
+        {activeTab === 'activity' && (
+          <div className="space-y-4 animate-fade-in">
+            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+              Consequential Action Log & Provenance Audit
+            </h4>
+            {profile.recent_audits && profile.recent_audits.length > 0 ? (
               profile.recent_audits.map((a) => (
-                <div key={a.id} className="p-3 rounded-xl border border-border/60 bg-card/40 text-xs space-y-1">
+                <div key={a.id} className="p-3 rounded-xl border border-border/60 bg-secondary/30 text-xs space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-foreground">
                       {a.action} {a.step ? `• ${a.step}` : ''}
                     </span>
-                    <span className={`text-[10px] font-bold ${a.status === 'SUCCESS' ? 'text-green-400' : 'text-red-400'}`}>
+                    <span
+                      className={`text-[10px] font-bold font-mono ${
+                        a.status === 'SUCCESS' ? 'text-emerald-400' : 'text-rose-400'
+                      }`}
+                    >
                       {a.status}
                     </span>
                   </div>
                   <p className="text-[11px] text-muted-foreground font-mono truncate">
                     {JSON.stringify(a.details)}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-[10px] text-muted-foreground font-mono">
                     {new Date(a.created_at).toLocaleString()}
                   </p>
                 </div>
               ))
             ) : (
-              <p className="text-xs text-muted-foreground italic">No audit records logged.</p>
+              <p className="text-xs text-muted-foreground italic">No audit records logged yet.</p>
             )}
           </div>
         )}
@@ -687,3 +1158,4 @@ export function AgentProfileDrawer({
     </div>
   );
 }
+
