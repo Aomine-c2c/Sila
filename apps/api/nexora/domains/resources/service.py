@@ -325,37 +325,64 @@ class ResourceService:
         }
 
         # 3. Expensive Tasks (aggregate from usage records)
+        task_aggregates: dict[uuid.UUID, dict] = {}
+        for rec in usage_records:
+            if rec.task_id is None:
+                continue
+            tid = rec.task_id
+            if tid not in task_aggregates:
+                details = rec.details or {}
+                task_aggregates[tid] = {
+                    "task_id": tid,
+                    "task_title": details.get("task_title", "Untitled Task"),
+                    "agent_name": details.get("agent_name"),
+                    "cost_usd": 0.0,
+                    "tokens_consumed": 0,
+                    "cpu_duration_seconds": 0.0,
+                }
+            if rec.resource_type == "cost_usd":
+                task_aggregates[tid]["cost_usd"] += rec.amount
+            elif rec.resource_type == "tokens":
+                task_aggregates[tid]["tokens_consumed"] += int(rec.amount)
+            elif rec.resource_type == "duration_seconds":
+                task_aggregates[tid]["cpu_duration_seconds"] += rec.amount
+
         expensive_tasks = [
-            ExpensiveTaskSummary(
-                task_id=None,
-                task_title="Large Research Analysis (Market Intelligence)",
-                agent_name="Senior Research Analyst",
-                cost_usd=1.85,
-                tokens_consumed=184_000,
-                cpu_duration_seconds=1240.0,
-            )
+            ExpensiveTaskSummary(**agg)
+            for agg in sorted(
+                task_aggregates.values(),
+                key=lambda x: x["cost_usd"],
+                reverse=True,
+            )[:5]
         ]
 
-        # 4. Provider Usage
+        # 4. Provider Usage (aggregate from usage records)
+        provider_aggregates: dict[str, dict] = {}
+        for rec in usage_records:
+            details = rec.details or {}
+            provider_name = details.get("provider_name")
+            if not provider_name:
+                continue
+            if provider_name not in provider_aggregates:
+                provider_aggregates[provider_name] = {
+                    "provider_name": provider_name,
+                    "total_tokens": 0,
+                    "total_cost_usd": 0.0,
+                    "request_count": 0,
+                }
+            if rec.resource_type == "tokens":
+                provider_aggregates[provider_name]["total_tokens"] += int(rec.amount)
+            elif rec.resource_type == "cost_usd":
+                provider_aggregates[provider_name]["total_cost_usd"] += rec.amount
+            provider_aggregates[provider_name]["request_count"] += 1
+
         provider_usage = [
-            ProviderUsageMetric(
-                provider_name="Google Gemini",
-                total_tokens=1_250_000,
-                total_cost_usd=1.88,
-                request_count=42,
-            ),
-            ProviderUsageMetric(
-                provider_name="Anthropic Claude",
-                total_tokens=480_000,
-                total_cost_usd=4.20,
-                request_count=18,
-            ),
-            ProviderUsageMetric(
-                provider_name="OpenAI",
-                total_tokens=320_000,
-                total_cost_usd=1.60,
-                request_count=15,
-            ),
+            ProviderUsageMetric(**agg)
+            for agg in sorted(
+                provider_aggregates.values(),
+                key=lambda x: x["total_cost_usd"],
+                reverse=True,
+            )
         ]
 
         # Host telemetry (OBSERVED, never faked)

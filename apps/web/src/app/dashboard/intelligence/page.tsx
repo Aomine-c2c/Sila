@@ -30,11 +30,29 @@ import {
   ModelRoutingPolicyUpdate,
 } from '@/lib/api/intelligence';
 import { useOrganizationContext } from '@/lib/organizationContext';
-import { IntelligenceFlowDiagram } from '@/components/intelligence/IntelligenceFlowDiagram';
-import { ModelComparisonMatrix } from '@/components/intelligence/ModelComparisonMatrix';
-import { ProviderDirectory } from '@/components/intelligence/ProviderDirectory';
-import { RoutingPolicyEditor } from '@/components/intelligence/RoutingPolicyEditor';
-import { ModelDetailsModal } from '@/components/intelligence/ModelDetailsModal';
+import dynamic from 'next/dynamic';
+import { Loader2 } from 'lucide-react';
+
+const IntelligenceFlowDiagram = dynamic(
+  () => import('@/components/intelligence/IntelligenceFlowDiagram').then((mod) => mod.IntelligenceFlowDiagram),
+  { loading: () => <div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" /></div> }
+);
+const ModelComparisonMatrix = dynamic(
+  () => import('@/components/intelligence/ModelComparisonMatrix').then((mod) => mod.ModelComparisonMatrix),
+  { loading: () => <div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" /></div> }
+);
+const ProviderDirectory = dynamic(
+  () => import('@/components/intelligence/ProviderDirectory').then((mod) => mod.ProviderDirectory),
+  { loading: () => <div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" /></div> }
+);
+const RoutingPolicyEditor = dynamic(
+  () => import('@/components/intelligence/RoutingPolicyEditor').then((mod) => mod.RoutingPolicyEditor),
+  { loading: () => <div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" /></div> }
+);
+const ModelDetailsModal = dynamic(
+  () => import('@/components/intelligence/ModelDetailsModal').then((mod) => mod.ModelDetailsModal),
+  { ssr: false }
+);
 
 const STRATEGY_DESCRIPTIONS: Record<string, string> = {
   BALANCED: 'Optimizes across cost, latency, and capability matching based on company priorities.',

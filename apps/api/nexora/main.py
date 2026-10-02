@@ -28,6 +28,7 @@ import nexora.domains.resources.models  # noqa: F401
 import nexora.domains.workflows.models  # noqa: F401
 from nexora.config import get_settings
 from nexora.database import AsyncSessionLocal
+from nexora.domains.activity.router import router as activity_router
 from nexora.domains.agents.router import router as agent_router
 
 # Domain routers
@@ -105,6 +106,7 @@ def create_app() -> FastAPI:
     app.include_router(blueprint_router, prefix=API_PREFIX)
     app.include_router(council_router, prefix=API_PREFIX)
     app.include_router(evolution_router, prefix=API_PREFIX)
+    app.include_router(activity_router, prefix=API_PREFIX)
 
     # ── UI Route ───────────────────────────────────────────────────────────
     from pathlib import Path

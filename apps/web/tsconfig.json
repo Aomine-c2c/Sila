@@ -14,7 +14,16 @@
     "jsx": "preserve",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@neiman/types": ["../../packages/types/index.ts"],
+      "@neiman/core": ["../../packages/core/index.ts"],
+      "@neiman/events": ["../../packages/events/index.ts"],
+      "@neiman/permissions": ["../../packages/permissions/index.ts"],
+      "@neiman/config": ["../../packages/config/index.ts"],
+      "@neiman/validation": ["../../packages/validation/index.ts"],
+      "@neiman/auth": ["../../packages/auth/index.ts"],
+      "@neiman/api": ["../../packages/api/index.ts"],
+      "@neiman/ui": ["../../packages/ui/index.ts"]
     },
     "plugins": [
       {

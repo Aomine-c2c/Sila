@@ -24,6 +24,7 @@ import {
   Database,
   FileText,
   Users,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -78,6 +79,7 @@ const NAV_SECTIONS: NavSection[] = [
       { id: 'decisions', name: 'Decisions Ledger', href: '/dashboard/decisions', icon: Scale },
       { id: 'resources', name: 'Resource Allocation', href: '/dashboard/resources', icon: Database },
       { id: 'activity', name: 'Activity Stream', href: '/dashboard/activity', icon: Activity },
+      { id: 'settings', name: 'Administration', href: '/dashboard/settings', icon: Settings, badge: 'Admin' },
     ],
   },
 ];

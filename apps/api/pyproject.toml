@@ -16,6 +16,8 @@ dependencies = [
     "structlog>=24.1.0",
     "python-multipart>=0.0.9",
     "faker>=40.40.0",
+    "rich>=13.7.0",
+    "textual>=0.50.0",
 ]
 
 [project.optional-dependencies]

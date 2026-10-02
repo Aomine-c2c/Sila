@@ -1,7 +1,9 @@
 /**
  * NEIMAN API Client
- * Central HTTP client for all NEIMAN backend calls.
- * Reads token from auth store automatically.
+ * Central HTTP client for all NEIMAN backend calls with:
+ * - Automatic in-flight request deduplication for idempotent GET queries
+ * - In-memory LRU-like TTL caching to eliminate burst redundant requests
+ * - Reads token from auth store automatically
  */
 
 const API_BASE =
@@ -28,12 +30,36 @@ export function configureApiClient(getToken: () => string | null) {
   _getToken = getToken;
 }
 
+// In-flight GET request deduplication map
+const inflightRequests = new Map<string, Promise<unknown>>();
+
+// Short-lived memory cache for GET requests (5 seconds TTL)
+interface CacheEntry {
+  data: unknown;
+  expiresAt: number;
+}
+const queryCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 4000;
+
+export function invalidateApiCache(pathPrefix?: string) {
+  if (!pathPrefix) {
+    queryCache.clear();
+    return;
+  }
+  queryCache.forEach((_, key) => {
+    if (key.includes(pathPrefix)) {
+      queryCache.delete(key);
+    }
+  });
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const method = (options.method ?? 'GET').toUpperCase();
+
   if (isDevelopmentAuthBypassEnabled()) {
-    const method = (options.method ?? 'GET').toUpperCase();
     if (method !== 'GET') {
       throw new ApiError(403, { preview: true, read_only: true }, 'Local UI preview is read-only. This action was not sent to the API.');
     }
@@ -46,6 +72,20 @@ async function request<T>(
 
   const token = _getToken?.();
 
+  // Deduplication & cache key for GET requests
+  const cacheKey = `${token || 'anon'}:${method}:${path}`;
+
+  if (method === 'GET') {
+    const cached = queryCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data as T;
+    }
+
+    if (inflightRequests.has(cacheKey)) {
+      return inflightRequests.get(cacheKey) as Promise<T>;
+    }
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> || {}),
@@ -55,25 +95,51 @@ async function request<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-  });
-
-  if (!res.ok) {
-    let data: unknown = null;
+  const fetchPromise = (async () => {
     try {
-      data = await res.json();
-    } catch {
-      data = { detail: res.statusText };
+      const res = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers,
+      });
+
+      if (!res.ok) {
+        let data: unknown = null;
+        try {
+          data = await res.json();
+        } catch {
+          data = { detail: res.statusText };
+        }
+        const errorBody = data as { detail?: string; message?: string } | null;
+        const detail = errorBody?.detail ?? errorBody?.message ?? `API Error: ${res.status}`;
+        throw new ApiError(res.status, data, detail);
+      }
+
+      if (res.status === 204) return undefined as T;
+      const json = await res.json();
+
+      if (method === 'GET') {
+        queryCache.set(cacheKey, {
+          data: json,
+          expiresAt: Date.now() + CACHE_TTL_MS,
+        });
+      } else {
+        // Any mutation invalidates cache
+        invalidateApiCache();
+      }
+
+      return json as T;
+    } finally {
+      if (method === 'GET') {
+        inflightRequests.delete(cacheKey);
+      }
     }
-    const errorBody = data as { detail?: string; message?: string } | null;
-    const detail = errorBody?.detail ?? errorBody?.message ?? `API Error: ${res.status}`;
-    throw new ApiError(res.status, data, detail);
+  })();
+
+  if (method === 'GET') {
+    inflightRequests.set(cacheKey, fetchPromise);
   }
 
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+  return fetchPromise;
 }
 
 export const api = {

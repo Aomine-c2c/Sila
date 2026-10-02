@@ -51,7 +51,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         settings = get_settings()
         if settings.ENVIRONMENT == "production":
-            response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=63072000; includeSubDomains; preload"
+            )
 
         response.headers["Content-Security-Policy"] = "default-src 'self'"
 
@@ -66,12 +68,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self._path_prefixes = path_prefixes or ["/api/v1/auth/"]
         self._request_counts: dict[str, list[float]] = defaultdict(list)
 
-    def _is_rate_limited(self, client_ip: str, settings_requests: int, settings_window: int) -> bool:
+    def _is_rate_limited(self, client_ip: str, req_limit: int, window: int) -> bool:
         now = time.monotonic()
-        cutoff = now - settings_window
+        cutoff = now - window
         timestamps = self._request_counts[client_ip]
         self._request_counts[client_ip] = [t for t in timestamps if t > cutoff]
-        if len(self._request_counts[client_ip]) >= settings_requests:
+        if len(self._request_counts[client_ip]) >= req_limit:
             return True
         self._request_counts[client_ip].append(now)
         return False
@@ -85,7 +87,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         client_ip = request.client.host if request.client else "unknown"
-        if self._is_rate_limited(client_ip, settings.RATE_LIMIT_REQUESTS, settings.RATE_LIMIT_WINDOW):
+        if self._is_rate_limited(
+            client_ip, settings.RATE_LIMIT_REQUESTS, settings.RATE_LIMIT_WINDOW
+        ):
             response: Response = Response(
                 status_code=429,
                 headers={"Retry-After": str(settings.RATE_LIMIT_WINDOW)},
@@ -95,4 +99,3 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return response
 
         return await call_next(request)
-

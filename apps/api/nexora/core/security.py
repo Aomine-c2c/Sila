@@ -28,7 +28,6 @@ from urllib.parse import urlsplit
 from nexora.config import get_settings
 from nexora.exceptions import ForbiddenError, ValidationError
 
-
 # ── 1. Permission Matrix & Boundary Hierarchy ─────────────────────────────────
 
 class ResourceDomain(str, Enum):

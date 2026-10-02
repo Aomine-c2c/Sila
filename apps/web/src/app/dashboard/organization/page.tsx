@@ -3,11 +3,24 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useAuthStore } from '@/store/auth';
 import { controlRoomApi, type ControlRoomState } from '@/lib/api/controlRoom';
-import { OrganizationalGraph } from '@/components/OrganizationalGraph';
 import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 import { PREVIEW_COMPANY } from '@/lib/api/controlRoomPreview';
+
+const OrganizationalGraph = dynamic(
+  () => import('@/components/OrganizationalGraph').then((mod) => mod.OrganizationalGraph),
+  {
+    loading: () => (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 rounded-2xl border border-border bg-card/40">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm font-mono text-muted-foreground">Loading Organizational Canvas Engine…</p>
+      </div>
+    ),
+    ssr: false,
+  }
+);
 
 export default function OrganizationMapPage() {
   const { activeCompany } = useAuthStore();

@@ -29,6 +29,7 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
@@ -63,8 +64,10 @@ export default function LoginPage() {
     } catch (err) {
       if (err instanceof ApiError) {
         setApiError(err.message);
+      } else if (err instanceof TypeError && err.message.toLowerCase().includes('fetch')) {
+        setApiError('Unable to reach the NEIMAN API server at http://localhost:8000. Please ensure the backend is running.');
       } else {
-        setApiError('Login failed. Please try again.');
+        setApiError('Login failed. Please check your credentials and ensure the backend is active.');
       }
       // Clear token on error
       setToken(null);
@@ -141,6 +144,40 @@ export default function LoginPage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 Access your AI-powered organization
               </p>
+            </div>
+
+            {/* SINGLE CONFIGURED USER (NEIMAN ADMIN) */}
+            <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  Primary Organization Administrator
+                </span>
+                <span className="text-[10px] font-mono text-muted-foreground">Single User Mode</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setValue('email', 'admin@neiman.ai', { shouldValidate: true, shouldDirty: true });
+                  setValue('password', 'password123', { shouldValidate: true, shouldDirty: true });
+                }}
+                className="w-full p-3 rounded-lg bg-card/90 border border-primary/40 hover:border-primary text-left transition-colors flex items-center justify-between shadow-sm"
+              >
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-foreground text-sm">System Administrator</span>
+                    <span className="badge badge-primary text-[9px] py-0 px-1.5">SUPERADMIN</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-mono block">admin@neiman.ai</span>
+                </div>
+                <span className="text-xs font-mono text-primary font-semibold hover:underline">Click to Fill</span>
+              </button>
+
+              <div className="text-[10px] font-mono text-muted-foreground/90 flex items-center justify-between pt-1 border-t border-border/40">
+                <span>Default Password: <code className="text-foreground font-bold">password123</code></span>
+                <span>Role: Workspace Owner</span>
+              </div>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>

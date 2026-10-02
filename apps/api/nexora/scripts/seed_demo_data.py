@@ -103,18 +103,80 @@ async def seed_data():
     async with AsyncSessionLocal() as db:
         auth_svc = AuthService(db)
 
-        # 1. Root Admin User
-        admin_email = "admin@furnitureco.com"
-        user = await auth_svc.repo.get_by_email(admin_email)
-        if not user:
-            user = await auth_svc.register(
-                email=admin_email,
-                username="admin_furniture",
-                password="password123",
-                first_name="Elena",
-                last_name="Vance",
-            )
-            print(f"👤 Created Primary Executive User: {user.email}")
+        # 1. Preconfigured Persona Users across RBAC tiers
+        preconfigured_users = [
+            {
+                "email": "elena.vance@neiman.ai",
+                "username": "elena_vance",
+                "password": "password123",
+                "first_name": "Elena",
+                "last_name": "Vance",
+                "role": MembershipRole.OWNER,
+                "is_superuser": True,
+                "title": "Chief Executive Officer & Founder",
+            },
+            {
+                "email": "marcus.sterling@neiman.ai",
+                "username": "marcus_sterling",
+                "password": "password123",
+                "first_name": "Marcus",
+                "last_name": "Sterling",
+                "role": MembershipRole.ADMIN,
+                "is_superuser": False,
+                "title": "Principal Systems Architect (Admin)",
+            },
+            {
+                "email": "elena.rostova@neiman.ai",
+                "username": "elena_rostova",
+                "password": "password123",
+                "first_name": "Elena",
+                "last_name": "Rostova",
+                "role": MembershipRole.MEMBER,
+                "is_superuser": False,
+                "title": "Reliability SRE Manager (Manager)",
+            },
+            {
+                "email": "tariq.almansoor@neiman.ai",
+                "username": "tariq_almansoor",
+                "password": "password123",
+                "first_name": "Tariq",
+                "last_name": "Al-Mansoor",
+                "role": MembershipRole.VIEWER,
+                "is_superuser": False,
+                "title": "Security & Compliance Auditor (Viewer)",
+            },
+            # Also preserve legacy admin account
+            {
+                "email": "admin@furnitureco.com",
+                "username": "admin_furniture",
+                "password": "password123",
+                "first_name": "Elena",
+                "last_name": "Vance",
+                "role": MembershipRole.OWNER,
+                "is_superuser": True,
+                "title": "Default Dev Admin",
+            },
+        ]
+
+        created_users = []
+        for u_data in preconfigured_users:
+            existing = await auth_svc.repo.get_by_email(u_data["email"])
+            if not existing:
+                existing = await auth_svc.register(
+                    email=u_data["email"],
+                    username=u_data["username"],
+                    password=u_data["password"],
+                    first_name=u_data["first_name"],
+                    last_name=u_data["last_name"],
+                )
+                if u_data["is_superuser"]:
+                    existing.is_superuser = True
+                    await db.commit()
+                    await db.refresh(existing)
+            created_users.append((existing, u_data["role"]))
+            print(f"👤 Preconfigured User Ready: {existing.email} ({u_data['title']})")
+
+        primary_owner = created_users[0][0]
 
         # 2. Flagship Company & DNA
         comp_name = "Aether Dynamics AI"
@@ -126,19 +188,21 @@ async def seed_data():
             vision="A world where decentralized, self-optimizing organizations operate with total transparency and zero waste.",
             industry="Aerospace & AI Systems",
             status=CompanyStatus.ACTIVE,
-            owner_id=user.id,
+            owner_id=primary_owner.id,
         )
         db.add(company)
         await db.flush()
 
-        # Membership
-        membership = CompanyMember(
-            company_id=company.id,
-            user_id=user.id,
-            role=MembershipRole.OWNER,
-            is_active=True,
-        )
-        db.add(membership)
+        # Memberships for all preconfigured personas
+        for u_obj, role in created_users:
+            membership = CompanyMember(
+                company_id=company.id,
+                user_id=u_obj.id,
+                role=role,
+                is_active=True,
+            )
+            db.add(membership)
+        await db.flush()
 
         # DNA
         dna = OrganizationalDNA(
@@ -232,7 +296,7 @@ async def seed_data():
         ]:
             proj = Project(
                 company_id=company.id,
-                owner_id=user.id,
+                owner_id=primary_owner.id,
                 name=title,
                 objective=fake.paragraph(nb_sentences=2),
                 priority=prio,

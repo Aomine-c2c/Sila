@@ -13,6 +13,7 @@ Implements:
 
 import time
 import uuid
+from collections import defaultdict
 from typing import Any
 
 from sqlalchemy import select
@@ -152,45 +153,62 @@ class EvolutionService:
         summary_by_dimension = {}
         for dim in dimensions:
             dim_metrics = [m for m in metrics if m.dimension == dim]
-            
-            # Synthesize realistic operational metrics
-            completion_rate = 94.5 if not dim_metrics else min(100.0, max(50.0, sum(m.actual_value for m in dim_metrics if 'completion' in m.metric_name) / max(1, len([m for m in dim_metrics if 'completion' in m.metric_name]))))
-            failure_rate = round(100.0 - completion_rate, 2)
-            
+
+            metric_values: dict[str, list[float]] = defaultdict(list)
+            for m in dim_metrics:
+                metric_values[m.metric_name].append(m.actual_value)
+
+            def _avg(key: str) -> float:
+                vals = metric_values.get(key, [])
+                return round(sum(vals) / len(vals), 2) if vals else 0.0
+
+            def _count(key: str) -> int:
+                return len(metric_values.get(key, []))
+
+            completion_rate = _avg("completion_rate")
+            failure_rate = round(100.0 - completion_rate, 2) if completion_rate > 0 else 0.0
+
             summary_by_dimension[dim.value] = {
                 "dimension": dim.value,
-                "completion_rate_pct": round(completion_rate, 1),
+                "completion_rate_pct": completion_rate,
                 "failure_rate_pct": failure_rate,
-                "avg_cycle_time_ms": 1420.0,
-                "resource_efficiency_score": 0.88,
-                "cost_usd": 48.20,
-                "rework_count": 2,
-                "quality_score": 0.94,
-                "human_interventions": 3,
-                "escalation_frequency": 1,
-                "provider_reliability_pct": 99.4,
-                "task_success_rate_pct": 96.2,
+                "avg_cycle_time_ms": _avg("cycle_time_ms"),
+                "resource_efficiency_score": _avg("resource_efficiency"),
+                "cost_usd": round(_avg("cost_usd"), 2),
+                "rework_count": int(_avg("rework_count")),
+                "quality_score": _avg("quality_score"),
+                "human_interventions": int(_avg("human_interventions")),
+                "escalation_frequency": int(_avg("escalation_frequency")),
+                "provider_reliability_pct": _avg("provider_reliability"),
+                "task_success_rate_pct": _avg("task_success_rate"),
                 "observations_count": len(dim_metrics),
             }
+
+        real_bottlenecks = []
+        for m in metrics:
+            if m.metric_name in ("completion_rate", "quality_score") and m.actual_value < 50.0:
+                severity = "HIGH" if m.actual_value < 30.0 else "MEDIUM"
+                real_bottlenecks.append({
+                    "dimension": m.dimension.value,
+                    "target": m.target_id,
+                    "issue": f"Low {m.metric_name}: {m.actual_value}",
+                    "severity": severity,
+                })
+
+        overall = "EXCELLENT"
+        all_dims = list(summary_by_dimension.values())
+        if all_dims:
+            min_completion = min(d["completion_rate_pct"] for d in all_dims if d["observations_count"] > 0)
+            if min_completion < 50.0:
+                overall = "Degraded"
+            elif min_completion < 80.0:
+                overall = "WARNING"
 
         return {
             "company_id": str(company_id),
             "dimensions": summary_by_dimension,
-            "overall_health": "EXCELLENT",
-            "active_bottlenecks": [
-                {
-                    "dimension": "MODEL_PROVIDER",
-                    "target": "claude-3-5-sonnet",
-                    "issue": "Occasional 429 latency spike under batch token load",
-                    "severity": "MEDIUM",
-                },
-                {
-                    "dimension": "WORKFLOW",
-                    "target": "QA Regression Sweep",
-                    "issue": "Execution slot saturation causing 12% queue delay",
-                    "severity": "LOW",
-                },
-            ],
+            "overall_health": overall,
+            "active_bottlenecks": real_bottlenecks,
         }
 
     # -------------------------------------------------------------

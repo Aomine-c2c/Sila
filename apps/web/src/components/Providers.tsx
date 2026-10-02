@@ -14,7 +14,10 @@ configureApiClient(() => useAuthStore.getState().token);
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
+      staleTime: 60_000, // 1 minute stale time avoids aggressive refetching
+      gcTime: 10 * 60_000, // Retain inactive queries in garbage collector for 10 minutes
+      refetchOnWindowFocus: false, // Prevent redundant background network requests on tab focus
+      refetchOnReconnect: 'always',
       retry: (failureCount, error: unknown) => {
         // Don't retry on 401/403
         if (error instanceof Error) {

@@ -89,6 +89,9 @@ export function OrganizationalGraph({
   // Selection & Inspector state
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 
+  // Virtualization / Pagination for large node counts
+  const [maxNodesPerColumn, setMaxNodesPerColumn] = useState<number>(30);
+
   const toggleDeptCollapse = (deptId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setCollapsedDepts((prev) => {
@@ -684,7 +687,7 @@ export function OrganizationalGraph({
                     <p className="text-xs text-muted-foreground/60 italic">No {col.label.toLowerCase()}</p>
                   </div>
                 ) : (
-                  col.items.map((node) => {
+                  col.items.slice(0, maxNodesPerColumn).map((node) => {
                     const Icon = getNodeIcon(node.type);
                     const isSelected = selectedNode?.id === node.id;
                     const isDept = node.type === 'department';
@@ -824,6 +827,15 @@ export function OrganizationalGraph({
                       </div>
                     );
                   })
+                )}
+                {col.items.length > maxNodesPerColumn && (
+                  <button
+                    type="button"
+                    onClick={() => setMaxNodesPerColumn((prev) => prev + 30)}
+                    className="py-2 px-3 text-[11px] font-mono rounded-lg border border-dashed border-border hover:border-primary/50 text-muted-foreground hover:text-foreground text-center transition-colors bg-secondary/20"
+                  >
+                    + Show {col.items.length - maxNodesPerColumn} more {col.label.toLowerCase()}
+                  </button>
                 )}
               </div>
             </div>

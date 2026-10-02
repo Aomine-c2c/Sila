@@ -39,10 +39,25 @@ import {
   WorkflowStep,
 } from '@/lib/api/workflows';
 import { agentsApi, Agent } from '@/lib/api/agents';
-import { WorkflowPalette, NodePaletteItem } from '@/components/workflow/WorkflowPalette';
-import { WorkflowCanvas } from '@/components/workflow/WorkflowCanvas';
-import { WorkflowInspector } from '@/components/workflow/WorkflowInspector';
-import { WorkflowValidationPanel } from '@/components/workflow/WorkflowValidationPanel';
+import dynamic from 'next/dynamic';
+
+const WorkflowCanvas = dynamic(
+  () => import('@/components/workflow/WorkflowCanvas').then((mod) => mod.WorkflowCanvas),
+  { loading: () => <div className="flex h-96 items-center justify-center border border-border rounded-xl bg-card/40"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div> }
+);
+const WorkflowPalette = dynamic(
+  () => import('@/components/workflow/WorkflowPalette').then((mod) => mod.WorkflowPalette),
+  { ssr: false }
+);
+const WorkflowInspector = dynamic(
+  () => import('@/components/workflow/WorkflowInspector').then((mod) => mod.WorkflowInspector),
+  { ssr: false }
+);
+const WorkflowValidationPanel = dynamic(
+  () => import('@/components/workflow/WorkflowValidationPanel').then((mod) => mod.WorkflowValidationPanel),
+  { ssr: false }
+);
+import type { NodePaletteItem } from '@/components/workflow/WorkflowPalette';
 
 // Canonical Software Requirement Pipeline preset
 const CANONICAL_SOFTWARE_PIPELINE: WorkflowStep[] = [

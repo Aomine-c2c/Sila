@@ -22,6 +22,7 @@ import { OrganizationSwitcher } from '@/components/layout/OrganizationSwitcher';
 import { NotificationsCenter } from '@/components/layout/NotificationsCenter';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { isTauriDesktop, desktopEvents, desktopWindowState } from '@/lib/desktop/tauriBridge';
 
 export default function DashboardLayout({
   children,
@@ -52,7 +53,7 @@ export default function DashboardLayout({
     }
   }, [activeCompany, developmentBypass, setActiveCompany]);
 
-  // Global keyboard shortcut for Command Palette (Cmd+K / Ctrl+K)
+  // Global keyboard shortcut for Command Palette (Cmd+K / Ctrl+K) and Desktop Native integration
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -61,6 +62,44 @@ export default function DashboardLayout({
       }
     };
     window.addEventListener('keydown', handleKeyDown);
+
+    // Deep link handler (e.g. neiman://dashboard/simulation or neiman://dashboard/activity)
+    let unlistenDeepLink: (() => void) | undefined;
+    if (isTauriDesktop()) {
+      desktopEvents.listenDeepLink((url) => {
+        try {
+          const parsed = new URL(url);
+          const targetPath = parsed.pathname || parsed.host;
+          if (targetPath) {
+            window.location.href = targetPath.startsWith('/') ? targetPath : `/${targetPath}`;
+          }
+        } catch {
+          // fallback string replace
+          const cleanPath = url.replace(/^neiman:\/\//, '/');
+          window.location.href = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+        }
+      }).then((unsub) => {
+        unlistenDeepLink = unsub;
+      });
+
+      // Window resize / position persistence
+      const handleResizeOrMove = () => {
+        desktopWindowState.save({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          x: window.screenX,
+          y: window.screenY,
+          is_maximized: window.outerWidth >= window.screen.availWidth && window.outerHeight >= window.screen.availHeight,
+        });
+      };
+      window.addEventListener('resize', handleResizeOrMove);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('resize', handleResizeOrMove);
+        if (unlistenDeepLink) unlistenDeepLink();
+      };
+    }
+
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 

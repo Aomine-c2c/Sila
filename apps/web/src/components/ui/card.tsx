@@ -1,28 +1,9 @@
 import * as React from 'react';
-import { cn } from '@/lib/utils';
+import { Card as BaseCard, type CardProps as BaseCardProps, cn } from '@neiman/ui';
 
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  glow?: boolean;
-  interactive?: boolean;
-}
+export { BaseCard as Card, type BaseCardProps as CardProps };
 
-export const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, glow = false, interactive = false, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        'rounded-xl border border-border/70 bg-card/80 text-card-foreground backdrop-blur-md transition-all duration-200 shadow-sm',
-        glow && 'hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10',
-        interactive && 'cursor-pointer hover:border-border hover:bg-card hover:-translate-y-0.5 active:translate-y-0',
-        className
-      )}
-      {...props}
-    />
-  )
-);
-Card.displayName = 'Card';
-
-export const CardHeader = React.forwardRef<HTMLDivElement, CardProps>(
+export const CardHeader = React.forwardRef<HTMLDivElement, BaseCardProps>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
@@ -55,14 +36,14 @@ export const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTML
 );
 CardDescription.displayName = 'CardDescription';
 
-export const CardContent = React.forwardRef<HTMLDivElement, CardProps>(
+export const CardContent = React.forwardRef<HTMLDivElement, BaseCardProps>(
   ({ className, ...props }, ref) => (
     <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
   )
 );
 CardContent.displayName = 'CardContent';
 
-export const CardFooter = React.forwardRef<HTMLDivElement, CardProps>(
+export const CardFooter = React.forwardRef<HTMLDivElement, BaseCardProps>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
