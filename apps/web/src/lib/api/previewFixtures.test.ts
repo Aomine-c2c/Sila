@@ -2,7 +2,7 @@ import { getPreviewApiResponse } from './previewFixtures';
 
 describe('all-page preview API fixtures', () => {
   it('provides read data for each primary dashboard area and nested detail view', () => {
-    const company = '/api/v1/companies/preview-company-nexora';
+    const company = '/api/v1/companies/preview-company-NEIMAN';
     const paths = [
       '/api/v1/companies/me',
       `${company}/agents`, `${company}/departments`, `${company}/roles`, `${company}/projects`,
@@ -26,6 +26,6 @@ describe('all-page preview API fixtures', () => {
   });
 
   it('returns no fixture for unknown routes so the API client can fail closed', () => {
-    expect(getPreviewApiResponse('/api/v1/companies/preview-company-nexora/not-a-domain')).toBeUndefined();
+    expect(getPreviewApiResponse('/api/v1/companies/preview-company-NEIMAN/not-a-domain')).toBeUndefined();
   });
 });

@@ -1,5 +1,5 @@
 """
-Intelligence Router — Core routing engine of the NEXORA Intelligence Exchange.
+Intelligence Router — Core routing engine of the NEIMAN Intelligence Exchange.
 Implements:
 1. Provider health & model availability monitoring
 2. Circuit breaker state checks & fast-fail protection

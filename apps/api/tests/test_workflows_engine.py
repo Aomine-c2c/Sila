@@ -1,5 +1,5 @@
 """
-Comprehensive tests for NEXORA Workflow Execution Engine & Observability.
+Comprehensive tests for NEIMAN Workflow Execution Engine & Observability.
 
 Verifies:
 1. Canonical Software Delivery Pipeline Execution:

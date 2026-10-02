@@ -1,8 +1,8 @@
-# Default values for nexora-api
+# Default values for NEIMAN-api
 replicaCount: 3
 
 image:
-  repository: ghcr.io/ORG/nexora-api
+  repository: ghcr.io/ORG/NEIMAN-api
   pullPolicy: IfNotPresent
   tag: "latest"
 
@@ -46,14 +46,14 @@ ingress:
     nginx.ingress.kubernetes.io/rate-limit: "100"
     nginx.ingress.kubernetes.io/rate-limit-window: "1m"
   hosts:
-    - host: api.nexora.example.com
+    - host: api.NEIMAN.example.com
       paths:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: nexora-api-tls
+    - secretName: NEIMAN-api-tls
       hosts:
-        - api.nexora.example.com
+        - api.NEIMAN.example.com
 
 resources:
   limits:
@@ -103,7 +103,7 @@ env:
   - name: DEBUG
     value: "false"
   - name: APP_NAME
-    value: "NEXORA"
+    value: "NEIMAN"
   - name: ACCESS_TOKEN_EXPIRE_MINUTES
     value: "15"
   - name: REFRESH_TOKEN_EXPIRE_DAYS
@@ -114,7 +114,7 @@ env:
     value: "60"
 
 envFromSecrets:
-  - name: nexora-secrets
+  - name: NEIMAN-secrets
 
 affinity:
   podAntiAffinity:
@@ -126,7 +126,7 @@ affinity:
               - key: app
                 operator: In
                 values:
-                  - nexora-api
+                  - NEIMAN-api
           topologyKey: kubernetes.io/hostname
 
 nodeSelector: {}

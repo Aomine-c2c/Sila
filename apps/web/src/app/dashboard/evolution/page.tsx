@@ -128,7 +128,7 @@ export default function EvolutionLabPage() {
     enabled: !!companyId,
   });
 
-  // NEXORA Simulation Lab Scenarios
+  // NEIMAN Simulation Lab Scenarios
   const { data: simulationScenarios = [], isLoading: simulationsLoading, refetch: refetchSimulations } = useQuery({
     queryKey: ['simulation-scenarios', companyId],
     queryFn: () => evolutionApi.listSimulationScenarios(companyId!),
@@ -250,7 +250,7 @@ export default function EvolutionLabPage() {
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2.5">
               <FlaskConical className="h-7 w-7 text-amber-400" />
-              NEXORA Evolution Engine & Lab
+              NEIMAN Evolution Engine & Lab
             </h1>
             <span className="badge badge-primary text-xs">Phase 11 & 12</span>
           </div>
@@ -264,44 +264,40 @@ export default function EvolutionLabPage() {
           <div className="flex items-center bg-secondary/50 p-1 rounded-xl border border-border">
             <button
               onClick={() => setActiveTab('simulation-lab')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'simulation-lab'
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'simulation-lab'
                   ? 'bg-card text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <Zap className="h-3.5 w-3.5 text-indigo-400" />
               Simulation Lab ({simulationScenarios.length})
             </button>
             <button
               onClick={() => setActiveTab('evolution-lab')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'evolution-lab'
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'evolution-lab'
                   ? 'bg-card text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <FlaskConical className="h-3.5 w-3.5 text-amber-400" />
               Evolution Lab ({adaptations.length})
             </button>
             <button
               onClick={() => setActiveTab('performance')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'performance'
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'performance'
                   ? 'bg-card text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <BarChart3 className="h-3.5 w-3.5 text-teal-400" />
               Performance Matrix
             </button>
             <button
               onClick={() => setActiveTab('snapshots')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'snapshots'
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'snapshots'
                   ? 'bg-card text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <History className="h-3.5 w-3.5 text-cyan-400" />
               Snapshots ({snapshots.length})
@@ -350,34 +346,34 @@ export default function EvolutionLabPage() {
               const routing = baseline?.routing_strategy ?? (previewMode ? 'Not provided' : 'Standard Tier Routing');
               const slots = baseline?.parallel_execution_slots ?? (previewMode ? 0 : 5);
               return <>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <Target className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <div className="text-xs font-mono uppercase text-muted-foreground">{previewMode ? 'Synthetic organization' : 'Current live organization'}</div>
-                <div className="text-sm font-bold text-foreground">{previewMode ? 'Sample operating baseline' : 'Active production baseline'}</div>
-              </div>
-            </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <Target className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-mono uppercase text-muted-foreground">{previewMode ? 'Synthetic organization' : 'Current live organization'}</div>
+                    <div className="text-sm font-bold text-foreground">{previewMode ? 'Sample operating baseline' : 'Active production baseline'}</div>
+                  </div>
+                </div>
 
-            <div className="flex items-center gap-6 text-xs font-mono">
-              <div>
-                <span className="text-muted-foreground block text-[10px]">WORKFORCE</span>
-                <span className="font-bold text-foreground">{agentCount} Active Agents</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground block text-[10px]">MONTHLY BUDGET</span>
-                <span className="font-bold text-emerald-400">${Number(monthlyBudget).toFixed(2)} / mo</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground block text-[10px]">ROUTING</span>
-                <span className="font-bold text-cyan-400">{routing}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground block text-[10px]">PARALLEL SLOTS</span>
-                <span className="font-bold text-indigo-400">{slots} Slots</span>
-              </div>
-            </div>
+                <div className="flex items-center gap-6 text-xs font-mono">
+                  <div>
+                    <span className="text-muted-foreground block text-[10px]">WORKFORCE</span>
+                    <span className="font-bold text-foreground">{agentCount} Active Agents</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px]">MONTHLY BUDGET</span>
+                    <span className="font-bold text-emerald-400">${Number(monthlyBudget).toFixed(2)} / mo</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px]">ROUTING</span>
+                    <span className="font-bold text-cyan-400">{routing}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px]">PARALLEL SLOTS</span>
+                    <span className="font-bold text-indigo-400">{slots} Slots</span>
+                  </div>
+                </div>
               </>;
             })()}
           </div>
@@ -402,11 +398,10 @@ export default function EvolutionLabPage() {
                   <div
                     key={scenario.id}
                     onClick={() => setSelectedScenarioId(scenario.id)}
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative space-y-3 ${
-                      isSelected
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative space-y-3 ${isSelected
                         ? 'border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/40'
                         : 'border-border bg-card/40 hover:bg-card/70 hover:border-border/80'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <span className="font-bold text-sm text-foreground leading-tight">
@@ -605,9 +600,8 @@ export default function EvolutionLabPage() {
                         <span className="text-[10px] font-mono text-muted-foreground uppercase block">
                           Cost Delta
                         </span>
-                        <div className={`text-base font-bold font-mono ${
-                          activeRunResult.metrics_comparison?.deltas?.cost_delta_pct <= 0 ? 'text-emerald-400' : 'text-amber-400'
-                        }`}>
+                        <div className={`text-base font-bold font-mono ${activeRunResult.metrics_comparison?.deltas?.cost_delta_pct <= 0 ? 'text-emerald-400' : 'text-amber-400'
+                          }`}>
                           {activeRunResult.metrics_comparison?.deltas?.cost_delta_pct > 0 ? '+' : ''}
                           {activeRunResult.metrics_comparison?.deltas?.cost_delta_pct}%
                         </div>
@@ -620,9 +614,8 @@ export default function EvolutionLabPage() {
                         <span className="text-[10px] font-mono text-muted-foreground uppercase block">
                           Latency Delta
                         </span>
-                        <div className={`text-base font-bold font-mono ${
-                          activeRunResult.metrics_comparison?.deltas?.latency_delta_pct <= 0 ? 'text-emerald-400' : 'text-amber-400'
-                        }`}>
+                        <div className={`text-base font-bold font-mono ${activeRunResult.metrics_comparison?.deltas?.latency_delta_pct <= 0 ? 'text-emerald-400' : 'text-amber-400'
+                          }`}>
                           {activeRunResult.metrics_comparison?.deltas?.latency_delta_pct > 0 ? '+' : ''}
                           {activeRunResult.metrics_comparison?.deltas?.latency_delta_pct}%
                         </div>
@@ -707,12 +700,11 @@ export default function EvolutionLabPage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="text-sm font-semibold text-foreground leading-tight">{ad.title}</h4>
-                      <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border uppercase ${
-                        ad.status === 'DEPLOYED' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
-                        ad.status === 'ROLLED_BACK' ? 'bg-purple-500/10 text-purple-400 border-purple-500/30' :
-                        ad.status === 'VALIDATED' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' :
-                        'bg-secondary text-muted-foreground border-border'
-                      }`}>
+                      <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border uppercase ${ad.status === 'DEPLOYED' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
+                          ad.status === 'ROLLED_BACK' ? 'bg-purple-500/10 text-purple-400 border-purple-500/30' :
+                            ad.status === 'VALIDATED' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' :
+                              'bg-secondary text-muted-foreground border-border'
+                        }`}>
                         {ad.status}
                       </span>
                     </div>
@@ -813,7 +805,7 @@ export default function EvolutionLabPage() {
                                 px-2.5 py-1 rounded-md border flex items-center gap-1
                                 ${isCurrent ? 'bg-primary text-primary-foreground border-primary font-bold shadow' :
                                   isPast ? 'bg-secondary/60 text-foreground border-border' :
-                                  'bg-secondary/20 text-muted-foreground border-border/40 opacity-60'}
+                                    'bg-secondary/20 text-muted-foreground border-border/40 opacity-60'}
                               `}
                             >
                               <span>{st}</span>
@@ -1161,7 +1153,7 @@ export default function EvolutionLabPage() {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Rollbacks in NEXORA are treated as valuable organizational information, not merely failure. Document the reason and lesson learned to commit into Company Memory.
+              Rollbacks in NEIMAN are treated as valuable organizational information, not merely failure. Document the reason and lesson learned to commit into Company Memory.
             </p>
 
             <div className="space-y-3 text-xs">

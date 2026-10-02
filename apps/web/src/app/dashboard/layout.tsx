@@ -20,6 +20,8 @@ import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 import { CommandPalette } from '@/components/layout/CommandPalette';
 import { OrganizationSwitcher } from '@/components/layout/OrganizationSwitcher';
 import { NotificationsCenter } from '@/components/layout/NotificationsCenter';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function DashboardLayout({
   children,
@@ -46,7 +48,7 @@ export default function DashboardLayout({
             setActiveCompany(companies[0]);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [activeCompany, developmentBypass, setActiveCompany]);
 
@@ -69,79 +71,84 @@ export default function DashboardLayout({
 
   const initials = user
     ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase() ||
-      user.username[0].toUpperCase()
+    user.username[0].toUpperCase()
     : 'U';
 
   return (
     <AuthGuard>
-      <div className="dashboard-atmosphere min-h-screen bg-nexora-dark w-full">
-        {/* Top bar with HeaderCommandStrip & Multi-State Organic Activity Orb */}
-        <header className="nexora-topbar sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border px-4 backdrop-blur-lg lg:px-6 gap-4">
-          {/* Left: Brand & Breadcrumbs */}
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex items-center gap-2 text-xs font-mono shrink-0">
-              <Link
-                href="/dashboard"
-                className="text-muted-foreground/80 hover:text-foreground transition-colors font-bold text-sm tracking-tight flex items-center gap-2"
-                title="Return to Core Orbital Constellation"
-              >
-                <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                NEXORA
-              </Link>
-              <ChevronRight className="h-3 w-3 text-muted-foreground/40 shrink-0" />
-              <Link
-                href="/dashboard"
-                className="text-primary font-semibold uppercase tracking-wider truncate text-xs hover:underline"
-              >
-                {currentDomain}
-              </Link>
-            </div>
-          </div>
+      <div className="dashboard-atmosphere flex h-screen w-full overflow-hidden bg-background text-foreground">
+        {/* Left Minimalist Sidebar */}
+        <Sidebar />
 
-          {/* Right: Global Search, Organization Switcher, Notifications, User Menu */}
-          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
-            {/* Global Search trigger button */}
-            <div className="hidden xl:flex items-center w-48">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between gap-2 rounded-xl border border-border/80 bg-secondary/40 px-3 py-1.5 text-xs text-muted-foreground hover:border-primary/40 hover:bg-secondary/70 hover:text-foreground transition-all"
-                onClick={() => setCommandPaletteOpen(true)}
-                aria-label="Open command palette"
-              >
-                <div className="flex items-center gap-2">
-                  <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>Search...</span>
-                </div>
-                <kbd className="inline-flex items-center gap-0.5 rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground ring-1 ring-border">
-                  <Command className="h-2.5 w-2.5" /> K
-                </kbd>
-              </button>
-            </div>
-
-            {/* Organization Switcher */}
-            {!developmentBypass ? (
-              <OrganizationSwitcher />
-            ) : (
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/5 px-2.5 py-1 text-[11px] font-medium text-primary">
-                <Eye className="h-3 w-3" aria-hidden="true" /> UI preview
+        {/* Right Main Application Workspace */}
+        <div className="flex flex-1 flex-col min-w-0 h-screen overflow-hidden">
+          {/* Top bar with Breadcrumbs, Global Search, ThemeToggle, & User Menu */}
+          <header className="NEIMAN-topbar sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/80 px-4 backdrop-blur-xl lg:px-6 gap-4">
+            {/* Left: Domain Breadcrumbs */}
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex items-center gap-2 text-xs font-mono shrink-0">
+                <Link
+                  href="/dashboard"
+                  className="text-muted-foreground/80 hover:text-foreground transition-colors font-bold text-sm tracking-tight flex items-center gap-2"
+                  title="Return to Core Overview"
+                >
+                  <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  NEIMAN
+                </Link>
+                <ChevronRight className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+                <span className="text-primary font-semibold uppercase tracking-wider truncate text-xs">
+                  {currentDomain}
+                </span>
               </div>
-            )}
+            </div>
 
-            {/* Notifications & Approvals */}
-            <NotificationsCenter />
+            {/* Right: Global Search, Theme Toggle, Organization Switcher, Notifications, User Menu */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {/* Global Search trigger button */}
+              <div className="hidden md:flex items-center w-44 lg:w-56">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between gap-2 rounded-lg border border-border/80 bg-card/60 px-3 py-1.5 text-xs text-muted-foreground hover:border-primary/40 hover:bg-secondary/70 hover:text-foreground transition-all duration-200"
+                  onClick={() => setCommandPaletteOpen(true)}
+                  aria-label="Open command palette"
+                >
+                  <div className="flex items-center gap-2">
+                    <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>Search...</span>
+                  </div>
+                  <kbd className="inline-flex items-center gap-0.5 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground border border-border/60">
+                    <Command className="h-2.5 w-2.5" /> K
+                  </kbd>
+                </button>
+              </div>
+
+              {/* Theme Toggle (Light / Dark) */}
+              <ThemeToggle />
+
+              {/* Organization Switcher */}
+              {!developmentBypass ? (
+                <OrganizationSwitcher />
+              ) : (
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+                  <Eye className="h-3 w-3" aria-hidden="true" /> UI preview
+                </div>
+              )}
+
+              {/* Notifications & Approvals */}
+              <NotificationsCenter />
 
               {/* User menu */}
               <div className="relative">
                 <button
                   id="user-menu-trigger"
                   type="button"
-                  className="flex items-center gap-2 rounded-lg bg-secondary/50 p-1 sm:px-2.5 sm:py-1.5 hover:bg-secondary/80 transition-colors"
+                  className="flex items-center gap-2 rounded-lg bg-card/70 border border-border/70 p-1 sm:px-2.5 sm:py-1.5 hover:bg-secondary hover:border-primary/40 transition-colors"
                   onClick={() => setShowUserMenu((v) => !v)}
                   aria-expanded={showUserMenu}
                   aria-haspopup="true"
                   aria-label="User account menu"
                 >
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
                     {initials}
                   </div>
                   {user && (
@@ -166,7 +173,7 @@ export default function DashboardLayout({
                       onClick={() => setShowUserMenu(false)}
                       aria-hidden="true"
                     />
-                    <div className="absolute right-0 top-full mt-1.5 z-50 w-52 rounded-xl border border-border bg-nexora-surface shadow-xl ring-1 ring-border p-1 animate-fade-in">
+                    <div className="absolute right-0 top-full mt-1.5 z-50 w-52 rounded-xl border border-border bg-card shadow-xl ring-1 ring-border p-1 animate-fade-in">
                       <div className="px-3 py-2 border-b border-border/60">
                         <p className="text-xs font-semibold text-foreground">
                           {user?.first_name ? `${user.first_name} ${user.last_name}` : user?.username || 'User'}
@@ -175,7 +182,7 @@ export default function DashboardLayout({
                       </div>
                       <Link
                         href="/dashboard/settings"
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-foreground hover:bg-secondary/60 transition-colors"
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-foreground hover:bg-secondary transition-colors"
                         onClick={() => setShowUserMenu(false)}
                       >
                         <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
@@ -185,7 +192,7 @@ export default function DashboardLayout({
                       <button
                         id="logout-button"
                         type="button"
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-red-500 hover:bg-red-500/10 transition-colors"
                         onClick={handleLogout}
                       >
                         <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
@@ -199,10 +206,10 @@ export default function DashboardLayout({
           </header>
 
           {/* Page main content */}
-          <main className="dashboard-canvas p-4 lg:p-6" role="main">
+          <main className="dashboard-canvas flex-1 overflow-y-auto p-4 lg:p-6" role="main">
             {developmentBypass && (
               <div
-                className="mb-5 rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-200/90"
+                className="mb-5 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-200/90"
                 role="status"
               >
                 Synthetic preview data · all dashboard pages show local sample records, not live data. Preview is read-only; writes are blocked and no API requests are sent.
@@ -210,6 +217,7 @@ export default function DashboardLayout({
             )}
             {children}
           </main>
+        </div>
 
         {/* Global Command Palette */}
         <CommandPalette

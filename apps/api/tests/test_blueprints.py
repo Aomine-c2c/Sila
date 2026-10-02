@@ -1,5 +1,5 @@
 """
-Comprehensive pytest test suite for NEXORA Company Blueprints and 'Build My Company'.
+Comprehensive pytest test suite for NEIMAN Company Blueprints and 'Build My Company'.
 
 Covers:
 - Auto-seeding of all 10 core organizational blueprints:
@@ -165,7 +165,7 @@ class TestCompanyBlueprints:
 
         save_req = {
             "company_id": company_id,
-            "template_key": f"template-nexora-{uuid.uuid4().hex[:6]}",
+            "template_key": f"template-NEIMAN-{uuid.uuid4().hex[:6]}",
             "template_name": "Nexora Enterprise Standard Template",
             "description": "Harvested baseline company template for fast cloning",
             "category": "Technology",

@@ -1,4 +1,4 @@
-# CURRENT STATE — NEXORA Project Baseline
+# CURRENT STATE — NEIMAN Project Baseline
 
 **Audit Date:** 2026-09-29  
 **Auditor:** Antigravity (Lead Architect / Autonomous CTO)  
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The NEXORA project has transitioned from an initial greenfield into an operational, test-validated, multi-agent operating system foundation. Both the backend (`apps/api`) and the frontend (`apps/web`) are active, verified with automated test suites (100 backend domain tests passing, frontend Jest tests passing, TypeScript compilation 0 errors), and wired together via REST APIs and real-time dashboard telemetry.
+The NEIMAN project has transitioned from an initial greenfield into an operational, test-validated, multi-agent operating system foundation. Both the backend (`apps/api`) and the frontend (`apps/web`) are active, verified with automated test suites (100 backend domain tests passing, frontend Jest tests passing, TypeScript compilation 0 errors), and wired together via REST APIs and real-time dashboard telemetry.
 
 ---
 
@@ -19,7 +19,7 @@ The NEXORA project has transitioned from an initial greenfield into an operation
 ├── apps/
 │   ├── api/                     # FastAPI async backend service
 │   │   ├── alembic/             # Database migrations (9 versions applied up to head)
-│   │   ├── nexora/              # Core domain package
+│   │   ├── NEIMAN/              # Core domain package
 │   │   │   ├── core/            # Base models, Enums, Permissions
 │   │   │   ├── domains/         # 13 domain packages (agents, auth, blueprints, councils, decisions, governance, intelligence, memory, organizations, policies, projects, resources, workflows)
 │   │   │   ├── config.py        # Settings & CORS config
@@ -63,7 +63,7 @@ The NEXORA project has transitioned from an initial greenfield into an operation
 
 ## 4. Database Architecture
 - **ORM:** SQLAlchemy 2.0 Async (`AsyncSessionLocal`).
-- **Database Engine:** SQLite async (`sqlite+aiosqlite:///./nexora.db`) for lightweight local iteration, switchable to PostgreSQL via `DATABASE_URL`.
+- **Database Engine:** SQLite async (`sqlite+aiosqlite:///./NEIMAN.db`) for lightweight local iteration, switchable to PostgreSQL via `DATABASE_URL`.
 - **Migrations:** Alembic versioned migrations up to revision `0009` (head).
 
 ---

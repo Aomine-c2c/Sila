@@ -1,5 +1,5 @@
 /**
- * NEXORA Organizational Governance API Client
+ * NEIMAN Organizational Governance API Client
  * Manages Company Constitution, Autonomy Matrix (Levels 0-5),
  * Action Evaluations, Approval Gates, Escalations, and Consequential Action Audit Logs.
  */

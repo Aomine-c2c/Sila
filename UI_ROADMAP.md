@@ -1,7 +1,7 @@
-# NEXORA Frontend UI Roadmap
+# NEIMAN Frontend UI Roadmap
 
 > **Status:** Implementation in progress
-> **Goal:** Build a production-grade Next.js frontend for NEXORA that replaces all 6 static HTML prototypes
+> **Goal:** Build a production-grade Next.js frontend for NEIMAN that replaces all 6 static HTML prototypes
 > **Approach:** Phase-based delivery — core functionality first, then enhancements, then platform extensions
 
 > **Implementation update (2026-09-30):** `apps/web` is now an operational Next.js dashboard with auth, organization management, agents, workflows, councils, memory, governance, resources, blueprints, intelligence, evolution, and decision routes. This plan is a backlog, not a statement that these planned tasks are all still untouched. The latest implemented items are documented in `FRONTEND_TECHNICAL_DEBT.md`; project/task management, comprehensive accessibility review, preferences, and broader end-to-end coverage remain open.
@@ -292,18 +292,18 @@
 | 9.1 | Initialize CLI project | `packages/tui/` with `ink` (React for terminal) |
 | 9.2 | Auth flow | Login + JWT stored in keychain |
 | 9.3 | Agent dashboard view | Agent list with status + quick actions |
-| 9.4 | Command execution | `nexora agent execute <id> --task "..."` |
+| 9.4 | Command execution | `NEIMAN agent execute <id> --task "..."` |
 | 9.5 | Interactive forms | Terminal-based form filling |
 | 9.6 | Live output streaming | Terminal output during task execution |
-| 9.7 | Table views | `nexora list agents`, `nexora list tasks` |
-| 9.8 | Help system | `nexora help` with command reference |
+| 9.7 | Table views | `NEIMAN list agents`, `NEIMAN list tasks` |
+| 9.8 | Help system | `NEIMAN help` with command reference |
 
 ### Acceptance Criteria
 
-- `nexora login` authenticates and stores token
-- `nexora agents` shows interactive agent list
-- `nexora execute --agent <id> --task "..."` runs and streams output
-- `nexora approvals` shows pending approvals with accept/reject keys
+- `NEIMAN login` authenticates and stores token
+- `NEIMAN agents` shows interactive agent list
+- `NEIMAN execute --agent <id> --task "..."` runs and streams output
+- `NEIMAN approvals` shows pending approvals with accept/reject keys
 - All commands show spinner/loading states during API calls
 
 ---

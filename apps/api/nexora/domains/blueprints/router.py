@@ -1,5 +1,5 @@
 """
-REST API Router for NEXORA Company Blueprints and 'Build My Company'.
+REST API Router for NEIMAN Company Blueprints and 'Build My Company'.
 Endpoints:
 - GET /blueprints (List all 10 core + custom templates)
 - GET /blueprints/{id_or_key} (Inspect blueprint)

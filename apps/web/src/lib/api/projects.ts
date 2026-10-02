@@ -1,5 +1,5 @@
 /**
- * NEXORA Projects & Tasks API Client
+ * NEIMAN Projects & Tasks API Client
  */
 
 import { api } from './client';

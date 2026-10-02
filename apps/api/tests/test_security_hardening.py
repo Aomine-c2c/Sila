@@ -1,5 +1,5 @@
 """
-Adversarial Security & Penetration Tests for NEXORA.
+Adversarial Security & Penetration Tests for NEIMAN.
 
 Rigorous automated testing for:
 1. Multi-Tenant Boundary Isolation (Cross-company data exfiltration blocked)
@@ -118,7 +118,7 @@ class TestSecurityHardening:
         """Block unauthorized DROP and TRUNCATE SQL queries."""
         dangerous_queries = [
             "DROP TABLE users;",
-            "DROP DATABASE nexora_prod;",
+            "DROP DATABASE NEIMAN_prod;",
             "TRUNCATE TABLE model_request_logs;",
             "GRANT ALL PRIVILEGES ON *.* TO 'attacker'@'%';",
         ]

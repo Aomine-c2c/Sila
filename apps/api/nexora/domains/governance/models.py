@@ -35,7 +35,7 @@ from nexora.core.enums import (
 
 class CompanyConstitution(NexoraBase):
     """
-    The fundamental legal and operational charter for a Company in NEXORA.
+    The fundamental legal and operational charter for a Company in NEIMAN.
     Governs all agents, workflows, and automated decisions.
     """
 
@@ -272,7 +272,7 @@ class EscalationRecord(NexoraBase):
 class GovernanceAuditLog(NexoraBase):
     """
     Consequential Action Audit Log.
-    Every consequential action in NEXORA records:
+    Every consequential action in NEIMAN records:
     - actor (agent_id or user_id + name)
     - authority (role, permissions, or delegation grant)
     - timestamp (created_at)

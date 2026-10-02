@@ -1,4 +1,4 @@
-# NEXORA SYSTEM HEALTH AUDIT
+# NEIMAN SYSTEM HEALTH AUDIT
 
 **Role:** Autonomous CTO  
 **Date:** 2026-09-30  
@@ -8,7 +8,7 @@
 
 ## 1. Architectural Topology & Component Inventory
 
-NEXORA is structured as a modular, domain-driven organization operating system.
+NEIMAN is structured as a modular, domain-driven organization operating system.
 
 | Domain | Primary Responsibilities | Health Status | Test Coverage |
 | :--- | :--- | :--- | :--- |

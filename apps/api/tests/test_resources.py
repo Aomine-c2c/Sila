@@ -1,5 +1,5 @@
 """
-Tests for the NEXORA Resource Engine.
+Tests for the NEIMAN Resource Engine.
 Covers:
 - Pools and finite capacity tracking (COMPUTE, INTELLIGENCE, FINANCIAL, OPERATIONAL)
 - Budgets and expenditure caps

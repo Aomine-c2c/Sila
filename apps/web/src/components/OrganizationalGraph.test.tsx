@@ -86,7 +86,7 @@ const mockProjects: Project[] = [
     id: 'proj-1',
     company_id: 'comp-1',
     owner_id: 'agent-cto',
-    name: 'NEXORA Operating System Upgrade',
+    name: 'NEIMAN Operating System Upgrade',
     objective: 'Modernize core architecture',
     status: 'ACTIVE',
     priority: 'HIGH',
@@ -140,7 +140,7 @@ describe('OrganizationalGraph', () => {
 
     expect(screen.getByText('Test organization')).toBeInTheDocument();
     expect(screen.queryByText('Autonomous CTO Agent')).not.toBeInTheDocument();
-    expect(screen.queryByText('NEXORA Operating System Upgrade')).not.toBeInTheDocument();
+    expect(screen.queryByText('NEIMAN Operating System Upgrade')).not.toBeInTheDocument();
   });
 
   it('renders all hierarchy tiers: Company, Department, Role, Agent, Project, Task', () => {
@@ -162,7 +162,7 @@ describe('OrganizationalGraph', () => {
     expect(screen.getByText('Chief Technology Officer')).toBeInTheDocument();
     expect(screen.getByText('Autonomous CTO Agent')).toBeInTheDocument();
     expect(screen.getByText('Security Sentinel')).toBeInTheDocument();
-    expect(screen.getByText('NEXORA Operating System Upgrade')).toBeInTheDocument();
+    expect(screen.getByText('NEIMAN Operating System Upgrade')).toBeInTheDocument();
     expect(screen.getByText('Deploy microkernel containers')).toBeInTheDocument();
   });
 

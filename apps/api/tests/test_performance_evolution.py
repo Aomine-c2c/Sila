@@ -1,5 +1,5 @@
 """
-Tests for NEXORA Organizational Performance Tracking and Evolution Engine.
+Tests for NEIMAN Organizational Performance Tracking and Evolution Engine.
 """
 
 import pytest
@@ -162,7 +162,7 @@ class TestPerformanceAndEvolutionEngine:
     ):
         company_id = company_via_api["id"]
         """
-        Tests the complete NEXORA Simulation Lab lifecycle:
+        Tests the complete NEIMAN Simulation Lab lifecycle:
         1. List scenarios (seeds Simulation A, B, and C).
         2. Create a custom simulation scenario.
         3. Run controlled synthetic workload benchmark against simulated configuration.

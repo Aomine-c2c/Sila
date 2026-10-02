@@ -1,5 +1,5 @@
 /**
- * NEXORA Intelligence Exchange API Client
+ * NEIMAN Intelligence Exchange API Client
  */
 
 import { api } from './client';
@@ -160,6 +160,21 @@ export interface GenerateResponse {
   circuit_breaker_status: string;
 }
 
+export interface ProviderProbeRequest {
+  simulated_latency_ms?: number;
+  simulate_error?: string | null;
+}
+
+export interface ProviderProbeResponse {
+  provider_name: string;
+  is_healthy: boolean;
+  circuit_breaker_status: string;
+  consecutive_failures: number;
+  measured_latency_ms: number;
+  probe_timestamp: string;
+  detail: string;
+}
+
 export const intelligenceApi = {
   getDashboard: (companyId: string): Promise<IntelligenceDashboardData> =>
     api.get<IntelligenceDashboardData>(`/api/v1/companies/${companyId}/intelligence/dashboard`),
@@ -175,6 +190,16 @@ export const intelligenceApi = {
 
   listModels: (companyId: string): Promise<Model[]> =>
     api.get<Model[]>(`/api/v1/companies/${companyId}/intelligence/models`),
+
+  probeProvider: (
+    companyId: string,
+    providerName: string,
+    body?: ProviderProbeRequest
+  ): Promise<ProviderProbeResponse> =>
+    api.post<ProviderProbeResponse>(
+      `/api/v1/companies/${companyId}/intelligence/providers/${providerName}/probe`,
+      body || {}
+    ),
 
   generate: (companyId: string, body: GenerateRequest): Promise<GenerateResponse> =>
     api.post<GenerateResponse>(`/api/v1/companies/${companyId}/intelligence/generate`, body),

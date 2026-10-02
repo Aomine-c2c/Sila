@@ -1,4 +1,4 @@
-# Multi-stage build for NEXORA Web
+# Multi-stage build for NEIMAN Web
 FROM node:20-alpine as builder
 
 WORKDIR /app

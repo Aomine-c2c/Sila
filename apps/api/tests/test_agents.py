@@ -380,7 +380,7 @@ class TestAgentExecutionLifecycleAndAudits:
             json={
                 "memory_type": "semantic",
                 "key": "company_mission",
-                "content": "NEXORA is building the autonomous organization OS.",
+                "content": "NEIMAN is building the autonomous organization OS.",
                 "importance": 3.0,
             },
             headers=auth_headers,

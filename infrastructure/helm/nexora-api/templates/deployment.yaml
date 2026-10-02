@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "nexora-api.fullname" . }}
+  name: {{ include "NEIMAN-api.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "nexora-api.labels" . | nindent 4 }}
+    {{- include "NEIMAN-api.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "nexora-api.selectorLabels" . | nindent 6 }}
+      {{- include "NEIMAN-api.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "nexora-api.selectorLabels" . | nindent 8 }}
+        {{- include "NEIMAN-api.selectorLabels" . | nindent 8 }}
       {{- with .Values.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      serviceAccountName: {{ include "nexora-api.serviceAccountName" . }}
+      serviceAccountName: {{ include "NEIMAN-api.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:

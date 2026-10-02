@@ -111,7 +111,7 @@ export function ActivityOrb({ className = '' }: ActivityOrbProps) {
         type="button"
         onClick={() => setIsDrawerOpen(true)}
         className="relative group p-1 rounded-full focus:outline-none focus:ring-1 focus:ring-primary/40 transition-transform hover:scale-105"
-        title={`NEXORA Organic Core: ${stateConfig.label} (Click for Activity Radar)`}
+        title={`NEIMAN Organic Core: ${stateConfig.label} (Click for Activity Radar)`}
         aria-label="Open System Activity Radar"
       >
         {/* Outer Aura Ring */}
@@ -199,11 +199,10 @@ export function ActivityOrb({ className = '' }: ActivityOrbProps) {
                     key={filter}
                     type="button"
                     onClick={() => setActiveFilter(filter)}
-                    className={`px-2.5 py-1 rounded-lg border transition-all ${
-                      activeFilter === filter
+                    className={`px-2.5 py-1 rounded-lg border transition-all ${activeFilter === filter
                         ? 'bg-primary text-primary-foreground font-semibold border-primary shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border/60 hover:bg-secondary hover:text-foreground'
-                    }`}
+                      }`}
                   >
                     {filter}
                   </button>
@@ -258,13 +257,12 @@ export function ActivityOrb({ className = '' }: ActivityOrbProps) {
 
                       <div className="pt-1 flex items-center justify-between text-[10px]">
                         <span
-                          className={`px-2 py-0.5 rounded-full font-mono font-semibold border ${
-                            isBlocked
+                          className={`px-2 py-0.5 rounded-full font-mono font-semibold border ${isBlocked
                               ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                               : isApproval
-                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                          }`}
+                                ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                            }`}
                         >
                           {item.result}
                         </span>

@@ -8,7 +8,7 @@
 
 ## 1. Zero-Trust Security Kernel
 
-The NEXORA Security Kernel (`nexora.core.security`) operates on the foundational assumption that all external inputs, model-generated text, and third-party web content are untrusted.
+The NEIMAN Security Kernel (`NEIMAN.core.security`) operates on the foundational assumption that all external inputs, model-generated text, and third-party web content are untrusted.
 
 ### Available security controls and their limits:
 

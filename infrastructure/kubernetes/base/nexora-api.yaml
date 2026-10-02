@@ -1,43 +1,43 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nexora-api
-  namespace: nexora
+  name: NEIMAN-api
+  namespace: NEIMAN
   labels:
-    app: nexora-api
+    app: NEIMAN-api
     version: v1
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: nexora-api
+      app: NEIMAN-api
   template:
     metadata:
       labels:
-        app: nexora-api
+        app: NEIMAN-api
         version: v1
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8000"
         prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: nexora-api
+      serviceAccountName: NEIMAN-api
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
       containers:
         - name: api
-          image: ghcr.io/ORG/nexora-api:latest
+          image: ghcr.io/ORG/NEIMAN-api:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
               name: http
           envFrom:
             - configMapRef:
-                name: nexora-config
+                name: NEIMAN-config
             - secretRef:
-                name: nexora-secrets
+                name: NEIMAN-secrets
           resources:
             requests:
               cpu: "500m"
@@ -79,16 +79,16 @@ spec:
                     - key: app
                       operator: In
                       values:
-                        - nexora-api
+                        - NEIMAN-api
                 topologyKey: kubernetes.io/hostname
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: nexora-api
-  namespace: nexora
+  name: NEIMAN-api
+  namespace: NEIMAN
   labels:
-    app: nexora-api
+    app: NEIMAN-api
 spec:
   type: ClusterIP
   ports:
@@ -97,4 +97,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: nexora-api
+    app: NEIMAN-api

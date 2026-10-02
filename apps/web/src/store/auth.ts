@@ -1,5 +1,5 @@
 /**
- * NEXORA Auth Store — Zustand
+ * NEIMAN Auth Store — Zustand
  * Manages JWT token, current user, and active company context.
  */
 'use client';
@@ -85,7 +85,7 @@ export const useAuthStore = create<AuthState>()(
         }),
     }),
     {
-      name: 'nexora-auth',
+      name: 'NEIMAN-auth',
       storage: createJSONStorage(() => localStorage),
       // Only persist these fields
       partialize: (state) => ({

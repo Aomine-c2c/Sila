@@ -114,7 +114,10 @@ export default function WorkflowsDashboardPage() {
       setSelectedWorkflow(first);
       const loadedSteps = first.steps && first.steps.length > 0 ? first.steps : CANONICAL_SOFTWARE_PIPELINE;
       setSteps(loadedSteps);
-      setSelectedStepId(loadedSteps[0]?.id || null);
+      setSelectedStepId((prevId) => {
+        if (prevId && loadedSteps.some((s) => s.id === prevId)) return prevId;
+        return loadedSteps[0]?.id || null;
+      });
     }
   }, [workflows, selectedWorkflow]);
 

@@ -1,5 +1,5 @@
 /**
- * NEXORA Control Room Unified API Client
+ * NEIMAN Control Room Unified API Client
  * Interfaces for fetching the full organizational state, 15 core domains, and real-time operational answers.
  */
 

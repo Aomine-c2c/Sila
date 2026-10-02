@@ -1,5 +1,5 @@
 /**
- * NEXORA Resource Engine API Client
+ * NEIMAN Resource Engine API Client
  * Manages compute, intelligence, financial, and operational resource pools,
  * budgets, evaluation requests, allocations, and control center telemetry.
  */

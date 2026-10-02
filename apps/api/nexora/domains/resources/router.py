@@ -1,5 +1,5 @@
 """
-REST API Router for NEXORA Resource Engine.
+REST API Router for NEIMAN Resource Engine.
 Endpoints for:
 - Resource Pools & Quotas
 - Resource Budgets

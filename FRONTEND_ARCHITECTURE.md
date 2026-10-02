@@ -1,4 +1,4 @@
-# NEXORA Frontend Architecture
+# NEIMAN Frontend Architecture
 
 > **Status:** Implemented foundation; ongoing hardening
 > **Audience:** Frontend engineers, architects, Tauri/desktop team
@@ -10,7 +10,7 @@
 
 > This document began as a frontend plan. The Next.js application, dashboard, domain API clients, auth pages, and Tauri shell now exist under `apps/web`. Some planned package boundaries and product surfaces are still outstanding; see `FRONTEND_TECHNICAL_DEBT.md` and `UI_ROADMAP.md` before treating the planned layout below as current implementation.
 
-NEXORA is an AI-native Organization Operating System. The backend (FastAPI + async SQLAlchemy + PostgreSQL) is fully implemented across 13 domains. There is **no existing frontend** — only six static HTML prototype pages in `apps/api/nexora/static/` that serve as design reference for six core UI surfaces.
+NEIMAN is an AI-native Organization Operating System. The backend (FastAPI + async SQLAlchemy + PostgreSQL) is fully implemented across 13 domains. There is **no existing frontend** — only six static HTML prototype pages in `apps/api/NEIMAN/static/` that serve as design reference for six core UI surfaces.
 
 This document defines the frontend architecture for a **shared, multi-platform application** that targets:
 
@@ -30,7 +30,7 @@ The key principle: **share as much as possible** across platforms — types, API
 Sila/
 ├── apps/
 │   ├── api/                    # FastAPI backend (existing)
-│   │   └── nexora/
+│   │   └── NEIMAN/
 │   │       ├── domains/        # 13 domain modules
 │   │       ├── core/            # Enums, permissions, base classes
 │   │       ├── config.py        # Pydantic Settings (env-driven)
@@ -828,7 +828,7 @@ The Tauri desktop app bundles the **same Next.js build** as the web app:
 | Variable | Web | Tauri | TUI |
 |---|---|---|---|
 | `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:8000/api/v1` | Same (or embedded) | `http://localhost:8000/api/v1` |
-| `NEXT_PUBLIC_APP_NAME` | `NEXORA` | `NEXORA` | `NEXORA` |
+| `NEXT_PUBLIC_APP_NAME` | `NEIMAN` | `NEIMAN` | `NEIMAN` |
 | `NEXT_PUBLIC_ENVIRONMENT` | `development` | `production` (desktop) | auto-detected |
 | `NEXT_PUBLIC_ENABLE_TELEMETRY` | `false` | `true` (host metrics) | `true` |
 | `NEXT_PUBLIC_DEFAULT_COMPANY_ID` | `00000000-0000-0000-0000-000000000001` | Same | Same |
@@ -983,7 +983,7 @@ Both the Next.js app and Tauri app import from `packages/types` and `packages/ap
 
 ```bash
 # Backend
-make dev-api            # uvicorn nexora.main:app --reload
+make dev-api            # uvicorn NEIMAN.main:app --reload
 
 # Frontend (Next.js)
 cd apps/web && npm run dev  # localhost:3000
@@ -1073,7 +1073,7 @@ This architecture is implemented in phases as defined in `UI_ROADMAP.md`. The sh
 | Decision | Choice | Rationale |
 |---|---|---|
 | CSS framework | Tailwind CSS | Rapid development, consistent design tokens, no runtime CSS-in-JS |
-| Component library | Custom (`@nexus/ui`) | NEXORA has unique dark theme requirements; existing libraries don't match |
+| Component library | Custom (`@nexus/ui`) | NEIMAN has unique dark theme requirements; existing libraries don't match |
 | Form library | React Hook Form + Zod | Performant, TypeScript-first, Zod schemas can be exported to backend |
 | State management | Zustand + React Query | Minimal boilerplate, React Query handles all async, Zustand for UI state |
 | Routing | Next.js App Router | File-system routing + nested layouts + loading states |

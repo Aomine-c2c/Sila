@@ -30,7 +30,7 @@ export default function SettingsPage() {
       <section className="glass rounded-2xl p-5 sm:p-6" aria-labelledby="profile-heading">
         <div className="mb-5 flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><UserRound className="h-5 w-5" aria-hidden="true" /></span>
-          <div><h2 id="profile-heading" className="font-semibold text-foreground">Signed-in profile</h2><p className="text-xs text-muted-foreground">Profile information managed by your NEXORA account.</p></div>
+          <div><h2 id="profile-heading" className="font-semibold text-foreground">Signed-in profile</h2><p className="text-xs text-muted-foreground">Profile information managed by your NEIMAN account.</p></div>
         </div>
         {user ? (
           <dl className="grid gap-4 sm:grid-cols-2">
@@ -61,7 +61,7 @@ export default function SettingsPage() {
       <section className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 sm:p-6" aria-labelledby="session-heading">
         <div className="mb-4 flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-300"><ShieldCheck className="h-5 w-5" aria-hidden="true" /></span>
-          <div><h2 id="session-heading" className="font-semibold text-foreground">Session</h2><p className="text-xs text-muted-foreground">This signs you out of NEXORA in this browser.</p></div>
+          <div><h2 id="session-heading" className="font-semibold text-foreground">Session</h2><p className="text-xs text-muted-foreground">This signs you out of NEIMAN in this browser.</p></div>
         </div>
         <button type="button" className="btn btn-outline gap-2" onClick={signOut} disabled={previewMode} title={previewMode ? 'Sign-out is unavailable in synthetic preview mode' : undefined}><LogOut className="h-4 w-4" aria-hidden="true" />{previewMode ? 'Sign out unavailable in preview' : 'Sign out'}</button>
       </section>

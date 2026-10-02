@@ -1,5 +1,5 @@
 """
-Service layer for NEXORA Organizational Memory System.
+Service layer for NEIMAN Organizational Memory System.
 Coordinates storage, search, decision tracking, context assembly, and seed data.
 """
 
@@ -46,7 +46,7 @@ class MemoryService:
                 MemoryDomain.COMPANY.value,
                 MemoryScope.PUBLIC.value,
                 "Company Operating Principles",
-                "NEXORA operates as an autonomous, self-coordinating organizational operating system with strict capability-based security.",
+                "NEIMAN operates as an autonomous, self-coordinating organizational operating system with strict capability-based security.",
                 "Autonomous organization OS principles and core mission.",
                 ProvenanceType.POLICY_DOCUMENT.value,
                 "Founding Charter",

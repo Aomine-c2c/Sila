@@ -1,14 +1,14 @@
 apiVersion: v2
-name: nexora-web
-description: NEXORA Web Helm Chart
+name: NEIMAN-web
+description: NEIMAN Web Helm Chart
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
 keywords:
-  - nexora
+  - NEIMAN
   - web
   - nextjs
   - frontend
 maintainers:
-  - name: NEXORA Team
-    email: team@nexora.example.com
+  - name: NEIMAN Team
+    email: team@NEIMAN.example.com

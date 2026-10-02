@@ -1,6 +1,6 @@
 /**
- * NEXORA API Client
- * Central HTTP client for all NEXORA backend calls.
+ * NEIMAN API Client
+ * Central HTTP client for all NEIMAN backend calls.
  * Reads token from auth store automatically.
  */
 

@@ -1,13 +1,13 @@
 #!/bin/bash
-# NEXORA Secret Rotation Script
+# NEIMAN Secret Rotation Script
 # Usage: ./rotate-secrets.sh [api|web|all]
 
 set -euo pipefail
 
 TARGET="${1:-all}"
-VAULT_ADDR="${VAULT_ADDR:-https://vault.nexora.example.com}"
+VAULT_ADDR="${VAULT_ADDR:-https://vault.NEIMAN.example.com}"
 
-echo "🔐 NEXORA Secret Rotation - Target: ${TARGET}"
+echo "🔐 NEIMAN Secret Rotation - Target: ${TARGET}"
 echo "================================================="
 
 # Function to generate new secret
@@ -25,8 +25,8 @@ rotate_secret() {
     vault kv put "${path}" "${key}=${new_value}"
     
     # Trigger External Secrets sync
-    local secret_name=$(echo "${path}" | sed 's|nexora/||' | sed 's|/|-|g')
-    kubectl annotate externalsecret "nexora-${secret_name}-secrets" -n nexora force-sync=$(date +%s) --overwrite 2>/dev/null || true
+    local secret_name=$(echo "${path}" | sed 's|NEIMAN/||' | sed 's|/|-|g')
+    kubectl annotate externalsecret "NEIMAN-${secret_name}-secrets" -n NEIMAN force-sync=$(date +%s) --overwrite 2>/dev/null || true
 }
 
 if [[ "${TARGET}" == "api" || "${TARGET}" == "all" ]]; then
@@ -35,20 +35,20 @@ if [[ "${TARGET}" == "api" || "${TARGET}" == "all" ]]; then
     
     # JWT Secret
     NEW_JWT=$(generate_secret)
-    rotate_secret "nexora/api/auth" "secret_key" "${NEW_JWT}"
+    rotate_secret "NEIMAN/api/auth" "secret_key" "${NEW_JWT}"
     
     # Database URL (if using dynamic credentials, this rotates automatically)
     # NEW_DB=$(generate_db_creds)
-    # rotate_secret "nexora/api/database" "url" "${NEW_DB}"
+    # rotate_secret "NEIMAN/api/database" "url" "${NEW_DB}"
     
     # LLM API Keys (manual - need to provide new keys)
     echo "  ⚠️  LLM API keys require manual update in Vault:"
-    echo "     vault kv put nexora/api/llm openai_key=<new> anthropic_key=<new> google_key=<new>"
+    echo "     vault kv put NEIMAN/api/llm openai_key=<new> anthropic_key=<new> google_key=<new>"
     
     # Restart API pods
     echo "  🔄 Restarting API pods..."
-    kubectl rollout restart deployment/nexora-api -n nexora
-    kubectl rollout status deployment/nexora-api -n nexora --timeout=300s
+    kubectl rollout restart deployment/NEIMAN-api -n NEIMAN
+    kubectl rollout status deployment/NEIMAN-api -n NEIMAN --timeout=300s
 fi
 
 if [[ "${TARGET}" == "web" || "${TARGET}" == "all" ]]; then
@@ -57,14 +57,14 @@ if [[ "${TARGET}" == "web" || "${TARGET}" == "all" ]]; then
     
     # Analytics keys (if any)
     echo "  ⚠️  Web analytics keys require manual update in Vault:"
-    echo "     vault kv put nexora/web/analytics key=<new>"
+    echo "     vault kv put NEIMAN/web/analytics key=<new>"
     
     # Restart Web pods
     echo "  🔄 Restarting Web pods..."
-    kubectl rollout restart deployment/nexora-web -n nexora
-    kubectl rollout status deployment/nexora-web -n nexora --timeout=300s
+    kubectl rollout restart deployment/NEIMAN-web -n NEIMAN
+    kubectl rollout status deployment/NEIMAN-web -n NEIMAN --timeout=300s
 fi
 
 echo ""
 echo "✅ Secret rotation complete!"
-echo "   Verify: kubectl logs -n nexora -l app=nexora-api | grep -i startup"
+echo "   Verify: kubectl logs -n NEIMAN -l app=NEIMAN-api | grep -i startup"

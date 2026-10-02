@@ -1,4 +1,4 @@
-"""Initial schema — all NEXORA core entities
+"""Initial schema — all NEIMAN core entities
 
 Revision ID: 0001
 Revises:

@@ -1,4 +1,4 @@
-# NEXORA Roadmap
+# NEIMAN Roadmap
 
 This roadmap prioritizes safe, incremental delivery. Readiness claims should be backed by reproducible checks and operational evidence.
 

@@ -1,5 +1,5 @@
 /**
- * NEXORA Workflows API Client
+ * NEIMAN Workflows API Client
  * Enterprise-grade multi-step orchestration across organizational agents, tools, conditions, and human gates.
  */
 

@@ -14,8 +14,8 @@ class TestProjects:
         resp = await client.post(
             f"/api/v1/companies/{company_id}/projects",
             json={
-                "name": "NEXORA Launch",
-                "objective": "Ship NEXORA v1 to market",
+                "name": "NEIMAN Launch",
+                "objective": "Ship NEIMAN v1 to market",
                 "priority": "CRITICAL",
                 "milestones": [
                     {"title": "MVP", "description": "Core features done"},
@@ -26,7 +26,7 @@ class TestProjects:
         )
         assert resp.status_code == 201
         data = resp.json()
-        assert data["name"] == "NEXORA Launch"
+        assert data["name"] == "NEIMAN Launch"
         assert data["priority"] == "CRITICAL"
         assert data["status"] == "DRAFT"
         assert len(data["milestones"]) == 2

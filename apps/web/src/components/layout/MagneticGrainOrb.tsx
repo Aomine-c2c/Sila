@@ -25,6 +25,8 @@ import { governanceApi } from '@/lib/api/governance';
 import { useOrganizationContext } from '@/lib/organizationContext';
 import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 
+import { useTheme } from '@/components/ThemeProvider';
+
 interface SatelliteModule {
   id: string;
   name: string;
@@ -77,6 +79,9 @@ export function MagneticGrainOrb() {
   const [activeModuleHover, setActiveModuleHover] = useState<SatelliteModule | null>(null);
   const [bloomOpen, setBloomOpen] = useState(true);
 
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
   const isPreview = isDevelopmentAuthBypassEnabled();
   // Live Audits telemetry for dynamic particle pulse
   const { data: audits = [] } = useQuery({
@@ -92,7 +97,13 @@ export function MagneticGrainOrb() {
   const hasAlert = audits.some((a) => a.result === 'DENIED' || a.result === 'BLOCKED');
   const hasApproval = audits.some((a) => a.result === 'PENDING');
 
-  const coreColor = hasAlert ? '#ef4444' : hasApproval ? '#f59e0b' : '#a3e635'; // Neon lime default
+  const coreColor = hasAlert
+    ? '#ef4444'
+    : hasApproval
+      ? '#f59e0b'
+      : isDark
+        ? '#a3e635' // Cyber lime
+        : '#059669'; // Emerald teal for light mode
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -122,9 +133,9 @@ export function MagneticGrainOrb() {
       const y = radius * Math.sin(phi) * Math.sin(theta);
 
       const colorVariant = Math.random();
-      let color = '#a3e635'; // Neon lime
-      if (colorVariant > 0.7) color = '#06b6d4'; // Cyan
-      if (colorVariant > 0.9) color = '#ffffff'; // White specular spark
+      let color = isDark ? '#a3e635' : '#059669'; // Lime / Emerald
+      if (colorVariant > 0.7) color = isDark ? '#06b6d4' : '#0284c7'; // Cyan / Sky
+      if (colorVariant > 0.9) color = isDark ? '#ffffff' : '#0f172a'; // Specular dark / white
 
       grains.push({
         x: centerX + x,
@@ -173,8 +184,14 @@ export function MagneticGrainOrb() {
         centerY,
         120 * currentExpansion
       );
-      radialGradient.addColorStop(0, hasAlert ? 'rgba(239,68,68,0.22)' : 'rgba(163,230,53,0.18)');
-      radialGradient.addColorStop(0.5, 'rgba(6,182,212,0.06)');
+      if (hasAlert) {
+        radialGradient.addColorStop(0, 'rgba(239,68,68,0.22)');
+      } else if (isDark) {
+        radialGradient.addColorStop(0, 'rgba(163,230,53,0.18)');
+      } else {
+        radialGradient.addColorStop(0, 'rgba(5,150,105,0.16)');
+      }
+      radialGradient.addColorStop(0.5, isDark ? 'rgba(6,182,212,0.06)' : 'rgba(2,132,199,0.05)');
       radialGradient.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = radialGradient;
       ctx.fillRect(0, 0, width, height);
@@ -234,7 +251,7 @@ export function MagneticGrainOrb() {
       cancelAnimationFrame(animationFrameId);
       canvas.removeEventListener('mousemove', handleMouseMove);
     };
-  }, [isHovered, bloomOpen, hasAlert, hasApproval, coreColor]);
+  }, [isHovered, bloomOpen, hasAlert, hasApproval, coreColor, isDark]);
 
   // Calculate Radial Positions for Orbiting Satellites (12 Satellites in 360 degrees)
   const radiusX = 200; // Horizontal orbit radius
@@ -276,15 +293,14 @@ export function MagneticGrainOrb() {
             <Radio className="h-4 w-4 text-primary animate-pulse" />
           </div>
           <span className="mt-1.5 text-[10px] font-mono tracking-widest uppercase text-muted-foreground group-hover:text-primary transition-colors">
-            {bloomOpen ? 'Collapse Constellation' : 'NEXORA Core'}
+            {bloomOpen ? 'Collapse Constellation' : 'NEIMAN Core'}
           </span>
         </button>
 
         {/* 2. RADIAL ORBITAL SATELLITES (Blooms outwards on hover or toggle) */}
         <div
-          className={`absolute inset-0 pointer-events-none transition-all duration-500 ease-out ${
-            isHovered || bloomOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'
-          }`}
+          className={`absolute inset-0 pointer-events-none transition-all duration-500 ease-out ${isHovered || bloomOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'
+            }`}
         >
           {satellites.map((sat) => {
             const Icon = sat.icon;
@@ -302,11 +318,10 @@ export function MagneticGrainOrb() {
                   type="button"
                   onClick={() => router.push(sat.href)}
                   onMouseEnter={() => setActiveModuleHover(sat)}
-                  className={`group relative flex items-center justify-center h-10 w-10 rounded-2xl border backdrop-blur-xl transition-all shadow-lg ${
-                    isSelected
+                  className={`group relative flex items-center justify-center h-10 w-10 rounded-2xl border backdrop-blur-xl transition-all shadow-lg ${isSelected
                       ? 'bg-primary text-primary-foreground border-primary scale-125 shadow-primary/30'
                       : 'bg-card/90 text-foreground/80 border-border/80 hover:border-primary hover:text-primary hover:scale-115'
-                  }`}
+                    }`}
                   title={`${sat.name} · ${sat.description}`}
                 >
                   <Icon className="h-4 w-4" />

@@ -1,4 +1,4 @@
-"""User model — the identity anchor for all NEXORA interactions."""
+"""User model — the identity anchor for all NEIMAN interactions."""
 
 from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship

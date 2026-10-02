@@ -1,5 +1,5 @@
 """
-REST API Router for NEXORA Organizational Governance Layer.
+REST API Router for NEIMAN Organizational Governance Layer.
 Endpoints for:
 - Company Constitution
 - Autonomy Matrix Configuration (0-5)

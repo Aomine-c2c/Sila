@@ -37,7 +37,7 @@ from nexora.core.enums import (
 
 class Company(NexoraBase):
     """
-    The top-level organizational entity in NEXORA.
+    The top-level organizational entity in NEIMAN.
     Everything — departments, agents, projects — belongs to a Company.
     """
 

@@ -1,4 +1,4 @@
-"""Service layer for NEXORA Organizational Governance Layer."""
+"""Service layer for NEIMAN Organizational Governance Layer."""
 
 import uuid
 from datetime import UTC, datetime

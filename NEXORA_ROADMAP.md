@@ -1,4 +1,4 @@
-# NEXORA ROADMAP — Autonomous Organization Operating System
+# NEIMAN ROADMAP — Autonomous Organization Operating System
 
 **Date:** 2026-09-29  
 **Version:** 2.0  
@@ -8,14 +8,14 @@
 
 ## 1. Architectural Vision
 
-**NEXORA** is an AI-native Operating System for intelligent organizations. It empowers teams to define operational workflows, assemble multi-agent departments, delegate complex decisions to heterogeneous AI councils (Claude, Gemini, OpenAI), and maintain complete governance and observability over all automated actions.
+**NEIMAN** is an AI-native Operating System for intelligent organizations. It empowers teams to define operational workflows, assemble multi-agent departments, delegate complex decisions to heterogeneous AI councils (Claude, Gemini, OpenAI), and maintain complete governance and observability over all automated actions.
 
 ---
 
 ## 2. Completed Phases
 
 - [x] **Phase 0 — Project Audit & Baseline Setup**
-- [x] **Phase 1 — Establish NEXORA Core** (Company, DNA, Department, Role, Project, Policy, Decision)
+- [x] **Phase 1 — Establish NEIMAN Core** (Company, DNA, Department, Role, Project, Policy, Decision)
 - [x] **Phase 2 — AI Employee System** (Agent Lifecycle, Reporting Hierarchy, Capabilities, Permissions)
 - [x] **Phase 3 — Intelligence Exchange** (Provider Abstraction, Capability Routing, Token Cost Tracking)
 - [x] **Phase 4 — Resource Engine** (Compute, Tokens, Budgets, Quota Allocation)

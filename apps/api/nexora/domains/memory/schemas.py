@@ -1,5 +1,5 @@
 """
-Pydantic Schemas for NEXORA Organizational Memory System.
+Pydantic Schemas for NEIMAN Organizational Memory System.
 Covers:
 - Memory Items (10 domains, metadata, permissions, retention)
 - Context Assembly Request & Minimal Necessary Context Response

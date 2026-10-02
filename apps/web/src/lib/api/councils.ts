@@ -1,5 +1,5 @@
 /**
- * NEXORA Agent Councils API Client
+ * NEIMAN Agent Councils API Client
  */
 
 import { api } from './client';
@@ -56,13 +56,13 @@ export interface CouncilDeliberation {
   problem_statement: string;
   context_data: Record<string, unknown>;
   current_stage:
-    | 'PROPOSAL'
-    | 'INDEPENDENT_REVIEW'
-    | 'OBJECTIONS'
-    | 'DISCUSSION'
-    | 'SYNTHESIS'
-    | 'DECISION'
-    | 'RECORD';
+  | 'PROPOSAL'
+  | 'INDEPENDENT_REVIEW'
+  | 'OBJECTIONS'
+  | 'DISCUSSION'
+  | 'SYNTHESIS'
+  | 'DECISION'
+  | 'RECORD';
   status: 'PENDING' | 'DELIBERATING' | 'SYNTHESIZED' | 'RESOLVED' | 'STALEMATE';
   proposals: unknown[];
   independent_reviews: ReviewItem[];

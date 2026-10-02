@@ -932,7 +932,7 @@ wheels = [
 ]
 
 [[package]]
-name = "nexora-api"
+name = "NEIMAN-api"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

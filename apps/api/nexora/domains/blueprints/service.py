@@ -1,5 +1,5 @@
 """
-Service layer for NEXORA Company Blueprints:
+Service layer for NEIMAN Company Blueprints:
 - Listing & retrieving blueprints (with auto-seeding of the 10 core blueprints)
 - Instantiating a blueprint into a real Company (departments, roles, agents, workflows, policies, constitution, governance)
 - Customizing & saving blueprints
@@ -550,7 +550,7 @@ class BlueprintService:
         user: User | None = None,
     ) -> BlueprintGenerationProposal:
         """
-        Executes the 12-step NEXORA natural-language organization synthesis pipeline:
+        Executes the 12-step NEIMAN natural-language organization synthesis pipeline:
         1. USER DESCRIPTION
         2. REQUIREMENT ANALYSIS
         3. INDUSTRY IDENTIFICATION
@@ -854,7 +854,7 @@ class BlueprintService:
             {
                 "category": "Budget Runway Exhaustion",
                 "description": "High task concurrency could deplete monthly API token allocations prematurely.",
-                "mitigation": "Hard daily quota ceiling enforced by the NEXORA Resource Engine.",
+                "mitigation": "Hard daily quota ceiling enforced by the NEIMAN Resource Engine.",
                 "severity": "LOW",
             },
         ]

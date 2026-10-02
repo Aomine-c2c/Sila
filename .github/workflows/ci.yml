@@ -39,15 +39,15 @@ jobs:
 
       - name: Run Ruff
         working-directory: ./apps/api
-        run: uv run ruff check nexora/ tests/
+        run: uv run ruff check NEIMAN/ tests/
 
       - name: Run MyPy
         working-directory: ./apps/api
-        run: uv run mypy nexora/
+        run: uv run mypy NEIMAN/
 
       - name: Run Ruff format check
         working-directory: ./apps/api
-        run: uv run ruff format --check nexora/ tests/
+        run: uv run ruff format --check NEIMAN/ tests/
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -82,13 +82,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: nexora
-          POSTGRES_PASSWORD: nexora_test
-          POSTGRES_DB: nexora_test
+          POSTGRES_USER: NEIMAN
+          POSTGRES_PASSWORD: NEIMAN_test
+          POSTGRES_DB: NEIMAN_test
         ports:
           - "5432:5432"
         options: >-
-          --health-cmd "pg_isready -U nexora"
+          --health-cmd "pg_isready -U NEIMAN"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
@@ -124,13 +124,13 @@ jobs:
       - name: Run database migrations
         working-directory: ./apps/api
         env:
-          DATABASE_URL: postgresql+asyncpg://nexora:nexora_test@localhost:5432/nexora_test
+          DATABASE_URL: postgresql+asyncpg://NEIMAN:NEIMAN_test@localhost:5432/NEIMAN_test
         run: uv run alembic upgrade head
 
       - name: Run API tests
         working-directory: ./apps/api
         env:
-          DATABASE_URL: postgresql+asyncpg://nexora:nexora_test@localhost:5432/nexora_test
+          DATABASE_URL: postgresql+asyncpg://NEIMAN:NEIMAN_test@localhost:5432/NEIMAN_test
           REDIS_URL: redis://localhost:6379/0
           SECRET_KEY: test-secret-key
           DEBUG: "true"

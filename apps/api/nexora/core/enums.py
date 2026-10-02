@@ -1,4 +1,4 @@
-"""All domain enums for NEXORA."""
+"""All domain enums for NEIMAN."""
 
 from enum import Enum, StrEnum
 
@@ -122,7 +122,7 @@ class AgentAutonomy(str, Enum):
 
 
 class AgentStatus(StrEnum):
-    # NEXORA Employee Lifecycle
+    # NEIMAN Employee Lifecycle
     CREATED = "CREATED"
     CONFIGURED = "CONFIGURED"
     AVAILABLE = "AVAILABLE"

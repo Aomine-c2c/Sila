@@ -1,4 +1,4 @@
-# MISSING CAPABILITIES & GAP ANALYSIS — NEXORA
+# MISSING CAPABILITIES & GAP ANALYSIS — NEIMAN
 
 **Audit Date:** 2026-09-29  
 **Scope:** Production-Ready Autonomous Organization OS Roadmap  
@@ -9,13 +9,13 @@
 
 | Domain | Implemented Features | Evidence |
 | :--- | :--- | :--- |
-| **Organizations & Core** | Companies, Departments, Roles, DNA, Membership RBAC | `nexora/domains/organizations/`, tested |
-| **Workforce & Agents** | Full 7-stage lifecycle, capabilities, hierarchy, communications | `nexora/domains/agents/`, tested |
-| **Intelligence Exchange** | Provider abstraction (Claude, Gemini, OpenAI), capability routing | `nexora/domains/intelligence/`, tested |
-| **Resource Engine** | Compute, intelligence tokens, financial budgets, scheduling | `nexora/domains/resources/`, tested |
-| **Governance & Policies** | 6-level autonomy matrix (0-5), approval gates, audit viewer | `nexora/domains/governance/`, tested |
-| **Workflow Engine** | Triggers, conditions, retries, branching, human-in-the-loop, observability | `nexora/domains/workflows/`, tested |
-| **Agent Councils** | Multi-model deliberation (7 stages), dissent knowledge capture | `nexora/domains/councils/`, tested |
+| **Organizations & Core** | Companies, Departments, Roles, DNA, Membership RBAC | `NEIMAN/domains/organizations/`, tested |
+| **Workforce & Agents** | Full 7-stage lifecycle, capabilities, hierarchy, communications | `NEIMAN/domains/agents/`, tested |
+| **Intelligence Exchange** | Provider abstraction (Claude, Gemini, OpenAI), capability routing | `NEIMAN/domains/intelligence/`, tested |
+| **Resource Engine** | Compute, intelligence tokens, financial budgets, scheduling | `NEIMAN/domains/resources/`, tested |
+| **Governance & Policies** | 6-level autonomy matrix (0-5), approval gates, audit viewer | `NEIMAN/domains/governance/`, tested |
+| **Workflow Engine** | Triggers, conditions, retries, branching, human-in-the-loop, observability | `NEIMAN/domains/workflows/`, tested |
+| **Agent Councils** | Multi-model deliberation (7 stages), dissent knowledge capture | `NEIMAN/domains/councils/`, tested |
 | **Company Control Room** | Mission Control dashboard, interactive canvas organizational graph | `apps/web/src/app/dashboard/`, live |
 
 ---

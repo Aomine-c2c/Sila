@@ -1,5 +1,5 @@
 """
-Repository layer for NEXORA Organizational Memory System.
+Repository layer for NEIMAN Organizational Memory System.
 Handles storage, domain queries, text search, and decision records.
 """
 

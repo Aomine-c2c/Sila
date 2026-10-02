@@ -1,4 +1,4 @@
-"""Tests for the NEXORA Intelligence Exchange."""
+"""Tests for the NEIMAN Intelligence Exchange."""
 
 import pytest
 from httpx import AsyncClient

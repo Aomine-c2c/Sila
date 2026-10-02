@@ -137,9 +137,9 @@ export default function IntelligenceExchangePage() {
       simulation_flags: Object.keys(simFlags).length > 0 ? simFlags : undefined,
       structured_output_schema: requireStructuredJson
         ? {
-            type: 'object',
-            required: ['provider', 'status', 'analysis'],
-          }
+          type: 'object',
+          required: ['provider', 'status', 'analysis'],
+        }
         : undefined,
     });
   };
@@ -160,7 +160,7 @@ export default function IntelligenceExchangePage() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               <Zap className="h-3.5 w-3.5" />
-              NEXORA Intelligence Exchange
+              NEIMAN Intelligence Exchange
             </div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
               Multi-Provider Resilience & Failover Routing
@@ -265,11 +265,10 @@ export default function IntelligenceExchangePage() {
         <button
           type="button"
           onClick={() => setActiveTab('architecture')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
-            activeTab === 'architecture'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${activeTab === 'architecture'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <Zap className="h-4 w-4" />
           Architecture & Routing Topology
@@ -278,11 +277,10 @@ export default function IntelligenceExchangePage() {
         <button
           type="button"
           onClick={() => setActiveTab('matrix')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
-            activeTab === 'matrix'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${activeTab === 'matrix'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <Cpu className="h-4 w-4" />
           Model Comparison Benchmark ({models.length})
@@ -291,11 +289,10 @@ export default function IntelligenceExchangePage() {
         <button
           type="button"
           onClick={() => setActiveTab('providers')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
-            activeTab === 'providers'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${activeTab === 'providers'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <Cloud className="h-4 w-4" />
           Provider Health & Adapters ({providers.length})
@@ -304,11 +301,10 @@ export default function IntelligenceExchangePage() {
         <button
           type="button"
           onClick={() => setActiveTab('policy')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
-            activeTab === 'policy'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${activeTab === 'policy'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <Sliders className="h-4 w-4" />
           Routing Policy & Fallbacks
@@ -317,11 +313,10 @@ export default function IntelligenceExchangePage() {
         <button
           type="button"
           onClick={() => setActiveTab('simulator')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
-            activeTab === 'simulator'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${activeTab === 'simulator'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <Sparkles className="h-4 w-4" />
           Capability Simulator & Resiliency
@@ -330,11 +325,10 @@ export default function IntelligenceExchangePage() {
         <button
           type="button"
           onClick={() => setActiveTab('decisions')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
-            activeTab === 'decisions'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${activeTab === 'decisions'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <ArrowRightLeft className="h-4 w-4" />
           Decision Audit Ledger ({decisions.length})
@@ -375,6 +369,11 @@ export default function IntelligenceExchangePage() {
             models={models}
             onResetBreakers={() => resetBreakersMutation.mutate()}
             isResetting={resetBreakersMutation.isPending}
+            onProbeProvider={async (providerName, req) => {
+              const res = await intelligenceApi.probeProvider(companyId, providerName, req);
+              queryClient.invalidateQueries({ queryKey: ['intelligence-dashboard', companyId] });
+              return res;
+            }}
           />
         </div>
       )}
@@ -627,13 +626,12 @@ export default function IntelligenceExchangePage() {
                               [{step.tier}] {step.provider} / {step.model}
                             </span>
                             <span
-                              className={`font-semibold ${
-                                step.action === 'COMPLETED'
+                              className={`font-semibold ${step.action === 'COMPLETED'
                                   ? 'text-emerald-400'
                                   : step.action === 'RETRY'
-                                  ? 'text-amber-400'
-                                  : 'text-rose-400'
-                              }`}
+                                    ? 'text-amber-400'
+                                    : 'text-rose-400'
+                                }`}
                             >
                               {step.action} {step.error ? `(${step.error})` : ''}
                             </span>
@@ -709,13 +707,12 @@ export default function IntelligenceExchangePage() {
                       </td>
                       <td className="p-3 font-semibold font-mono text-[10px]">
                         <span
-                          className={`px-1.5 py-0.5 rounded ${
-                            d.routed_tier === 'PRIMARY'
+                          className={`px-1.5 py-0.5 rounded ${d.routed_tier === 'PRIMARY'
                               ? 'bg-blue-500/10 text-blue-400'
                               : d.routed_tier === 'LOCAL_DEGRADED'
-                              ? 'bg-emerald-500/10 text-emerald-400'
-                              : 'bg-amber-500/10 text-amber-300'
-                          }`}
+                                ? 'bg-emerald-500/10 text-emerald-400'
+                                : 'bg-amber-500/10 text-amber-300'
+                            }`}
                         >
                           {d.routed_tier || 'PRIMARY'}
                         </span>
@@ -747,11 +744,10 @@ export default function IntelligenceExchangePage() {
                       </td>
                       <td className="p-3">
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
-                            d.circuit_breaker_status === 'CLOSED'
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${d.circuit_breaker_status === 'CLOSED'
                               ? 'bg-emerald-500/10 text-emerald-400'
                               : 'bg-rose-500/10 text-rose-400'
-                          }`}
+                            }`}
                         >
                           {d.circuit_breaker_status || 'CLOSED'}
                         </span>

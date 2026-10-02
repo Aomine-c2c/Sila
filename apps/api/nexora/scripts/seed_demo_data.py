@@ -1,5 +1,5 @@
 """
-NEXORA Autonomous Organization OS — Comprehensive Realistic Data Simulator.
+NEIMAN Autonomous Organization OS — Comprehensive Realistic Data Simulator.
 Uses Faker to generate rich, realistic organizational datasets across all 15 domains:
 - Companies & Organizational DNA
 - Departments (Hierarchy & functional charters)
@@ -98,7 +98,7 @@ ROLE_TEMPLATES = [
 ]
 
 async def seed_data():
-    print("🚀 Initializing realistic Faker simulation for NEXORA...")
+    print("🚀 Initializing realistic Faker simulation for NEIMAN...")
 
     async with AsyncSessionLocal() as db:
         auth_svc = AuthService(db)
@@ -359,7 +359,7 @@ async def seed_data():
             company_id=company.id,
             title="Adoption of Multi-Model Intelligence Architecture",
             problem="Avoid single-vendor lock-in across critical organizational workflows.",
-            decision="Adopt NEXORA Intelligence Exchange with capability routing.",
+            decision="Adopt NEIMAN Intelligence Exchange with capability routing.",
             rationale="Eliminates single point of failure and allows model swapping without rewrites.",
             expected_outcome="99.99% workflow uptime even during major cloud vendor outages.",
             status=DecisionStatus.DECIDED,

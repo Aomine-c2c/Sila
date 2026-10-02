@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * NEXORA Auth Guard
+ * NEIMAN Auth Guard
  * Redirects unauthenticated users to /auth/login.
  * Redirects authenticated users away from auth pages.
  */
@@ -79,7 +79,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   if (checkFailed) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-center" role="alert">
-        <p className="text-sm text-muted-foreground">NEXORA could not verify your session.</p>
+        <p className="text-sm text-muted-foreground">NEIMAN could not verify your session.</p>
         <button
           type="button"
           className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"

@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'NEXORA — Autonomous Organization OS',
+  title: 'NEIMAN — Autonomous Organization OS',
   description: 'The AI-native platform for organizational intelligence and automation',
   keywords: ['AI', 'agents', 'workflows', 'organization', 'automation', 'governance'],
 };

@@ -1,13 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: nexora
+namespace: NEIMAN
 
 resources:
   - ../../base/namespaces.yaml
   - ../../base/config.yaml
-  - ../../base/nexora-api.yaml
-  - ../../base/nexora-web.yaml
+  - ../../base/NEIMAN-api.yaml
+  - ../../base/NEIMAN-web.yaml
   - ../../base/ingress.yaml
   - ../../base/hpa.yaml
   - ../../base/rbac.yaml
@@ -17,8 +17,8 @@ patches:
       apiVersion: apps/v1
       kind: Deployment
       metadata:
-        name: nexora-api
-        namespace: nexora
+        name: NEIMAN-api
+        namespace: NEIMAN
       spec:
         replicas: 5
         template:
@@ -36,8 +36,8 @@ patches:
       apiVersion: apps/v1
       kind: Deployment
       metadata:
-        name: nexora-web
-        namespace: nexora
+        name: NEIMAN-web
+        namespace: NEIMAN
       spec:
         replicas: 5
         template:
@@ -53,16 +53,16 @@ patches:
                     memory: "2Gi"
 
 configMapGenerator:
-  - name: nexora-config
+  - name: NEIMAN-config
     behavior: merge
     literals:
       - ENVIRONMENT=production
       - DEBUG=false
 
 images:
-  - name: ghcr.io/ORG/nexora-api
+  - name: ghcr.io/ORG/NEIMAN-api
     newTag: v1.0.0
-  - name: ghcr.io/ORG/nexora-web
+  - name: ghcr.io/ORG/NEIMAN-web
     newTag: v1.0.0
 
 commonLabels:

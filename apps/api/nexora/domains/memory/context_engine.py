@@ -1,5 +1,5 @@
 """
-Context Assembly Engine for NEXORA Organizational Memory System.
+Context Assembly Engine for NEIMAN Organizational Memory System.
 
 Core Architectural Law:
 - External model providers must NOT automatically receive the entire company memory.

@@ -1,5 +1,5 @@
 /**
- * NEXORA Agents API
+ * NEIMAN Agents API
  */
 
 import { api } from './client';

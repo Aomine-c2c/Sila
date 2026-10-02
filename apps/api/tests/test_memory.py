@@ -1,5 +1,5 @@
 """
-Tests for the NEXORA Organizational Memory System.
+Tests for the NEIMAN Organizational Memory System.
 Covers:
 - 10 distinct memory domains (COMPANY, DEPARTMENT, AGENT, PROJECT, CUSTOMER, DECISION, POLICY, EXPERIMENT, FAILURE, KNOWLEDGE_BASE)
 - Structured metadata (source, owner, scope, permissions, confidence, relevance, provenance, retention policy)
@@ -155,7 +155,7 @@ class TestOrganizationalMemory:
                     "cons": ["Vendor lock-in", "Rate limits"],
                 },
                 {
-                    "title": "NEXORA Intelligence Exchange Abstraction",
+                    "title": "NEIMAN Intelligence Exchange Abstraction",
                     "description": "Decouple agents via abstract capabilities (large_context, fast_inference).",
                     "pros": ["Multi-vendor redundancy", "Cost arbitrage", "Privacy control"],
                     "cons": ["Adapter maintenance overhead"],

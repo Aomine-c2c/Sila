@@ -3,7 +3,7 @@ import type { ControlRoomState } from './controlRoom';
 
 /** Synthetic dashboard fixtures for local design review. Never persisted or written to an API. */
 export const PREVIEW_COMPANY: NexoraCompany = {
-  id: 'preview-company-nexora',
+  id: 'preview-company-NEIMAN',
   name: 'Northstar Studio',
   slug: 'northstar-studio-preview',
   description: 'Synthetic organization for local UI preview.',

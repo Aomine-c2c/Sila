@@ -2,7 +2,7 @@
 
 ## Security model
 
-NEXORA treats user content, retrieved memory, tool output, and model responses as untrusted. Authorization is enforced per company and capability. Consequential actions require governance checks and, where configured, human approval.
+NEIMAN treats user content, retrieved memory, tool output, and model responses as untrusted. Authorization is enforced per company and capability. Consequential actions require governance checks and, where configured, human approval.
 
 ## Current controls and limitations
 

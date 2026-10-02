@@ -10,13 +10,13 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # Application
-    APP_NAME: str = "NEXORA API"
+    APP_NAME: str = "NEIMAN API"
     APP_VERSION: str = "0.1.0"
     ENVIRONMENT: Literal["development", "staging", "production"] = "development"
     DEBUG: bool = False
 
     # Database
-    DATABASE_URL: str = "sqlite+aiosqlite:///./nexora.db"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./NEIMAN.db"
     TEST_DATABASE_URL: str = "sqlite+aiosqlite:///:memory:"
 
     # Security

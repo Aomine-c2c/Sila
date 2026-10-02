@@ -1,5 +1,5 @@
 /**
- * NEXORA Organizational Memory API Client
+ * NEIMAN Organizational Memory API Client
  * Manages 10 memory domains, contextual assembly, permissions, and decision records.
  */
 

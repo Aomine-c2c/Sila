@@ -8,7 +8,7 @@
 
 ## 1. Evolution Safety & Boundary Control
 
-NEXORA avoids unrestricted, chaotic self-modification. Organizational evolution is strictly controlled:
+NEIMAN avoids unrestricted, chaotic self-modification. Organizational evolution is strictly controlled:
 
 ```
 OBSERVE (Multidimensional KPIs, rework rates, failure rates)

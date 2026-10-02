@@ -278,7 +278,7 @@ export default function BlueprintsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <Layers className="h-7 w-7 text-primary" />
-            NEXORA Company Blueprints
+            NEIMAN Company Blueprints
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Instantiate preconfigured autonomous organizations or synthesize custom companies via natural language.
@@ -289,33 +289,30 @@ export default function BlueprintsPage() {
         <div className="flex items-center gap-1 bg-secondary/40 p-1 rounded-xl border border-border">
           <button
             onClick={() => setActiveTab('catalog')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === 'catalog'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'catalog'
+              ? 'bg-primary text-primary-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+              }`}
           >
             <Building2 className="h-4 w-4" />
             Catalog ({blueprints.length})
           </button>
           <button
             onClick={() => setActiveTab('build-my-company')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === 'build-my-company'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'build-my-company'
+              ? 'bg-primary text-primary-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+              }`}
           >
             <Sparkles className="h-4 w-4 text-amber-300" />
             Build My Company
           </button>
           <button
             onClick={() => setActiveTab('import-export')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === 'import-export'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'import-export'
+              ? 'bg-primary text-primary-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+              }`}
           >
             <Upload className="h-4 w-4" />
             Import / Export / Template
@@ -329,7 +326,7 @@ export default function BlueprintsPage() {
       {activeTab === 'catalog' && (
         <div className="space-y-6">
           {/* Controls Bar */}
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-nexora-surface/60 border border-border p-3.5 rounded-xl">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-NEIMAN-surface/60 border border-border p-3.5 rounded-xl">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -349,11 +346,10 @@ export default function BlueprintsPage() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
-                    selectedCategory === cat
-                      ? 'bg-primary/20 text-primary border border-primary/40'
-                      : 'bg-secondary/30 text-muted-foreground hover:text-foreground hover:bg-secondary/60'
-                  }`}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${selectedCategory === cat
+                    ? 'bg-primary/20 text-primary border border-primary/40'
+                    : 'bg-secondary/30 text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+                    }`}
                 >
                   {cat}
                 </button>
@@ -365,10 +361,10 @@ export default function BlueprintsPage() {
           {isLoading ? (
             <div className="p-12 flex flex-col items-center justify-center text-muted-foreground">
               <RotateCw className="h-8 w-8 animate-spin text-primary mb-3" />
-              <p className="text-sm">Loading NEXORA blueprint catalog...</p>
+              <p className="text-sm">Loading NEIMAN blueprint catalog...</p>
             </div>
           ) : filteredBlueprints.length === 0 ? (
-            <div className="p-12 text-center bg-nexora-surface border border-border rounded-xl">
+            <div className="p-12 text-center bg-NEIMAN-surface border border-border rounded-xl">
               <p className="text-muted-foreground text-sm">No blueprints match your search criteria.</p>
             </div>
           ) : (
@@ -382,7 +378,7 @@ export default function BlueprintsPage() {
                 return (
                   <div
                     key={bp.id}
-                    className="flex flex-col justify-between bg-nexora-surface border border-border/80 hover:border-primary/50 transition-all rounded-xl p-5 shadow-sm hover:shadow-md group"
+                    className="flex flex-col justify-between bg-NEIMAN-surface border border-border/80 hover:border-primary/50 transition-all rounded-xl p-5 shadow-sm hover:shadow-md group"
                   >
                     <div>
                       {/* Top Header */}
@@ -501,7 +497,7 @@ export default function BlueprintsPage() {
       {activeTab === 'build-my-company' && (
         <div className="space-y-6 max-w-5xl mx-auto">
           {/* Hero Banner */}
-          <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-nexora-surface to-background p-6">
+          <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-NEIMAN-surface to-background p-6">
             <div className="flex items-start gap-4">
               <div className="p-3 rounded-xl bg-primary/20 text-primary border border-primary/30">
                 <Sparkles className="h-6 w-6 text-amber-300 animate-pulse" />
@@ -509,7 +505,7 @@ export default function BlueprintsPage() {
               <div className="flex-1">
                 <h2 className="text-lg font-bold text-foreground">BUILD MY COMPANY</h2>
                 <p className="text-xs text-muted-foreground mt-1 max-w-2xl leading-relaxed">
-                  Describe any business or organization in plain English. NEXORA will synthesize complete departments,
+                  Describe any business or organization in plain English. NEIMAN will synthesize complete departments,
                   roles, specialized agents, workflows, operational policies, risk mitigations, and budget estimates for
                   your review before activation.
                 </p>
@@ -601,17 +597,16 @@ export default function BlueprintsPage() {
 
           {/* Proposal Review Section */}
           {proposal && (
-            <div className="bg-nexora-surface border border-primary/40 rounded-2xl p-6 space-y-6 shadow-lg animate-in fade-in">
+            <div className="bg-NEIMAN-surface border border-primary/40 rounded-2xl p-6 space-y-6 shadow-lg animate-in fade-in">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-border pb-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
-                      proposal.status === 'INSTANTIATED'
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                        : proposal.status === 'SIMULATED'
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${proposal.status === 'INSTANTIATED'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                      : proposal.status === 'SIMULATED'
                         ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
                         : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                    }`}>
+                      }`}>
                       {proposal.status === 'INSTANTIATED' ? 'INSTANTIATED LIVE' : proposal.status === 'SIMULATED' ? 'SIMULATION VALIDATED' : 'PROPOSED (PENDING REVIEW)'}
                     </span>
                     <span className="text-xs text-muted-foreground font-mono">ID: {proposal.id.slice(0, 8)}...</span>
@@ -1014,7 +1009,7 @@ export default function BlueprintsPage() {
       {activeTab === 'import-export' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
           {/* Card 1: Import Blueprint */}
-          <div className="bg-nexora-surface border border-border rounded-xl p-5 space-y-4">
+          <div className="bg-NEIMAN-surface border border-border rounded-xl p-5 space-y-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
                 <Upload className="h-5 w-5" />
@@ -1050,7 +1045,7 @@ export default function BlueprintsPage() {
           </div>
 
           {/* Card 2: Save Active Company as Template */}
-          <div className="bg-nexora-surface border border-border rounded-xl p-5 space-y-4">
+          <div className="bg-NEIMAN-surface border border-border rounded-xl p-5 space-y-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <Bookmark className="h-5 w-5" />
@@ -1143,7 +1138,7 @@ export default function BlueprintsPage() {
       {/* ======================================================== */}
       {instantiateModalBp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-nexora-surface border border-border rounded-2xl p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-md bg-NEIMAN-surface border border-border rounded-2xl p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
                 <Play className="h-4 w-4 text-primary fill-current" />
@@ -1212,7 +1207,7 @@ export default function BlueprintsPage() {
       {/* ======================================================== */}
       {instantiationSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-nexora-surface border border-emerald-500/50 rounded-2xl p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-lg bg-NEIMAN-surface border border-emerald-500/50 rounded-2xl p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                 <CheckCircle2 className="h-6 w-6" />
@@ -1259,7 +1254,7 @@ export default function BlueprintsPage() {
       {/* ======================================================== */}
       {inspectBlueprint && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-nexora-surface border border-border rounded-2xl p-6 shadow-2xl space-y-6">
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-NEIMAN-surface border border-border rounded-2xl p-6 shadow-2xl space-y-6">
             {/* Modal Header */}
             <div className="flex items-start justify-between border-b border-border pb-4">
               <div className="flex items-center gap-3">
@@ -1515,7 +1510,7 @@ export default function BlueprintsPage() {
             <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs space-y-1.5">
               <div className="font-bold text-amber-300 flex items-center gap-1.5">
                 <AlertTriangle className="h-4 w-4" />
-                NEXORA Autonomous Safety Mandate
+                NEIMAN Autonomous Safety Mandate
               </div>
               <p className="text-amber-200/90 leading-relaxed">
                 An AI organization is never silently instantiated from natural language. You are explicitly reviewing and authorizing

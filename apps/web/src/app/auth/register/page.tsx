@@ -68,7 +68,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="auth-stage relative min-h-screen bg-nexora-dark flex items-center justify-center overflow-hidden py-12">
+    <div className="auth-stage relative min-h-screen bg-NEIMAN-dark flex items-center justify-center overflow-hidden py-12">
       {/* Background */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.03]"
@@ -97,7 +97,7 @@ export default function RegisterPage() {
             N
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">NEXORA</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">NEIMAN</h1>
             <p className="text-sm text-muted-foreground">Autonomous Organization OS</p>
           </div>
         </div>
@@ -133,9 +133,8 @@ export default function RegisterPage() {
                       id="register-first-name"
                       type="text"
                       autoComplete="given-name"
-                      className={`w-full rounded-lg border bg-secondary/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
-                        errors.first_name ? 'border-destructive' : 'border-input'
-                      }`}
+                      className={`w-full rounded-lg border bg-secondary/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${errors.first_name ? 'border-destructive' : 'border-input'
+                        }`}
                       placeholder="Alice"
                       {...register('first_name')}
                     />
@@ -154,9 +153,8 @@ export default function RegisterPage() {
                       id="register-last-name"
                       type="text"
                       autoComplete="family-name"
-                      className={`w-full rounded-lg border bg-secondary/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
-                        errors.last_name ? 'border-destructive' : 'border-input'
-                      }`}
+                      className={`w-full rounded-lg border bg-secondary/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${errors.last_name ? 'border-destructive' : 'border-input'
+                        }`}
                       placeholder="Smith"
                       {...register('last_name')}
                     />
@@ -178,9 +176,8 @@ export default function RegisterPage() {
                     id="register-username"
                     type="text"
                     autoComplete="username"
-                    className={`w-full rounded-lg border bg-secondary/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
-                      errors.username ? 'border-destructive' : 'border-input'
-                    }`}
+                    className={`w-full rounded-lg border bg-secondary/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${errors.username ? 'border-destructive' : 'border-input'
+                      }`}
                     placeholder="alice_smith"
                     {...register('username')}
                   />
@@ -204,9 +201,8 @@ export default function RegisterPage() {
                     id="register-email"
                     type="email"
                     autoComplete="email"
-                    className={`w-full rounded-lg border bg-secondary/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
-                      errors.email ? 'border-destructive' : 'border-input'
-                    }`}
+                    className={`w-full rounded-lg border bg-secondary/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${errors.email ? 'border-destructive' : 'border-input'
+                      }`}
                     placeholder="you@company.com"
                     {...register('email')}
                   />
@@ -231,9 +227,8 @@ export default function RegisterPage() {
                       id="register-password"
                       type={showPassword ? 'text' : 'password'}
                       autoComplete="new-password"
-                      className={`w-full rounded-lg border bg-secondary/50 px-3 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
-                        errors.password ? 'border-destructive' : 'border-input'
-                      }`}
+                      className={`w-full rounded-lg border bg-secondary/50 px-3 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${errors.password ? 'border-destructive' : 'border-input'
+                        }`}
                       placeholder="••••••••"
                       {...register('password')}
                     />
@@ -270,9 +265,8 @@ export default function RegisterPage() {
                     id="register-confirm"
                     type="password"
                     autoComplete="new-password"
-                    className={`w-full rounded-lg border bg-secondary/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
-                      errors.confirm_password ? 'border-destructive' : 'border-input'
-                    }`}
+                    className={`w-full rounded-lg border bg-secondary/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${errors.confirm_password ? 'border-destructive' : 'border-input'
+                      }`}
                     placeholder="••••••••"
                     {...register('confirm_password')}
                   />

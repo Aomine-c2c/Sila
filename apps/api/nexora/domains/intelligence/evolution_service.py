@@ -475,7 +475,7 @@ class EvolutionService:
         return list(res.scalars().all())
 
     # -------------------------------------------------------------
-    # 4. NEXORA SIMULATION LAB (Branching, What-If, Benchmark & Promotion)
+    # 4. NEIMAN SIMULATION LAB (Branching, What-If, Benchmark & Promotion)
     # -------------------------------------------------------------
     async def create_simulation_scenario(
         self, company_id: uuid.UUID, data: SimulationScenarioCreate
@@ -757,7 +757,7 @@ class EvolutionService:
                 f"after approval by {req.approver}. Pre-promotion snapshot: {snapshot.id}. "
                 f"Config applied: {sim_config}. Notes: {req.notes or 'None'}"
             ),
-            source="NEXORA_SIMULATION_LAB",
+            source="NEIMAN_SIMULATION_LAB",
             provenance_type="PROMOTED_SIMULATION",
             confidence=0.95,
             retention_policy=RetentionPolicy.PERMANENT.value,

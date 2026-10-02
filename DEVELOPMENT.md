@@ -16,7 +16,7 @@ Preserve domain boundaries, provider neutrality, tenant isolation, least privile
 
 ## Local frontend UI preview
 
-The ignored local apps/web/.env.development.local file enables NEXT_PUBLIC_NEXORA_DEV_AUTH_BYPASS for the Next.js development server. Open /dashboard to inspect protected UI routes without signing in.
+The ignored local apps/web/.env.development.local file enables NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS for the Next.js development server. Open /dashboard to inspect protected UI routes without signing in.
 
 AuthGuard allows this only when both NODE_ENV=development and the explicit flag are present. Production builds cannot enable the bypass. Every dashboard route uses the same read-only sample organization and route-specific fixtures, with a persistent synthetic-data notice. Fixtures live in `apps/web/src/lib/api/controlRoomPreview.ts` and `apps/web/src/lib/api/previewFixtures.ts`; they are not persisted, and preview API requests return locally without network access. Writes and sign-out are blocked in preview mode.
 

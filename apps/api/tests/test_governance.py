@@ -1,5 +1,5 @@
 """
-Tests for NEXORA's Organizational Governance Layer.
+Tests for NEIMAN's Organizational Governance Layer.
 
 Covers:
 - Company Constitution (mission, values, operating principles, prohibited actions, approval requirements, security/financial/data rules, autonomy boundaries, escalation rules)

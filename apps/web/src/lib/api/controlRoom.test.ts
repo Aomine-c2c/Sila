@@ -6,17 +6,17 @@ describe('controlRoomApi.getOperationalState', () => {
 
   it('serves only the labeled synthetic fixture in explicit development preview without network access', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
-    const originalBypass = process.env.NEXT_PUBLIC_NEXORA_DEV_AUTH_BYPASS;
+    const originalBypass = process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS;
     Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', configurable: true });
-    process.env.NEXT_PUBLIC_NEXORA_DEV_AUTH_BYPASS = 'true';
+    process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS = 'true';
     const fetchSpy = jest.fn();
     Object.defineProperty(global, 'fetch', { value: fetchSpy, configurable: true });
 
     try {
-      const result = await controlRoomApi.getOperationalState('preview-company-nexora');
+      const result = await controlRoomApi.getOperationalState('preview-company-NEIMAN');
 
       expect(result).toEqual(getControlRoomPreviewState());
-      expect(result.company_id).toBe('preview-company-nexora');
+      expect(result.company_id).toBe('preview-company-NEIMAN');
       expect(result.agents).toHaveLength(4);
       expect(result.tasks.map((task) => task.status)).toContain('BLOCKED');
       expect(result.providers.map((provider) => provider.provider)).toEqual(['anthropic', 'google', 'local']);
@@ -24,8 +24,8 @@ describe('controlRoomApi.getOperationalState', () => {
     } finally {
       if (originalNodeEnv === undefined) delete (process.env as NodeJS.ProcessEnv & { NODE_ENV?: string }).NODE_ENV;
       else Object.defineProperty(process.env, 'NODE_ENV', { value: originalNodeEnv, configurable: true });
-      if (originalBypass === undefined) delete process.env.NEXT_PUBLIC_NEXORA_DEV_AUTH_BYPASS;
-      else process.env.NEXT_PUBLIC_NEXORA_DEV_AUTH_BYPASS = originalBypass;
+      if (originalBypass === undefined) delete process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS;
+      else process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS = originalBypass;
     }
   });
 

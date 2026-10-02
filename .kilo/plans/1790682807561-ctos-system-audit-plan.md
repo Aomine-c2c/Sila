@@ -1,4 +1,4 @@
-# NEXORA CTO System Audit & Implementation Plan
+# NEIMAN CTO System Audit & Implementation Plan
 
 **Audit Date:** 2026-09-30
 **Scope:** `apps/api` (FastAPI/Python 3.11) + `apps/web` (Next.js 14)
@@ -95,6 +95,17 @@
 
 ## Implementation Plan
 
+### Priority 0 — Frontend Fix: TypeScript Compilation Error (Blocking)
+
+**Task 0.1: Fix `department_id` reference on `Project` type in resources dashboard**
+- File: `apps/web/src/app/dashboard/resources/page.tsx:1173`
+- Error: `p.department_id` — `Project` interface (`apps/web/src/lib/api/projects.ts:18-35`) and backend model (`apps/api/nexora/domains/projects/models.py:14-44`) do NOT define `department_id`
+- Root cause: The filter on line 1173 was copied from the Agent filter (line 1191) which correctly uses `department_id`, but `Project` has no department association (only `company_id` and `owner_id`)
+- Fix: Remove `.filter()` call on line 1173 — show all projects regardless of department selection. Department scoping does not apply to projects.
+- Corrected line 1173: `{projects.map((p) => (`
+- Verification: Run `npx tsc --noEmit` in `apps/web` — should eliminate TS2339 error. The Agent filter on line 1191 remains unchanged since `Agent` type (`agents.ts:39`) does have `department_id`
+- Risk: None — projects were already visible in all department selections; the filter was dead code (TypeScript would error at compile, but runtime JS would silently return `undefined` for the missing field, making the filter a no-op anyway)
+
 ### Priority 1 — Security & Config Hardening (Safe, High-Impact)
 
 **Task 1.1: Fix `.env.example` naming inconsistencies**
@@ -103,29 +114,29 @@
 - Rationale: Config uses different field names; mismatched env vars mean adapters never activate.
 
 **Task 1.2: Add audit salt to environment configuration**
-- File: `apps/api/nexora/config.py` — add `AUDIT_SECRET_SALT: str` field with warning default
-- File: `apps/api/nexora/core/security.py:287` — replace hardcoded salt with `get_settings().AUDIT_SECRET_SALT`
+- File: `apps/api/NEIMAN/config.py` — add `AUDIT_SECRET_SALT: str` field with warning default
+- File: `apps/api/NEIMAN/core/security.py:287` — replace hardcoded salt with `get_settings().AUDIT_SECRET_SALT`
 - Risk: Backward compatible (default matches existing value). Must avoid circular import (security.py is imported by many modules; config.py should not import security.py).
 
 **Task 1.3: Add security response headers middleware**
-- File: `apps/api/nexora/middleware.py` — add `SecurityHeadersMiddleware(BaseHTTPMiddleware)`
+- File: `apps/api/NEIMAN/middleware.py` — add `SecurityHeadersMiddleware(BaseHTTPMiddleware)`
 - Headers: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Strict-Transport-Security` (production only), `Content-Security-Policy: default-src 'self'`
-- Register in: `apps/api/nexora/main.py` — `app.add_middleware(SecurityHeadersMiddleware)`
+- Register in: `apps/api/NEIMAN/main.py` — `app.add_middleware(SecurityHeadersMiddleware)`
 - Risk: Low. CSP should not break API-only responses. Static UI at `/ui/*` loads from same origin.
 
 **Task 1.4: Tighten CORS**
-- File: `apps/api/nexora/main.py:77-83`
+- File: `apps/api/NEIMAN/main.py:77-83`
 - Change: `allow_methods=["*"]` → `["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]`; `allow_headers=["*"]` → `["Authorization", "Content-Type", "X-Request-ID"]`
 
 **Task 1.5: Add rate-limiting middleware for auth endpoints**
-- File: `apps/api/nexora/middleware.py` — add `RateLimitMiddleware` using in-memory sliding window counter (IP-keyed dict with TTL)
+- File: `apps/api/NEIMAN/middleware.py` — add `RateLimitMiddleware` using in-memory sliding window counter (IP-keyed dict with TTL)
 - Config: Add `RATE_LIMIT_AUTH_REQUESTS: int = 20` and `RATE_LIMIT_AUTH_WINDOW: int = 60` to `config.py`
 - Register: Apply only to paths starting with `/api/v1/auth/`
 - Risk: Low but must verify `test_auth.py` tests don't hit the limit (tests make ~3-4 auth calls per test, fresh client per test — should be safe). Add ability to disable via `DISABLE_AUTH_RATE_LIMIT` or `DEBUG` mode in tests.
 - Note: In-memory limiter is sufficient for single-instance deployment. Document that Redis-backed limiter is needed for multi-instance.
 
 **Task 1.6: Enhance `/health` endpoint**
-- File: `apps/api/nexora/main.py:155-162`
+- File: `apps/api/NEIMAN/main.py:155-162`
 - Add: DB ping (`select 1` via async session), Redis connectivity check, intelligence circuit breaker states
 - Return structured JSON: `{"status": "ok", "components": {"database": "ok", "redis": "ok", "providers": {"anthropic": "CLOSED", ...}}}`
 - Risk: Low — additive. Need DB dependency injection for health check.
@@ -133,21 +144,21 @@
 ### Priority 2 — Naming Clarity & Data Integrity (Medium-Impact)
 
 **Task 2.1: Rename adapter classes**
-- File: `apps/api/nexora/domains/intelligence/adapters/base.py`
+- File: `apps/api/NEIMAN/domains/intelligence/adapters/base.py`
 - Rename: `OpenAIMockAdapter` → `OpenAILiveAdapter`, `AnthropicMockAdapter` → `AnthropicLiveAdapter`, `GeminiMockAdapter` → `GeminiLiveAdapter`, `LocalModelMockAdapter` → `LocalModelLiveAdapter`
 - Update `ModelAdapterRegistry.__init__` references
 - Update imports in: `tests/test_live_intelligence_adapters.py`
 - Risk: Low — internal naming only.
 
 **Task 2.2: Replace hardcoded data in resource control center**
-- File: `apps/api/nexora/domains/resources/service.py:327-359`
+- File: `apps/api/NEIMAN/domains/resources/service.py:327-359`
 - `expensive_tasks`: Query top 5 from `ResourceUsageRecord` (or `ModelRequestLog`) grouped by task, aggregated by cost
 - `provider_usage`: Query `ModelRequestLog` grouped by `selected_provider_name`, aggregate tokens/cost/request_count
 - If no data: return empty lists `[]` instead of fabricated entries
 - Verify: `test_resources.py:262-286` only checks that `expensive_tasks` and `provider_usage` keys exist (not their content) — will still pass
 
 **Task 2.3: Fix evolution summary to avoid synthetic data**
-- File: `apps/api/nexora/domains/intelligence/evolution_service.py:129-194`
+- File: `apps/api/NEIMAN/domains/intelligence/evolution_service.py:129-194`
 - When no `PerformanceMetricRecord` rows exist for a dimension: return zeroed metrics with `observations_count: 0`
 - When metrics exist: aggregate only from real data; remove hardcoded `avg_cycle_time_ms=1420.0`, `resource_efficiency_score=0.88`, `quality_score=0.94`, etc.
 - Check `evolution/page.tsx` — frontend uses `?? 95.0`, `?? 5.0`, `?? 0.88`, `?? 99.4` fallbacks, so zeroed backend data renders gracefully
@@ -155,7 +166,7 @@
 ### Priority 3 — Concurrency Safety (Medium-Risk)
 
 **Task 3.1: Add transactional safety to resource pool allocation**
-- File: `apps/api/nexora/domains/resources/service.py` (`submit_and_evaluate_request`)
+- File: `apps/api/NEIMAN/domains/resources/service.py` (`submit_and_evaluate_request`)
 - Wrap the evaluate → allocate → update-capacity flow in a transaction with `SELECT FOR UPDATE` (`with_for_update`) on pool rows
 - Risk: Medium — potential deadlocks. Must review `repository.py` methods for existing transaction handling.
 - Validation: `test_resources.py:63-107` tests approval flow; must still pass.
@@ -190,7 +201,7 @@ Rationale: Security & config gaps are production blockers → fix first. Then na
 |------|---------|--------|
 | After all tasks | `cd apps/api && uv run pytest tests/ -v --tb=short` | All 125 tests pass, including 9 security tests |
 | After Task 1.1 | `grep -E "GEMINI_API_KEY\|OLLAMA_HOST" .env.example` | Names match `config.py` |
-| After Task 1.2 | `grep "AUDIT_SECRET_SALT" nexora/core/security.py` | Salt sourced from config |
+| After Task 1.2 | `grep "AUDIT_SECRET_SALT" NEIMAN/core/security.py` | Salt sourced from config |
 | After Task 1.3 | `curl -I http://localhost:8000/` (dev) | Response includes security headers |
 | After Task 1.5 | `uv run pytest tests/test_auth.py -v` | Auth tests still pass (no rate limit conflicts) |
 | After Task 1.6 | `curl http://localhost:8000/health` | Returns component status JSON |
@@ -198,7 +209,7 @@ Rationale: Security & config gaps are production blockers → fix first. Then na
 | After Task 2.2 | Hit `/resources/control-center` for new company | `expensive_tasks: []`, `provider_usage: []` |
 | After Task 3.1 | Run concurrent resource request test | No over-allocation (pool capacity stays within bounds) |
 | After Task 4.1 | `cd apps/web && npx tsc --noEmit` | Zero TypeScript errors |
-| Lint check | `cd apps/api && uv run ruff check nexora/ tests/` | Zero lint errors |
+| Lint check | `cd apps/api && uv run ruff check NEIMAN/ tests/` | Zero lint errors |
 
 ---
 

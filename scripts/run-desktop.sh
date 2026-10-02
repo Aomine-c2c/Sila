@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# NEXORA Desktop Runner — Tauri Execution & Orchestration Script
+# NEIMAN Desktop Runner — Tauri Execution & Orchestration Script
 # ==============================================================================
-# Runs the full NEXORA Autonomous Organization OS desktop experience:
+# Runs the full NEIMAN Autonomous Organization OS desktop experience:
 # 1. Validates host prerequisites (Cargo/Rust, Node.js, WebKit/GTK).
 # 2. Checks/starts the background FastAPI backend (port 8000) if not running.
 # 3. Launches the Tauri desktop application hosting the Next.js web workspace.
@@ -19,7 +19,7 @@ WEB_PORT="${WEB_PORT:-3000}"
 API_URL="http://127.0.0.1:${API_PORT}"
 
 echo "================================================================="
-echo "   NEXORA — Autonomous Organization OS (Tauri Desktop Host)      "
+echo "   NEIMAN — Autonomous Organization OS (Tauri Desktop Host)      "
 echo "================================================================="
 
 # ------------------------------------------------------------------------------
@@ -45,7 +45,7 @@ command -v uv >/dev/null 2>&1 || {
 API_PID=""
 cleanup() {
     echo ""
-    echo "[*] Shutting down NEXORA Desktop session..."
+    echo "[*] Shutting down NEIMAN Desktop session..."
     if [ -n "${API_PID}" ] && kill -0 "${API_PID}" 2>/dev/null; then
         echo "[*] Stopping backend API server (PID: ${API_PID})..."
         kill "${API_PID}" 2>/dev/null || true
@@ -54,16 +54,16 @@ cleanup() {
 }
 trap cleanup SIGINT SIGTERM EXIT
 
-echo "[*] Checking if NEXORA API backend is running on port ${API_PORT}..."
+echo "[*] Checking if NEIMAN API backend is running on port ${API_PORT}..."
 if curl -s --connect-timeout 1 "${API_URL}/api/v1/health" >/dev/null 2>&1 || curl -s --connect-timeout 1 "${API_URL}/health" >/dev/null 2>&1; then
     echo "[+] Found existing backend active at ${API_URL}"
 else
     echo "[*] Starting background FastAPI backend on port ${API_PORT}..."
     if command -v uv >/dev/null 2>&1; then
-        (cd "${API_DIR}" && uv run uvicorn nexora.main:app --host 127.0.0.1 --port "${API_PORT}" --log-level warning) &
+        (cd "${API_DIR}" && uv run uvicorn NEIMAN.main:app --host 127.0.0.1 --port "${API_PORT}" --log-level warning) &
         API_PID=$!
     else
-        (cd "${API_DIR}" && python3 -m uvicorn nexora.main:app --host 127.0.0.1 --port "${API_PORT}" --log-level warning) &
+        (cd "${API_DIR}" && python3 -m uvicorn NEIMAN.main:app --host 127.0.0.1 --port "${API_PORT}" --log-level warning) &
         API_PID=$!
     fi
 

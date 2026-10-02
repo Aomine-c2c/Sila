@@ -12,6 +12,7 @@ jest.mock('@/lib/api/intelligence', () => ({
     generate: jest.fn(),
     updatePolicy: jest.fn(),
     resetCircuitBreakers: jest.fn(),
+    probeProvider: jest.fn(),
   },
 }));
 
@@ -188,7 +189,7 @@ function renderPage() {
   );
 }
 
-describe('NEXORA Intelligence Exchange UI', () => {
+describe('NEIMAN Intelligence Exchange UI', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     useAuthStore.getState().setActiveCompany(mockCompany);
@@ -201,9 +202,9 @@ describe('NEXORA Intelligence Exchange UI', () => {
   it('renders Intelligence Exchange title and the interactive Architecture Topology Diagram', async () => {
     renderPage();
 
-    expect(await screen.findByText('NEXORA Intelligence Exchange')).toBeInTheDocument();
-    expect(screen.getByText('NEXORA Intelligence Exchange Architecture')).toBeInTheDocument();
-    expect(screen.getByText('NEXORA ROUTING ENGINE')).toBeInTheDocument();
+    expect(await screen.findByText('NEIMAN Intelligence Exchange')).toBeInTheDocument();
+    expect(screen.getByText('NEIMAN Intelligence Exchange Architecture')).toBeInTheDocument();
+    expect(screen.getByText('NEIMAN ROUTING ENGINE')).toBeInTheDocument();
 
     // Verify Upstream Providers row in SVG Diagram
     expect(screen.getByText('Anthropic Claude')).toBeInTheDocument();
@@ -282,5 +283,40 @@ describe('NEXORA Intelligence Exchange UI', () => {
     await waitFor(() => {
       expect(intelligenceApi.updatePolicy).toHaveBeenCalled();
     });
+  });
+
+  it('allows live ping probing and fault injection simulation on providers', async () => {
+    (intelligenceApi.probeProvider as jest.Mock).mockResolvedValue({
+      provider_name: 'anthropic',
+      is_healthy: true,
+      circuit_breaker_status: 'CLOSED',
+      consecutive_failures: 0,
+      measured_latency_ms: 142,
+      probe_timestamp: '2026-10-02T10:00:00Z',
+      detail: 'Provider responded successfully (142ms)',
+    });
+
+    renderPage();
+
+    const providersTab = await screen.findByRole('button', { name: /Provider Health & Adapters/i });
+    fireEvent.click(providersTab);
+
+    expect(await screen.findByText('Active Provider Health Directory & Adapter Telemetry')).toBeInTheDocument();
+
+    const probeButtons = screen.getAllByRole('button', { name: /Ping Probe/i });
+    expect(probeButtons.length).toBeGreaterThan(0);
+
+    fireEvent.click(probeButtons[0]);
+
+    await waitFor(() => {
+      expect(intelligenceApi.probeProvider).toHaveBeenCalledWith(
+        mockCompany.id,
+        'anthropic',
+        undefined
+      );
+    });
+
+    expect(await screen.findByText('142ms')).toBeInTheDocument();
+    expect(screen.getByText('Provider responded successfully (142ms)')).toBeInTheDocument();
   });
 });

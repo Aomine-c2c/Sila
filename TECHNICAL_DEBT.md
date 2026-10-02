@@ -1,4 +1,4 @@
-# TECHNICAL DEBT REGISTER — NEXORA
+# TECHNICAL DEBT REGISTER — NEIMAN
 
 **Audit Date:** 2026-09-29  
 **Status:** Active Tracking & Remediation Register  

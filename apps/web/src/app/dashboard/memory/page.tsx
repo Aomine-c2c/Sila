@@ -165,7 +165,7 @@ export default function OrganizationalMemoryPage() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               <Brain className="h-3.5 w-3.5" />
-              NEXORA Organizational Memory System
+              NEIMAN Organizational Memory System
             </div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
               Institutional Knowledge & Context Assembly
@@ -198,11 +198,10 @@ export default function OrganizationalMemoryPage() {
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
         <button
           onClick={() => setSelectedDomain('')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors border ${
-            selectedDomain === ''
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors border ${selectedDomain === ''
               ? 'bg-primary text-primary-foreground border-primary'
               : 'bg-card border-border text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           All Domains ({memories.length})
         </button>
@@ -210,11 +209,10 @@ export default function OrganizationalMemoryPage() {
           <button
             key={d.id}
             onClick={() => setSelectedDomain(selectedDomain === d.id ? '' : d.id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors border ${
-              selectedDomain === d.id
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors border ${selectedDomain === d.id
                 ? 'bg-primary text-primary-foreground border-primary'
                 : 'bg-card border-border text-muted-foreground hover:text-foreground'
-            }`}
+              }`}
           >
             {d.label}
           </button>
@@ -225,11 +223,10 @@ export default function OrganizationalMemoryPage() {
       <div className="flex border-b border-border gap-6">
         <button
           onClick={() => setActiveTab('knowledge')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
-            activeTab === 'knowledge'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'knowledge'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <BookOpen className="h-4 w-4" />
           Searchable Knowledge Base
@@ -237,11 +234,10 @@ export default function OrganizationalMemoryPage() {
 
         <button
           onClick={() => setActiveTab('assembly')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
-            activeTab === 'assembly'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'assembly'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <Sparkles className="h-4 w-4" />
           Task Context Assembly Engine
@@ -249,11 +245,10 @@ export default function OrganizationalMemoryPage() {
 
         <button
           onClick={() => setActiveTab('decisions')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
-            activeTab === 'decisions'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'decisions'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <Scale className="h-4 w-4" />
           Decision Memory Records ({decisions.length})
@@ -261,11 +256,10 @@ export default function OrganizationalMemoryPage() {
 
         <button
           onClick={() => setActiveTab('add')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
-            activeTab === 'add'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'add'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <Plus className="h-4 w-4" />
           Ingest Knowledge

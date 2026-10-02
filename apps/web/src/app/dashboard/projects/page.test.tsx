@@ -56,7 +56,7 @@ const mockProjects = [
   {
     id: 'proj-1',
     company_id: 'comp-1',
-    name: 'NEXORA Operating System Upgrade',
+    name: 'NEIMAN Operating System Upgrade',
     objective: 'Modernize core microkernel and autonomous agent boundaries',
     status: 'ACTIVE',
     budget: 1500,
@@ -169,7 +169,7 @@ describe('Projects & Task Management Experience', () => {
   it('renders project overview, objective, KPIs, and progress', async () => {
     renderPage();
 
-    expect(await screen.findByText('NEXORA Operating System Upgrade')).toBeInTheDocument();
+    expect(await screen.findByText('NEIMAN Operating System Upgrade')).toBeInTheDocument();
     expect(screen.getByText('Modernize core microkernel and autonomous agent boundaries')).toBeInTheDocument();
 
     // Check KPIs
@@ -211,7 +211,7 @@ describe('Projects & Task Management Experience', () => {
   it('switches between project sub-tabs: Milestones, Agent Assignments, Activity, Resources', async () => {
     renderPage();
 
-    expect(await screen.findByText('NEXORA Operating System Upgrade')).toBeInTheDocument();
+    expect(await screen.findByText('NEIMAN Operating System Upgrade')).toBeInTheDocument();
 
     // Milestones Tab
     const milestonesTab = screen.getByRole('button', { name: /Milestones/i });

@@ -8,7 +8,7 @@
 
 ## 1. Resource Pools & Quotas
 
-The Resource Engine (`nexora.domains.resources`) tracks and enforces physical and virtual capacities across companies:
+The Resource Engine (`NEIMAN.domains.resources`) tracks and enforces physical and virtual capacities across companies:
 
 - **Compute Cluster (CPU):** Worker thread concurrency.
 - **Cluster Memory (RAM):** Memory headroom monitoring.

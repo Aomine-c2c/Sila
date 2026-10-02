@@ -2,15 +2,15 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "nexora-api.fullname" . }}-hpa
+  name: {{ include "NEIMAN-api.fullname" . }}-hpa
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "nexora-api.labels" . | nindent 4 }}
+    {{- include "NEIMAN-api.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "nexora-api.fullname" . }}
+    name: {{ include "NEIMAN-api.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
   metrics:

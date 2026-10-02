@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * NEXORA Client Providers
+ * NEIMAN Client Providers
  * Sets up TanStack Query and configures the API client with the auth store token.
  */
 
@@ -27,10 +27,14 @@ const queryClient = new QueryClient({
   },
 });
 
+import { ThemeProvider } from '@/components/ThemeProvider';
+
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+    <ThemeProvider defaultTheme="light">
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

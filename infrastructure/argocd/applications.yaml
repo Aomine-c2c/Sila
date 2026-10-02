@@ -1,16 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nexora-api
+  name: NEIMAN-api
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://github.com/ORG/nexora.git
+    repoURL: https://github.com/ORG/NEIMAN.git
     targetRevision: HEAD
-    path: infrastructure/helm/nexora-api
+    path: infrastructure/helm/NEIMAN-api
     helm:
       valueFiles:
         - values.yaml
@@ -19,7 +19,7 @@ spec:
           value: "v1.0.0"
   destination:
     server: https://kubernetes.default.svc
-    namespace: nexora
+    namespace: NEIMAN
   syncPolicy:
     automated:
       prune: true
@@ -44,16 +44,16 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nexora-web
+  name: NEIMAN-web
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://github.com/ORG/nexora.git
+    repoURL: https://github.com/ORG/NEIMAN.git
     targetRevision: HEAD
-    path: infrastructure/helm/nexora-web
+    path: infrastructure/helm/NEIMAN-web
     helm:
       valueFiles:
         - values.yaml
@@ -62,7 +62,7 @@ spec:
           value: "v1.0.0"
   destination:
     server: https://kubernetes.default.svc
-    namespace: nexora
+    namespace: NEIMAN
   syncPolicy:
     automated:
       prune: true
@@ -87,14 +87,14 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nexora-monitoring
+  name: NEIMAN-monitoring
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://github.com/ORG/nexora.git
+    repoURL: https://github.com/ORG/NEIMAN.git
     targetRevision: HEAD
     path: infrastructure/helm/monitoring
     helm:
@@ -102,7 +102,7 @@ spec:
         - values.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: nexora-monitoring
+    namespace: NEIMAN-monitoring
   syncPolicy:
     automated:
       prune: true

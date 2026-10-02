@@ -1,4 +1,4 @@
-"""Pydantic schemas for NEXORA Organizational Governance Layer."""
+"""Pydantic schemas for NEIMAN Organizational Governance Layer."""
 
 import uuid
 from datetime import datetime

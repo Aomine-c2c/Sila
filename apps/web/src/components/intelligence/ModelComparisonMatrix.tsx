@@ -91,8 +91,12 @@ export function ModelComparisonMatrix({
             Factual Model Capabilities & Measurable Performance Benchmark
           </h2>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            Objective benchmarks: measured round-trip latencies, verified token capacity, cost schedules, and tool integration.
+            Objective benchmarks: measured round-trip latencies, verified token capacity, cost schedules, and tool integration. Zero arbitrary rankings.
           </p>
+          <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-secondary/80 border border-border/80 text-[10px] font-mono text-muted-foreground">
+            <Info className="h-3 w-3 text-primary" />
+            <span>Factual configuration & empirical measurements. Sorted objectively by criteria without subjective scores.</span>
+          </div>
         </div>
 
         {/* Filter Controls */}

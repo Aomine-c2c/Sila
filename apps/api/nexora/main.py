@@ -1,5 +1,5 @@
 """
-NEXORA API — Main Application Entry Point.
+NEIMAN API — Main Application Entry Point.
 
 Wires together all domain routers, middleware, and lifecycle events.
 """
@@ -53,9 +53,9 @@ logger = structlog.get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup and shutdown lifecycle."""
-    logger.info("nexora_startup", environment=settings.ENVIRONMENT, version=settings.APP_VERSION)
+    logger.info("NEIMAN_startup", environment=settings.ENVIRONMENT, version=settings.APP_VERSION)
     yield
-    logger.info("nexora_shutdown")
+    logger.info("NEIMAN_shutdown")
 
 
 def create_app() -> FastAPI:
@@ -63,7 +63,7 @@ def create_app() -> FastAPI:
         title=settings.APP_NAME,
         version=settings.APP_VERSION,
         description=(
-            "NEXORA — Autonomous Organization OS\n\n"
+            "NEIMAN — Autonomous Organization OS\n\n"
             "The AI-native platform for organizational intelligence and automation."
         ),
         docs_url="/api/docs",
@@ -142,7 +142,7 @@ def create_app() -> FastAPI:
         @app.get(
             "/ui/workflows",
             tags=["UI"],
-            summary="NEXORA Workflow Observability & Execution Engine UI",
+            summary="NEIMAN Workflow Observability & Execution Engine UI",
         )
         async def workflows_ui():
             return FileResponse(static_dir / "workflow_dashboard.html")
@@ -163,7 +163,7 @@ def create_app() -> FastAPI:
 
     @app.get("/", include_in_schema=False)
     async def root():
-        return {"message": "NEXORA API", "docs": "/api/docs", "ui": "/ui/agents"}
+        return {"message": "NEIMAN API", "docs": "/api/docs", "ui": "/ui/agents"}
 
     return app
 

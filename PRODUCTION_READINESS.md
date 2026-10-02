@@ -19,7 +19,7 @@
 
 | Pillar | Current State | Production Requirement | Action / Status |
 | :--- | :--- | :--- | :--- |
-| **Database Engine** | Default SQLite file database (`nexora.db`) | Managed PostgreSQL 15+ cluster with PgBouncer connection pooling | Add config support & migration instructions |
+| **Database Engine** | Default SQLite file database (`NEIMAN.db`) | Managed PostgreSQL 15+ cluster with PgBouncer connection pooling | Add config support & migration instructions |
 | **Worker Queue** | In-process asynchronous task dispatch | Distributed task queue (Celery, ARQ, or BullMQ with Redis) for long workflows | Document & plan background worker runner |
 | **Secrets Storage** | Environment variables & `.env` file | Enterprise Vault (AWS Secrets Manager, HashiCorp Vault, or GCP Secret Manager) | Encrypted runtime key loading |
 | **Live AI API Keys** | Mock/simulation adapters active | Direct HTTPS API integration to OpenAI, Anthropic, Gemini, and Ollama | Implemented in this hardening pass |

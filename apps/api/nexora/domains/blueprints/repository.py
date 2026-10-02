@@ -1,4 +1,4 @@
-"""Repository layer for NEXORA Company Blueprints."""
+"""Repository layer for NEIMAN Company Blueprints."""
 
 import uuid
 

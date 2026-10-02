@@ -278,7 +278,7 @@ export function AgentProfileDrawer({
 
   if (isLoading) {
     return (
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-3xl bg-nexora-surface border-l border-border shadow-2xl p-6 flex items-center justify-center">
+      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-3xl bg-NEIMAN-surface border-l border-border shadow-2xl p-6 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -286,7 +286,7 @@ export function AgentProfileDrawer({
 
   if (error || !profile) {
     return (
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-3xl bg-nexora-surface border-l border-border shadow-2xl p-6">
+      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-3xl bg-NEIMAN-surface border-l border-border shadow-2xl p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-red-400">Failed to load agent</h2>
           <button type="button" onClick={onClose} className="p-1 hover:bg-secondary rounded-lg">
@@ -327,15 +327,14 @@ export function AgentProfileDrawer({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wide border ${
-                profile.status === 'AVAILABLE'
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wide border ${profile.status === 'AVAILABLE'
                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                   : profile.status === 'WORKING'
-                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 animate-pulse'
-                  : profile.status === 'BLOCKED'
-                  ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                  : 'bg-muted/40 text-muted-foreground border-border'
-              }`}
+                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 animate-pulse'
+                    : profile.status === 'BLOCKED'
+                      ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                      : 'bg-muted/40 text-muted-foreground border-border'
+                }`}
             >
               <span className="h-2 w-2 rounded-full bg-current" />
               STATUS: {profile.status}
@@ -399,11 +398,10 @@ export function AgentProfileDrawer({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`flex items-center gap-1.5 py-3 px-3.5 border-b-2 transition-all whitespace-nowrap ${
-                active
+              className={`flex items-center gap-1.5 py-3 px-3.5 border-b-2 transition-all whitespace-nowrap ${active
                   ? 'border-primary text-primary font-bold'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <Icon className="h-3.5 w-3.5" />
               {tab.label}
@@ -500,17 +498,15 @@ export function AgentProfileDrawer({
                   return (
                     <div
                       key={prov.id}
-                      className={`p-3 rounded-xl border text-center transition-all ${
-                        isSelected
+                      className={`p-3 rounded-xl border text-center transition-all ${isSelected
                           ? 'border-primary bg-primary/10 shadow-md shadow-primary/10'
                           : 'border-border/60 bg-secondary/40 opacity-60'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-center gap-1.5">
                         <Zap
-                          className={`h-3.5 w-3.5 ${
-                            isSelected ? 'text-primary' : 'text-muted-foreground'
-                          }`}
+                          className={`h-3.5 w-3.5 ${isSelected ? 'text-primary' : 'text-muted-foreground'
+                            }`}
                         />
                         <span className="font-bold text-xs text-foreground">{prov.label}</span>
                       </div>
@@ -672,22 +668,20 @@ export function AgentProfileDrawer({
                 <button
                   type="button"
                   onClick={() => setConfigMode('simple')}
-                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
-                    configMode === 'simple'
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${configMode === 'simple'
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   Simple Mode
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfigMode('advanced')}
-                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
-                    configMode === 'advanced'
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${configMode === 'advanced'
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   Advanced Mode
                 </button>
@@ -776,11 +770,10 @@ export function AgentProfileDrawer({
                       onClick={() =>
                         setEditForm((f) => ({ ...f, provider: p.id, model: p.model }))
                       }
-                      className={`p-3 rounded-xl border text-center transition-all ${
-                        editForm.provider === p.id
+                      className={`p-3 rounded-xl border text-center transition-all ${editForm.provider === p.id
                           ? 'border-primary bg-primary/10 font-bold'
                           : 'border-border/60 bg-secondary/30 hover:border-border'
-                      }`}
+                        }`}
                     >
                       <span className="text-xs text-foreground block">{p.label}</span>
                       <span className="text-[10px] font-mono text-muted-foreground block mt-0.5">
@@ -1134,9 +1127,8 @@ export function AgentProfileDrawer({
                       {a.action} {a.step ? `• ${a.step}` : ''}
                     </span>
                     <span
-                      className={`text-[10px] font-bold font-mono ${
-                        a.status === 'SUCCESS' ? 'text-emerald-400' : 'text-rose-400'
-                      }`}
+                      className={`text-[10px] font-bold font-mono ${a.status === 'SUCCESS' ? 'text-emerald-400' : 'text-rose-400'
+                        }`}
                     >
                       {a.status}
                     </span>

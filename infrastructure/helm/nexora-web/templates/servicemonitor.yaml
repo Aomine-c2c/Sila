@@ -2,15 +2,15 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "nexora-api.fullname" . }}-sm
+  name: {{ include "NEIMAN-api.fullname" . }}-sm
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "nexora-api.labels" . | nindent 4 }}
+    {{- include "NEIMAN-api.labels" . | nindent 4 }}
     release: prometheus
 spec:
   selector:
     matchLabels:
-      {{- include "nexora-api.selectorLabels" . | nindent 6 }}
+      {{- include "NEIMAN-api.selectorLabels" . | nindent 6 }}
   endpoints:
     - port: http
       path: /metrics

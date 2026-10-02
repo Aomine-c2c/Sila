@@ -8,7 +8,7 @@
 
 ## 1. Provider Normalization & Four-Tier Fallback
 
-NEXORA treats no single model provider as infallible. All model interactions pass through the normalized `IntelligenceRouter`:
+NEIMAN treats no single model provider as infallible. All model interactions pass through the normalized `IntelligenceRouter`:
 
 ```
 PRIMARY (e.g., Claude 3.5 Sonnet)

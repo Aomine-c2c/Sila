@@ -45,47 +45,47 @@ export function IntelligenceFlowDiagram({
     providers.length > 0
       ? providers
       : [
-          {
-            id: 'anthropic',
-            name: 'anthropic',
-            display_name: 'Anthropic Claude',
-            is_local: false,
-            is_active: true,
-            is_healthy: true,
-            consecutive_failures: 0,
-            created_at: '',
-          },
-          {
-            id: 'google_gemini',
-            name: 'google_gemini',
-            display_name: 'Google Gemini',
-            is_local: false,
-            is_active: true,
-            is_healthy: true,
-            consecutive_failures: 0,
-            created_at: '',
-          },
-          {
-            id: 'openai',
-            name: 'openai',
-            display_name: 'OpenAI',
-            is_local: false,
-            is_active: true,
-            is_healthy: true,
-            consecutive_failures: 0,
-            created_at: '',
-          },
-          {
-            id: 'local',
-            name: 'local',
-            display_name: 'Local / Air-Gapped',
-            is_local: true,
-            is_active: true,
-            is_healthy: true,
-            consecutive_failures: 0,
-            created_at: '',
-          },
-        ];
+        {
+          id: 'anthropic',
+          name: 'anthropic',
+          display_name: 'Anthropic Claude',
+          is_local: false,
+          is_active: true,
+          is_healthy: true,
+          consecutive_failures: 0,
+          created_at: '',
+        },
+        {
+          id: 'google_gemini',
+          name: 'google_gemini',
+          display_name: 'Google Gemini',
+          is_local: false,
+          is_active: true,
+          is_healthy: true,
+          consecutive_failures: 0,
+          created_at: '',
+        },
+        {
+          id: 'openai',
+          name: 'openai',
+          display_name: 'OpenAI',
+          is_local: false,
+          is_active: true,
+          is_healthy: true,
+          consecutive_failures: 0,
+          created_at: '',
+        },
+        {
+          id: 'local',
+          name: 'local',
+          display_name: 'Local / Air-Gapped',
+          is_local: true,
+          is_active: true,
+          is_healthy: true,
+          consecutive_failures: 0,
+          created_at: '',
+        },
+      ];
 
   return (
     <div className="relative rounded-2xl border border-primary/30 bg-card/85 p-6 backdrop-blur-xl shadow-2xl overflow-hidden select-none">
@@ -109,7 +109,7 @@ export function IntelligenceFlowDiagram({
               Autonomous Mesh Routing Topology
             </span>
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-              NEXORA Intelligence Exchange Architecture
+              NEIMAN Intelligence Exchange Architecture
             </h2>
           </div>
         </div>
@@ -122,6 +122,32 @@ export function IntelligenceFlowDiagram({
             Strategy: <strong className="uppercase">{activeStrategy.replace('_', ' ')}</strong>
           </span>
         </div>
+      </div>
+
+      {/* ASCII Architectural Routing Blueprint */}
+      <div className="mb-6 p-4 rounded-xl border border-border/80 bg-background/90 font-mono text-xs overflow-x-auto shadow-inner">
+        <div className="flex items-center justify-between pb-2 mb-2 border-b border-border/60 text-muted-foreground text-[10px]">
+          <span className="flex items-center gap-1.5 uppercase font-bold text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-ping" />
+            Architectural Routing Schematic
+          </span>
+          <span className="tracking-widest opacity-80">MULTI-PROVIDER ARBITRATION</span>
+        </div>
+        <pre className="text-foreground/90 font-bold leading-relaxed text-[11px] select-text">
+{`              INTELLIGENCE EXCHANGE
+
+   ┌────────┐     ┌────────┐     ┌────────┐
+   │ Claude │     │ Gemini │     │ OpenAI │
+   └───┬────┘     └───┬────┘     └───┬────┘
+       │              │              │
+       └──────────────┼──────────────┘
+                      │
+               ROUTING ENGINE
+                      │
+         ┌────────────┼────────────┐
+         ▼            ▼            ▼
+      Agent A       Agent B      Agent C`}
+        </pre>
       </div>
 
       {/* 1. UPSTREAM PROVIDERS ROW */}
@@ -139,26 +165,24 @@ export function IntelligenceFlowDiagram({
               onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelectProvider?.(p.name)}
               className={`
                 group p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden
-                ${
-                  isSelected
-                    ? 'border-primary ring-2 ring-primary/40 bg-primary/10'
-                    : 'border-border/80 bg-secondary/40 hover:bg-secondary/70 hover:border-primary/50'
+                ${isSelected
+                  ? 'border-primary ring-2 ring-primary/40 bg-primary/10'
+                  : 'border-border/80 bg-secondary/40 hover:bg-secondary/70 hover:border-primary/50'
                 }
               `}
             >
               {/* Top Accent Line */}
               <div
-                className={`absolute top-0 left-0 right-0 h-1 ${
-                  !isHealthy
+                className={`absolute top-0 left-0 right-0 h-1 ${!isHealthy
                     ? 'bg-rose-500'
                     : p.is_local
-                    ? 'bg-emerald-500'
-                    : p.name.includes('gemini')
-                    ? 'bg-blue-500'
-                    : p.name.includes('anthropic')
-                    ? 'bg-amber-500'
-                    : 'bg-emerald-400'
-                }`}
+                      ? 'bg-emerald-500'
+                      : p.name.includes('gemini')
+                        ? 'bg-blue-500'
+                        : p.name.includes('anthropic')
+                          ? 'bg-amber-500'
+                          : 'bg-emerald-400'
+                  }`}
               />
 
               <div className="flex items-center justify-between mb-2">
@@ -166,11 +190,10 @@ export function IntelligenceFlowDiagram({
                   {p.is_local ? <Server className="h-4 w-4 text-emerald-400" /> : <Cloud className="h-4 w-4 text-primary" />}
                 </span>
                 <span
-                  className={`inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase ${
-                    isHealthy
+                  className={`inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase ${isHealthy
                       ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                       : 'bg-rose-500/15 text-rose-400 border border-rose-500/30 animate-pulse'
-                  }`}
+                    }`}
                 >
                   {isHealthy ? (
                     <>
@@ -229,7 +252,7 @@ export function IntelligenceFlowDiagram({
         <div className="p-4 rounded-2xl border-2 border-primary/50 bg-gradient-to-b from-card via-card/95 to-primary/10 shadow-2xl backdrop-blur-md text-center space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/40 bg-primary/10 text-primary text-xs font-mono font-bold">
             <Cpu className="h-3.5 w-3.5" />
-            NEXORA ROUTING ENGINE
+            NEIMAN ROUTING ENGINE
           </div>
 
           <p className="text-xs text-muted-foreground px-4">

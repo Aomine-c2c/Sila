@@ -1,4 +1,4 @@
-# NEXORA Production Runbooks
+# NEIMAN Production Runbooks
 
 ## Table of Contents
 1. [API Health Check](#api-health-check)
@@ -17,26 +17,26 @@
 ## API Health Check
 
 ### Symptoms
-- Monitoring alerts: `nexora_api_down` or `nexora_api_high_error_rate`
+- Monitoring alerts: `NEIMAN_api_down` or `NEIMAN_api_high_error_rate`
 - Users report 5xx errors or timeouts
 
 ### Diagnosis
 ```bash
 # Check pod status
-kubectl get pods -n nexora -l app=nexora-api
+kubectl get pods -n NEIMAN -l app=NEIMAN-api
 
 # Check logs
-kubectl logs -n nexora -l app=nexora-api --tail=100
+kubectl logs -n NEIMAN -l app=NEIMAN-api --tail=100
 
 # Check health endpoint
-kubectl exec -n nexora -it <pod-name> -- curl localhost:8000/health
+kubectl exec -n NEIMAN -it <pod-name> -- curl localhost:8000/health
 
 # Check metrics
-kubectl exec -n nexora -it <pod-name> -- curl localhost:8000/metrics | grep -E "up|http_requests"
+kubectl exec -n NEIMAN -it <pod-name> -- curl localhost:8000/metrics | grep -E "up|http_requests"
 ```
 
 ### Resolution
-1. **Pods not ready**: Check events `kubectl describe pod -n nexora <pod-name>`
+1. **Pods not ready**: Check events `kubectl describe pod -n NEIMAN <pod-name>`
 2. **Database connection**: Verify PostgreSQL is accessible
 3. **Redis connection**: Verify Redis is accessible
 4. **OOM kills**: Check `kubectl describe pod` for OOMKilled
@@ -53,16 +53,16 @@ kubectl exec -n nexora -it <pod-name> -- curl localhost:8000/metrics | grep -E "
 ### Diagnosis
 ```bash
 # Check PostgreSQL pod
-kubectl get pods -n nexora-database
+kubectl get pods -n NEIMAN-database
 
 # Check connections
-kubectl exec -n nexora-database -it postgresql-0 -- psql -U nexora -c "SELECT count(*) FROM pg_stat_activity;"
+kubectl exec -n NEIMAN-database -it postgresql-0 -- psql -U NEIMAN -c "SELECT count(*) FROM pg_stat_activity;"
 
 # Check long-running queries
-kubectl exec -n nexora-database -it postgresql-0 -- psql -U nexora -c "SELECT pid, now() - pg_stat_activity.query_start AS duration, query FROM pg_stat_activity WHERE state = 'active' ORDER BY duration DESC;"
+kubectl exec -n NEIMAN-database -it postgresql-0 -- psql -U NEIMAN -c "SELECT pid, now() - pg_stat_activity.query_start AS duration, query FROM pg_stat_activity WHERE state = 'active' ORDER BY duration DESC;"
 
 # Check replication lag (if using replicas)
-kubectl exec -n nexora-database -it postgresql-0 -- psql -U nexora -c "SELECT * FROM pg_stat_replication;"
+kubectl exec -n NEIMAN-database -it postgresql-0 -- psql -U NEIMAN -c "SELECT * FROM pg_stat_replication;"
 ```
 
 ### Resolution
@@ -83,16 +83,16 @@ kubectl exec -n nexora-database -it postgresql-0 -- psql -U nexora -c "SELECT * 
 ### Diagnosis
 ```bash
 # Check HPA status
-kubectl get hpa -n nexora
+kubectl get hpa -n NEIMAN
 
 # Check resource usage
-kubectl top pods -n nexora
+kubectl top pods -n NEIMAN
 
 # Check metrics
-kubectl exec -n nexora -it <api-pod> -- curl localhost:8000/metrics | grep -E "http_request_duration|http_requests_total"
+kubectl exec -n NEIMAN -it <api-pod> -- curl localhost:8000/metrics | grep -E "http_request_duration|http_requests_total"
 
 # Check external dependencies (LLM APIs)
-kubectl logs -n nexora -l app=nexora-api | grep -i "timeout\|rate.limit\|llm"
+kubectl logs -n NEIMAN -l app=NEIMAN-api | grep -i "timeout\|rate.limit\|llm"
 ```
 
 ### Resolution
@@ -106,23 +106,23 @@ kubectl logs -n nexora -l app=nexora-api | grep -i "timeout\|rate.limit\|llm"
 ## Agent Execution Failures
 
 ### Symptoms
-- `nexora_agent_executions_total{status="failed"}` increasing
+- `NEIMAN_agent_executions_total{status="failed"}` increasing
 - Workflow tasks stuck in "running" state
 - Agent logs show errors
 
 ### Diagnosis
 ```bash
 # Check recent failed executions
-kubectl exec -n nexora -it <api-pod> -- python -c "
-from nexora.domains.agents.repository import AgentExecutionRepository
+kubectl exec -n NEIMAN -it <api-pod> -- python -c "
+from NEIMAN.domains.agents.repository import AgentExecutionRepository
 # query failed executions
 "
 
 # Check agent logs
-kubectl logs -n nexora -l app=nexora-api | grep -i "agent.*execution.*failed"
+kubectl logs -n NEIMAN -l app=NEIMAN-api | grep -i "agent.*execution.*failed"
 
 # Check resource limits
-kubectl describe pod -n nexora <api-pod> | grep -A5 Limits
+kubectl describe pod -n NEIMAN <api-pod> | grep -A5 Limits
 ```
 
 ### Resolution
@@ -138,18 +138,18 @@ kubectl describe pod -n nexora <api-pod> | grep -A5 Limits
 ### Symptoms
 - Deliberation status stuck in "discussion" or "synthesis"
 - No progress for > 30 minutes
-- `nexora_active_councils` metric high
+- `NEIMAN_active_councils` metric high
 
 ### Diagnosis
 ```bash
 # Check deliberation status
-kubectl exec -n nexora -it <api-pod> -- python -c "
-from nexora.domains.councils.repository import CouncilRepository
+kubectl exec -n NEIMAN -it <api-pod> -- python -c "
+from NEIMAN.domains.councils.repository import CouncilRepository
 # query stuck deliberations
 "
 
 # Check for agent timeouts
-kubectl logs -n nexora -l app=nexora-api | grep -i "council.*timeout\|deliberation.*stuck"
+kubectl logs -n NEIMAN -l app=NEIMAN-api | grep -i "council.*timeout\|deliberation.*stuck"
 ```
 
 ### Resolution
@@ -164,25 +164,25 @@ kubectl logs -n nexora -l app=nexora-api | grep -i "council.*timeout\|deliberati
 ### Symptoms
 - Workflow execution stuck in "running" for > expected duration
 - Tasks not progressing
-- `nexora_active_workflows` not decreasing
+- `NEIMAN_active_workflows` not decreasing
 
 ### Diagnosis
 ```bash
 # Check workflow execution status
-kubectl exec -n nexora -it <api-pod> -- python -c "
-from nexora.domains.workflows.repository import WorkflowExecutionRepository
+kubectl exec -n NEIMAN -it <api-pod> -- python -c "
+from NEIMAN.domains.workflows.repository import WorkflowExecutionRepository
 # query stuck executions
 "
 
 # Check for pending approvals
-kubectl exec -n nexora -it <api-pod> -- python -c "
-from nexora.domains.governance.repository import ApprovalRepository
+kubectl exec -n NEIMAN -it <api-pod> -- python -c "
+from NEIMAN.domains.governance.repository import ApprovalRepository
 # query pending approvals
 "
 
 # Check resource requests
-kubectl exec -n nexora -it <api-pod> -- python -c "
-from nexora.domains.resources.repository import ResourceRequestRepository
+kubectl exec -n NEIMAN -it <api-pod> -- python -c "
+from NEIMAN.domains.resources.repository import ResourceRequestRepository
 # query pending requests
 "
 ```
@@ -205,15 +205,15 @@ from nexora.domains.resources.repository import ResourceRequestRepository
 ### Diagnosis
 ```bash
 # Check resource usage
-kubectl top pods -n nexora
+kubectl top pods -n NEIMAN
 kubectl top nodes
 
 # Check PVC usage
-kubectl get pvc -n nexora
-kubectl get pvc -n nexora-database
+kubectl get pvc -n NEIMAN
+kubectl get pvc -n NEIMAN-database
 
 # Check Redis memory
-kubectl exec -n nexora-database -it redis-0 -- redis-cli INFO memory
+kubectl exec -n NEIMAN-database -it redis-0 -- redis-cli INFO memory
 ```
 
 ### Resolution
@@ -232,27 +232,27 @@ kubectl exec -n nexora-database -it redis-0 -- redis-cli INFO memory
 openssl rand -hex 32
 
 # 2. Update in Vault
-vault kv put nexora/api/auth secret_key=<new_key>
+vault kv put NEIMAN/api/auth secret_key=<new_key>
 
 # 3. External Secrets will sync automatically (within 1h)
 # Or force sync:
-kubectl annotate externalsecret nexora-api-secrets -n nexora force-sync=$(date +%s) --overwrite
+kubectl annotate externalsecret NEIMAN-api-secrets -n NEIMAN force-sync=$(date +%s) --overwrite
 
 # 4. Restart API pods to pick up new secret
-kubectl rollout restart deployment/nexora-api -n nexora
+kubectl rollout restart deployment/NEIMAN-api -n NEIMAN
 
 # 5. Verify
-kubectl logs -n nexora -l app=nexora-api | grep -i "startup\|secret"
+kubectl logs -n NEIMAN -l app=NEIMAN-api | grep -i "startup\|secret"
 ```
 
 ### API Keys (LLM Providers)
 ```bash
 # Update in Vault
-vault kv put nexora/api/llm openai_key=<new_key> anthropic_key=<new_key>
+vault kv put NEIMAN/api/llm openai_key=<new_key> anthropic_key=<new_key>
 
 # Force sync and restart
-kubectl annotate externalsecret nexora-api-secrets -n nexora force-sync=$(date +%s) --overwrite
-kubectl rollout restart deployment/nexora-api -n nexora
+kubectl annotate externalsecret NEIMAN-api-secrets -n NEIMAN force-sync=$(date +%s) --overwrite
+kubectl rollout restart deployment/NEIMAN-api -n NEIMAN
 ```
 
 ---
@@ -262,32 +262,32 @@ kubectl rollout restart deployment/nexora-api -n nexora
 ### Helm Rollback
 ```bash
 # List releases
-helm list -n nexora
+helm list -n NEIMAN
 
 # Rollback to previous revision
-helm rollback nexora-api -n nexora
+helm rollback NEIMAN-api -n NEIMAN
 
 # Rollback to specific revision
-helm rollback nexora-api 3 -n nexora
+helm rollback NEIMAN-api 3 -n NEIMAN
 
 # Verify
-helm status nexora-api -n nexora
-kubectl rollout status deployment/nexora-api -n nexora
+helm status NEIMAN-api -n NEIMAN
+kubectl rollout status deployment/NEIMAN-api -n NEIMAN
 ```
 
 ### ArgoCD Rollback
 ```bash
 # Via CLI
-argocd app rollback nexora-api 3
+argocd app rollback NEIMAN-api 3
 
-# Via UI: Applications > nexora-api > History > Rollback
+# Via UI: Applications > NEIMAN-api > History > Rollback
 ```
 
 ### Manual Image Rollback
 ```bash
 # Update image tag in values or kustomization
-kubectl set image deployment/nexora-api api=ghcr.io/ORG/nexora-api:v0.9.9 -n nexora
-kubectl rollout status deployment/nexora-api -n nexora
+kubectl set image deployment/NEIMAN-api api=ghcr.io/ORG/NEIMAN-api:v0.9.9 -n NEIMAN
+kubectl rollout status deployment/NEIMAN-api -n NEIMAN
 ```
 
 ---
@@ -297,7 +297,7 @@ kubectl rollout status deployment/nexora-api -n nexora
 ### Database Restore
 ```bash
 # 1. Find latest backup
-aws s3 ls s3://nexora-backups/postgresql/
+aws s3 ls s3://NEIMAN-backups/postgresql/
 
 # 2. Restore to new instance
 # (Use pg_restore or point-in-time recovery)
@@ -329,13 +329,13 @@ aws s3 ls s3://nexora-backups/postgresql/
 ## Contacts
 - **Primary On-Call**: +1-XXX-XXX-XXXX
 - **Secondary On-Call**: +1-XXX-XXX-XXXX
-- **Slack**: #nexora-oncall
-- **PagerDuty**: nexora-production
+- **Slack**: #NEIMAN-oncall
+- **PagerDuty**: NEIMAN-production
 
 ---
 
 ## Links
-- [Grafana Dashboards](https://grafana.nexora.example.com)
-- [ArgoCD](https://argocd.nexora.example.com)
-- [Vault](https://vault.nexora.example.com)
-- [Runbook Repository](https://github.com/ORG/nexora/tree/main/infrastructure/runbooks)
+- [Grafana Dashboards](https://grafana.NEIMAN.example.com)
+- [ArgoCD](https://argocd.NEIMAN.example.com)
+- [Vault](https://vault.NEIMAN.example.com)
+- [Runbook Repository](https://github.com/ORG/NEIMAN/tree/main/infrastructure/runbooks)

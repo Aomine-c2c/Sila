@@ -1,7 +1,7 @@
 [project]
-name = "nexora-api"
+name = "NEIMAN-api"
 version = "0.1.0"
-description = "NEXORA — Autonomous Organization OS API"
+description = "NEIMAN — Autonomous Organization OS API"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",

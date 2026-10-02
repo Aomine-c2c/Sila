@@ -1,18 +1,18 @@
 #!/bin/bash
-# NEXORA Health Check Script
+# NEIMAN Health Check Script
 # Usage: ./health-check.sh [namespace]
 
 set -euo pipefail
 
-NAMESPACE="${1:-nexora}"
+NAMESPACE="${1:-NEIMAN}"
 
-echo "🔍 NEXORA Health Check - Namespace: ${NAMESPACE}"
+echo "🔍 NEIMAN Health Check - Namespace: ${NAMESPACE}"
 echo "================================================="
 
 # Check API
 echo ""
 echo "📡 API Health:"
-API_PODS=$(kubectl get pods -n "${NAMESPACE}" -l app=nexora-api -o jsonpath='{.items[*].metadata.name}')
+API_PODS=$(kubectl get pods -n "${NAMESPACE}" -l app=NEIMAN-api -o jsonpath='{.items[*].metadata.name}')
 for pod in ${API_PODS}; do
     STATUS=$(kubectl get pod -n "${NAMESPACE}" "${pod}" -o jsonpath='{.status.phase}')
     READY=$(kubectl get pod -n "${NAMESPACE}" "${pod}" -o jsonpath='{.status.containerStatuses[0].ready}')
@@ -26,7 +26,7 @@ done
 # Check Web
 echo ""
 echo "🌐 Web Health:"
-WEB_PODS=$(kubectl get pods -n "${NAMESPACE}" -l app=nexora-web -o jsonpath='{.items[*].metadata.name}')
+WEB_PODS=$(kubectl get pods -n "${NAMESPACE}" -l app=NEIMAN-web -o jsonpath='{.items[*].metadata.name}')
 for pod in ${WEB_PODS}; do
     STATUS=$(kubectl get pod -n "${NAMESPACE}" "${pod}" -o jsonpath='{.status.phase}')
     READY=$(kubectl get pod -n "${NAMESPACE}" "${pod}" -o jsonpath='{.status.containerStatuses[0].ready}')
@@ -51,7 +51,7 @@ kubectl get ingress -n "${NAMESPACE}"
 echo ""
 echo "💾 PVC Status:"
 kubectl get pvc -n "${NAMESPACE}"
-kubectl get pvc -n nexora-database 2>/dev/null || true
+kubectl get pvc -n NEIMAN-database 2>/dev/null || true
 
 # Check Resources
 echo ""

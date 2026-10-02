@@ -55,7 +55,7 @@ export const NODE_PALETTE_ITEMS: NodePaletteItem[] = [
     icon: Globe,
     color: 'text-cyan-400',
     badgeBg: 'bg-cyan-500/10 border-cyan-500/30',
-    defaultConfig: { url: 'https://api.nexora.internal/webhook', method: 'POST' },
+    defaultConfig: { url: 'https://api.NEIMAN.internal/webhook', method: 'POST' },
   },
 
   // 2. Agents & Intelligence
@@ -261,11 +261,10 @@ export function WorkflowPalette({ onAddNode }: WorkflowPaletteProps) {
               key={cat}
               type="button"
               onClick={() => setSelectedCategory(cat)}
-              className={`px-2 py-0.5 rounded-md text-[10px] whitespace-nowrap font-medium transition-colors ${
-                selectedCategory === cat
+              className={`px-2 py-0.5 rounded-md text-[10px] whitespace-nowrap font-medium transition-colors ${selectedCategory === cat
                   ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
                   : 'bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground'
-              }`}
+                }`}
             >
               {cat === 'Agents & Intelligence' ? 'Agents' : cat === 'Governance & Approvals' ? 'Governance' : cat}
             </button>
@@ -292,7 +291,7 @@ export function WorkflowPalette({ onAddNode }: WorkflowPaletteProps) {
               }}
               draggable
               onDragStart={(e) => {
-                e.dataTransfer.setData('application/nexora-node', JSON.stringify(item));
+                e.dataTransfer.setData('application/NEIMAN-node', JSON.stringify(item));
               }}
               className="group p-2.5 rounded-xl border border-border/70 bg-secondary/30 hover:bg-secondary hover:border-primary/50 cursor-pointer transition-all space-y-1"
             >

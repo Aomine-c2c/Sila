@@ -17,11 +17,11 @@ export default function NotFound() {
   }, [router]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-nexora-dark text-foreground px-4 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-NEIMAN-dark text-foreground px-4 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/25 mb-4">
         <Radio className="h-8 w-8 animate-pulse text-primary" />
       </div>
-      <h1 className="text-xl font-bold tracking-tight">Navigating to NEXORA Control Room</h1>
+      <h1 className="text-xl font-bold tracking-tight">Navigating to NEIMAN Control Room</h1>
       <p className="mt-2 text-sm text-muted-foreground font-mono">Redirecting you to the active workspace operating picture...</p>
       <Link
         href="/dashboard"

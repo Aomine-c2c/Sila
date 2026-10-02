@@ -1,5 +1,5 @@
 """
-NEXORA Workflow Execution Engine.
+NEIMAN Workflow Execution Engine.
 
 Executes and coordinates orchestrated multi-step organizational processes:
 - SEQUENTIAL & PARALLEL execution

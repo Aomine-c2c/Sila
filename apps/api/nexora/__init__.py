@@ -1,1 +1,1 @@
-"""NEXORA — Autonomous Organization OS."""
+"""NEIMAN — Autonomous Organization OS."""

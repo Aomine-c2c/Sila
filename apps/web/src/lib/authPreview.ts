@@ -4,5 +4,5 @@
  */
 export function isDevelopmentAuthBypassEnabled(): boolean {
   return process.env.NODE_ENV === 'development' &&
-    process.env.NEXT_PUBLIC_NEXORA_DEV_AUTH_BYPASS === 'true';
+    process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS === 'true';
 }

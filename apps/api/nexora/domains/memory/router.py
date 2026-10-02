@@ -1,5 +1,5 @@
 """
-REST API Router for NEXORA Organizational Memory System.
+REST API Router for NEIMAN Organizational Memory System.
 Endpoints for:
 - 10-domain memory items management
 - Searchable Knowledge Base interface

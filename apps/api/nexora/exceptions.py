@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 
 class NexoraError(Exception):
-    """Base exception for all NEXORA domain errors."""
+    """Base exception for all NEIMAN domain errors."""
 
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
     detail: str = "An unexpected error occurred."
@@ -50,7 +50,7 @@ class BusinessRuleError(NexoraError):
 # ── FastAPI Exception Handlers ─────────────────────────────────────────────
 
 
-async def nexora_exception_handler(request: Request, exc: NexoraError) -> JSONResponse:
+async def NEIMAN_exception_handler(request: Request, exc: NexoraError) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -61,4 +61,4 @@ async def nexora_exception_handler(request: Request, exc: NexoraError) -> JSONRe
 
 
 def register_exception_handlers(app: FastAPI) -> None:
-    app.add_exception_handler(NexoraError, nexora_exception_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(NexoraError, NEIMAN_exception_handler)  # type: ignore[arg-type]

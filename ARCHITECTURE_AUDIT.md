@@ -1,4 +1,4 @@
-# ARCHITECTURE AUDIT — NEXORA
+# ARCHITECTURE AUDIT — NEIMAN
 
 **Audit Date:** 2026-09-29  
 **Auditor:** Antigravity (Lead Architect / Autonomous CTO)  
@@ -8,7 +8,7 @@
 
 ## 1. Executive Assessment
 
-NEXORA has established a modular, provider-agnostic, and observable foundation. Rather than treating agents as standalone conversational bots, the system represents agents as **organizational employees** bound by company roles, departments, capability permissions, and constitutional autonomy policies.
+NEIMAN has established a modular, provider-agnostic, and observable foundation. Rather than treating agents as standalone conversational bots, the system represents agents as **organizational employees** bound by company roles, departments, capability permissions, and constitutional autonomy policies.
 
 ---
 

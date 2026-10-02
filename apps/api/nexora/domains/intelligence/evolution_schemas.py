@@ -1,5 +1,5 @@
 """
-Pydantic Schemas for NEXORA Organizational Performance & Evolution Engine.
+Pydantic Schemas for NEIMAN Organizational Performance & Evolution Engine.
 """
 
 import uuid

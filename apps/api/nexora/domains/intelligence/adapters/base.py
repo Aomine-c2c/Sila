@@ -1,5 +1,5 @@
 """
-Vendor Model Adapters for the NEXORA Intelligence Exchange.
+Vendor Model Adapters for the NEIMAN Intelligence Exchange.
 Implements:
 - Granular provider exceptions (RateLimit, Timeout, ContextOverflow, StructuredOutputValidation)
 - CircuitBreaker state machine per provider (CLOSED, OPEN, HALF_OPEN)
@@ -392,7 +392,7 @@ class AnthropicMockAdapter(BaseModelAdapter):
                 else:
                     response_text = (
                         f"[Anthropic/{model_identifier}] Analytical architectural output addressing: '{request.prompt[:60]}...' "
-                        f"Structured according to NEXORA organizational standards."
+                        f"Structured according to NEIMAN organizational standards."
                     )
 
         is_valid, val_err = self.validate_structured_output(response_text, request.structured_output_schema)

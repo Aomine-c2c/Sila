@@ -20,6 +20,8 @@ from nexora.domains.intelligence.schemas import (
     ModelResponsePayload,
     ModelRoutingPolicyResponse,
     ModelRoutingPolicyUpdate,
+    ProviderProbeRequest,
+    ProviderProbeResponse,
 )
 from nexora.domains.intelligence.service import IntelligenceService
 
@@ -140,6 +142,22 @@ async def add_model(
     return await IntelligenceService(db).add_model(body)
 
 
+@router.post("/providers/{provider_name}/probe", response_model=ProviderProbeResponse)
+async def probe_provider(
+    company_id: uuid.UUID,
+    provider_name: str,
+    body: ProviderProbeRequest,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_member()),
+):
+    """
+    Actively probe a vendor adapter, measure round-trip latency,
+    and evaluate circuit breaker responses or fault simulations.
+    """
+    return await IntelligenceService(db).probe_provider(provider_name, body)
+
+
 @router.post("/circuit-breakers/reset")
 async def reset_circuit_breakers(
     company_id: uuid.UUID,
@@ -155,4 +173,5 @@ async def reset_circuit_breakers(
     await db.execute(update(ModelProvider).values(is_healthy=True, consecutive_failures=0))
     await db.flush()
     return {"status": "ok", "message": "All circuit breakers reset to CLOSED and providers marked healthy."}
+
 

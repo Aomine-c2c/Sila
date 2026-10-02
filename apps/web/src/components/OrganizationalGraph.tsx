@@ -111,7 +111,7 @@ export function OrganizationalGraph({
     nList.push({
       id: rootId,
       type: 'company',
-      title: companyName || 'NEXORA Enterprise',
+      title: companyName || 'NEIMAN Enterprise',
       subtitle: 'Autonomous Organization Root',
       status: companyStatus || 'ACTIVE',
       data: { name: companyName, status: companyStatus },
@@ -526,7 +526,7 @@ export function OrganizationalGraph({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold text-foreground tracking-wide">
-                NEXORA Organization Map
+                NEIMAN Organization Map
               </h3>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                 Interactive Telemetry
@@ -645,9 +645,8 @@ export function OrganizationalGraph({
       <div
         ref={canvasRef}
         onMouseDown={handleMouseDown}
-        className={`flex-1 overflow-auto p-8 relative scrollbar-thin select-none ${
-          isPanning ? 'cursor-grabbing' : 'cursor-grab'
-        }`}
+        className={`flex-1 overflow-auto p-8 relative scrollbar-thin select-none ${isPanning ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
         style={{
           backgroundImage: `
             radial-gradient(circle at 1px 1px, hsl(var(--primary) / 0.12) 1px, transparent 0)
@@ -712,10 +711,9 @@ export function OrganizationalGraph({
                         className={`
                           relative group rounded-xl border p-3.5 cursor-pointer transition-all duration-200
                           ${cardBg} ${cardBorder} ${glowEffect}
-                          ${
-                            isSelected
-                              ? 'ring-2 ring-primary shadow-xl shadow-primary/20 scale-[1.02] bg-primary/10'
-                              : 'hover:shadow-md'
+                          ${isSelected
+                            ? 'ring-2 ring-primary shadow-xl shadow-primary/20 scale-[1.02] bg-primary/10'
+                            : 'hover:shadow-md'
                           }
                         `}
                       >
@@ -733,14 +731,12 @@ export function OrganizationalGraph({
                           {/* Status Badge */}
                           {isAgent ? (
                             <span
-                              className={`text-[9px] uppercase font-mono px-1.5 py-0.5 rounded border shrink-0 flex items-center gap-1 ${
-                                getAgentStatusStyle(node.status).badge
-                              }`}
+                              className={`text-[9px] uppercase font-mono px-1.5 py-0.5 rounded border shrink-0 flex items-center gap-1 ${getAgentStatusStyle(node.status).badge
+                                }`}
                             >
                               <span
-                                className={`h-1.5 w-1.5 rounded-full ${
-                                  getAgentStatusStyle(node.status).dot
-                                }`}
+                                className={`h-1.5 w-1.5 rounded-full ${getAgentStatusStyle(node.status).dot
+                                  }`}
                               />
                               {getAgentStatusStyle(node.status).label}
                             </span>
@@ -793,11 +789,10 @@ export function OrganizationalGraph({
                           <div className="mt-2.5 pt-2 border-t border-border/40 flex items-center justify-between text-[10px] font-mono text-muted-foreground">
                             <span>
                               {node.managerId
-                                ? `Mgr: ${
-                                    agents.find((a) => a.id === node.managerId)?.name?.split(
-                                      ' '
-                                    )[0] ?? 'Lead'
-                                  }`
+                                ? `Mgr: ${agents.find((a) => a.id === node.managerId)?.name?.split(
+                                  ' '
+                                )[0] ?? 'Lead'
+                                }`
                                 : 'Org Lead'}
                             </span>
                             <span className="text-primary font-medium group-hover:underline flex items-center gap-0.5">
@@ -811,11 +806,10 @@ export function OrganizationalGraph({
                           <div className="mt-2 pt-1.5 border-t border-border/30 flex items-center justify-between text-[10px] font-mono">
                             <span className="text-muted-foreground">
                               {node.agentId
-                                ? `Assignee: ${
-                                    agents.find((a) => a.id === node.agentId)?.name?.split(
-                                      ' '
-                                    )[0] ?? 'Agent'
-                                  }`
+                                ? `Assignee: ${agents.find((a) => a.id === node.agentId)?.name?.split(
+                                  ' '
+                                )[0] ?? 'Agent'
+                                }`
                                 : 'Unassigned'}
                             </span>
                           </div>
@@ -874,14 +868,12 @@ export function OrganizationalGraph({
                   Operational State
                 </span>
                 <span
-                  className={`mt-1 inline-flex items-center gap-1.5 text-xs font-bold font-mono px-2 py-0.5 rounded border ${
-                    getAgentStatusStyle(selectedAgentData.agent.status).badge
-                  }`}
+                  className={`mt-1 inline-flex items-center gap-1.5 text-xs font-bold font-mono px-2 py-0.5 rounded border ${getAgentStatusStyle(selectedAgentData.agent.status).badge
+                    }`}
                 >
                   <span
-                    className={`h-2 w-2 rounded-full ${
-                      getAgentStatusStyle(selectedAgentData.agent.status).dot
-                    }`}
+                    className={`h-2 w-2 rounded-full ${getAgentStatusStyle(selectedAgentData.agent.status).dot
+                      }`}
                   />
                   {selectedAgentData.agent.status}
                 </span>

@@ -1,14 +1,14 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "nexora-web.name" -}}
+{{- define "NEIMAN-web.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Create a default fully qualified app name.
 */}}
-{{- define "nexora-web.fullname" -}}
+{{- define "NEIMAN-web.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -24,16 +24,16 @@ Create a default fully qualified app name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "nexora-web.chart" -}}
+{{- define "NEIMAN-web.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "nexora-web.labels" -}}
-helm.sh/chart: {{ include "nexora-web.chart" . }}
-{{ include "nexora-web.selectorLabels" . }}
+{{- define "NEIMAN-web.labels" -}}
+helm.sh/chart: {{ include "NEIMAN-web.chart" . }}
+{{ include "NEIMAN-web.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -43,17 +43,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "nexora-web.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "nexora-web.name" . }}
+{{- define "NEIMAN-web.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "NEIMAN-web.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "nexora-web.serviceAccountName" -}}
+{{- define "NEIMAN-web.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "nexora-web.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "NEIMAN-web.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}

@@ -23,6 +23,8 @@ from nexora.domains.intelligence.schemas import (
     ModelRequest,
     ModelResponse,
     ModelResponsePayload,
+    ProviderProbeRequest,
+    ProviderProbeResponse,
 )
 from nexora.exceptions import NotFoundError
 
@@ -266,3 +268,119 @@ class IntelligenceService:
             available_providers=[ModelProviderResponse.model_validate(p) for p in providers],
             available_models=[ModelResponse.model_validate(m) for m in models],
         )
+
+    # ── Live Health & Latency Probing ──────────────────────────────────────────
+
+    async def probe_provider(
+        self,
+        provider_name: str,
+        probe_req: ProviderProbeRequest,
+    ) -> ProviderProbeResponse:
+        """
+        Actively probes an AI vendor adapter to measure real-time latency,
+        verify circuit breaker state, and optionally test fault tolerance via error injection.
+        """
+        await self.seed_default_providers_if_empty()
+        from datetime import datetime, timezone
+        import time
+
+        # Find provider in database
+        q = select(ModelProvider).where(ModelProvider.name == provider_name)
+        res = await self.db.execute(q)
+        provider = res.scalar_one_or_none()
+        if not provider:
+            raise NotFoundError(f"Provider '{provider_name}' not found.")
+
+        adapter = self.router.registry.get(provider.name)
+        if not adapter:
+            raise NotFoundError(f"No active adapter registered for provider '{provider_name}'.")
+
+        # Fast-fail check if circuit breaker is already OPEN
+        if not adapter.circuit_breaker.can_execute():
+            return ProviderProbeResponse(
+                provider=provider.name,
+                display_name=provider.display_name,
+                is_healthy=False,
+                latency_ms=0.0,
+                circuit_breaker_status=adapter.circuit_breaker.state.value,
+                consecutive_failures=provider.consecutive_failures,
+                message=f"Fast-failed: Circuit breaker is {adapter.circuit_breaker.state.value} due to consecutive failures.",
+                timestamp=datetime.now(timezone.utc),
+            )
+
+        start_time = time.perf_counter()
+
+        # Handle chaos / error simulation
+        if probe_req.simulate_error:
+            adapter.circuit_breaker.record_failure()
+            provider.consecutive_failures += 1
+            if provider.consecutive_failures >= adapter.circuit_breaker.failure_threshold:
+                provider.is_healthy = False
+            await self.db.flush()
+
+            sim_latency = round((time.perf_counter() - start_time) * 1000 + 45.0, 2)
+            err_type = probe_req.simulate_error.lower()
+            return ProviderProbeResponse(
+                provider=provider.name,
+                display_name=provider.display_name,
+                is_healthy=provider.is_healthy,
+                latency_ms=sim_latency,
+                circuit_breaker_status=adapter.circuit_breaker.state.value,
+                consecutive_failures=provider.consecutive_failures,
+                message=f"Simulated {err_type.upper()} fault recorded. Failure count: {provider.consecutive_failures}/{adapter.circuit_breaker.failure_threshold}",
+                timestamp=datetime.now(timezone.utc),
+            )
+
+        try:
+            # Dispatch lightweight ping request
+            test_req = ModelRequest(
+                prompt="Ping healthcheck",
+                context_tokens_needed=10,
+                timeout_seconds=probe_req.timeout_seconds,
+            )
+            # Find default model for provider
+            q_m = select(Model).where(Model.provider_id == provider.id, Model.is_active.is_(True))
+            res_m = await self.db.execute(q_m)
+            model = res_m.scalars().first()
+            model_id = model.model_identifier if model else f"{provider.name}-default"
+
+            await adapter.generate_response(model_id, test_req, {})
+
+            latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
+            # Record success on circuit breaker & database
+            adapter.circuit_breaker.record_success()
+            provider.consecutive_failures = 0
+            provider.is_healthy = True
+            await self.db.flush()
+
+            return ProviderProbeResponse(
+                provider=provider.name,
+                display_name=provider.display_name,
+                is_healthy=True,
+                latency_ms=latency_ms,
+                circuit_breaker_status=adapter.circuit_breaker.state.value,
+                consecutive_failures=0,
+                message=f"Probe successful ({latency_ms}ms). Provider is online and healthy.",
+                timestamp=datetime.now(timezone.utc),
+            )
+
+        except Exception as e:
+            latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
+            adapter.circuit_breaker.record_failure()
+            provider.consecutive_failures += 1
+            if provider.consecutive_failures >= adapter.circuit_breaker.failure_threshold:
+                provider.is_healthy = False
+            await self.db.flush()
+
+            return ProviderProbeResponse(
+                provider=provider.name,
+                display_name=provider.display_name,
+                is_healthy=provider.is_healthy,
+                latency_ms=latency_ms,
+                circuit_breaker_status=adapter.circuit_breaker.state.value,
+                consecutive_failures=provider.consecutive_failures,
+                message=f"Probe failed: {str(e)}",
+                timestamp=datetime.now(timezone.utc),
+            )
+

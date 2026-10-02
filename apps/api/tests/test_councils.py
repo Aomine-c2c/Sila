@@ -1,5 +1,5 @@
 """
-Comprehensive Pytest Suite for NEXORA Agent Councils & Organizational Deliberation.
+Comprehensive Pytest Suite for NEIMAN Agent Councils & Organizational Deliberation.
 
 Verifies:
 1. Assembly of Agent Councils (Permanent & Temporary) with specialized participant perspectives:

@@ -1,5 +1,5 @@
 """
-NEXORA Security & Boundary Isolation Kernel.
+NEIMAN Security & Boundary Isolation Kernel.
 Implements:
 1. Least privilege permission matrix between:
    COMPANY -> DEPARTMENT -> AGENT -> MODEL -> TOOL -> RESOURCE
@@ -301,7 +301,7 @@ class AuditIntegrityChamber:
     Ensures an insider or compromised agent cannot silently rewrite history.
     """
 
-    SECRET_SALT = b"nexora_audit_cryptographic_anchor_v1"
+    SECRET_SALT = b"NEIMAN_audit_cryptographic_anchor_v1"
 
     @classmethod
     def _canonical_timestamp(cls, timestamp: str) -> str:

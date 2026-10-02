@@ -122,7 +122,7 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl rounded-2xl border border-border bg-nexora-surface shadow-2xl overflow-hidden ring-1 ring-white/10"
+        className="w-full max-w-xl rounded-2xl border border-border bg-NEIMAN-surface shadow-2xl overflow-hidden ring-1 ring-white/10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
@@ -168,19 +168,17 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
                 <button
                   key={cmd.id}
                   type="button"
-                  className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs transition-colors ${
-                    active
-                      ? 'bg-primary/10 text-primary border border-primary/20'
-                      : 'text-foreground/80 hover:bg-secondary/60 hover:text-foreground border border-transparent'
-                  }`}
+                  className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs transition-colors ${active
+                    ? 'bg-primary/10 text-primary border border-primary/20'
+                    : 'text-foreground/80 hover:bg-secondary/60 hover:text-foreground border border-transparent'
+                    }`}
                   onClick={() => handleSelect(cmd)}
                   onMouseEnter={() => setSelectedIndex(idx)}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`flex h-7 w-7 items-center justify-center rounded-md ${
-                        active ? 'bg-primary/20 text-primary' : 'bg-secondary text-muted-foreground'
-                      }`}
+                      className={`flex h-7 w-7 items-center justify-center rounded-md ${active ? 'bg-primary/20 text-primary' : 'bg-secondary text-muted-foreground'
+                        }`}
                     >
                       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                     </div>
@@ -208,7 +206,7 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
           </div>
           <div className="flex items-center gap-1 text-primary/70">
             <Command className="h-3 w-3" />
-            <span>NEXORA Quick Command</span>
+            <span>NEIMAN Quick Command</span>
           </div>
         </div>
       </div>

@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: nexora-api-ingress
-  namespace: nexora
+  name: NEIMAN-api-ingress
+  namespace: NEIMAN
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/rate-limit: "100"
@@ -14,25 +14,25 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - api.nexora.example.com
-      secretName: nexora-api-tls
+        - api.NEIMAN.example.com
+      secretName: NEIMAN-api-tls
   rules:
-    - host: api.nexora.example.com
+    - host: api.NEIMAN.example.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: nexora-api
+                name: NEIMAN-api
                 port:
                   number: 80
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: nexora-web-ingress
-  namespace: nexora
+  name: NEIMAN-web-ingress
+  namespace: NEIMAN
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/rate-limit: "200"
@@ -41,27 +41,27 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - nexora.example.com
-        - www.nexora.example.com
-      secretName: nexora-web-tls
+        - NEIMAN.example.com
+        - www.NEIMAN.example.com
+      secretName: NEIMAN-web-tls
   rules:
-    - host: nexora.example.com
+    - host: NEIMAN.example.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: nexora-web
+                name: NEIMAN-web
                 port:
                   number: 80
-    - host: www.nexora.example.com
+    - host: www.NEIMAN.example.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: nexora-web
+                name: NEIMAN-web
                 port:
                   number: 80

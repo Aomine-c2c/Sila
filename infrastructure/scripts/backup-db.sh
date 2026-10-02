@@ -1,5 +1,5 @@
 #!/bin/bash
-# NEXORA Database Backup Script
+# NEIMAN Database Backup Script
 # Usage: ./backup-db.sh [full|incremental]
 
 set -euo pipefail
@@ -7,9 +7,9 @@ set -euo pipefail
 BACKUP_TYPE="${1:-full}"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 BACKUP_DIR="/backups"
-S3_BUCKET="${BACKUP_S3_BUCKET:-s3://nexora-backups/postgresql}"
+S3_BUCKET="${BACKUP_S3_BUCKET:-s3://NEIMAN-backups/postgresql}"
 
-echo "💾 NEXORA Database Backup - Type: ${BACKUP_TYPE}"
+echo "💾 NEIMAN Database Backup - Type: ${BACKUP_TYPE}"
 echo "================================================="
 
 # Create backup directory
@@ -17,9 +17,9 @@ mkdir -p "${BACKUP_DIR}"
 
 if [[ "${BACKUP_TYPE}" == "full" ]]; then
     echo "📦 Creating full backup..."
-    BACKUP_FILE="${BACKUP_DIR}/nexora-full-${TIMESTAMP}.dump"
+    BACKUP_FILE="${BACKUP_DIR}/NEIMAN-full-${TIMESTAMP}.dump"
     
-    kubectl exec -n nexora-database postgresql-0 -- pg_dump -U nexora -Fc -d nexora > "${BACKUP_FILE}"
+    kubectl exec -n NEIMAN-database postgresql-0 -- pg_dump -U NEIMAN -Fc -d NEIMAN > "${BACKUP_FILE}"
     
     echo "☁️  Uploading to S3..."
     aws s3 cp "${BACKUP_FILE}" "${S3_BUCKET}/full/${TIMESTAMP}.dump"
@@ -31,9 +31,9 @@ elif [[ "${BACKUP_TYPE}" == "incremental" ]]; then
     echo "📦 Creating incremental backup (WAL)..."
     # This requires WAL archiving to be configured
     # For now, we'll do a full backup as incremental
-    BACKUP_FILE="${BACKUP_DIR}/nexora-inc-${TIMESTAMP}.dump"
+    BACKUP_FILE="${BACKUP_DIR}/NEIMAN-inc-${TIMESTAMP}.dump"
     
-    kubectl exec -n nexora-database postgresql-0 -- pg_dump -U nexora -Fc -d nexora > "${BACKUP_FILE}"
+    kubectl exec -n NEIMAN-database postgresql-0 -- pg_dump -U NEIMAN -Fc -d NEIMAN > "${BACKUP_FILE}"
     
     echo "☁️  Uploading to S3..."
     aws s3 cp "${BACKUP_FILE}" "${S3_BUCKET}/incremental/${TIMESTAMP}.dump"

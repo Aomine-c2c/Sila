@@ -5,7 +5,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: admin@nexora.example.com
+    email: admin@NEIMAN.example.com
     privateKeySecretRef:
       name: letsencrypt-prod-private-key
     solvers:
@@ -20,7 +20,7 @@ metadata:
 spec:
   acme:
     server: https://acme-staging-v02.api.letsencrypt.org/directory
-    email: admin@nexora.example.com
+    email: admin@NEIMAN.example.com
     privateKeySecretRef:
       name: letsencrypt-staging-private-key
     solvers:

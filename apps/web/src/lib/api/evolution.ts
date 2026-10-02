@@ -1,5 +1,5 @@
 /**
- * NEXORA Organizational Performance & Evolution Engine API Client
+ * NEIMAN Organizational Performance & Evolution Engine API Client
  */
 
 import { api } from './client';
@@ -209,7 +209,7 @@ export const evolutionApi = {
       { rollback_reason: rollbackReason, learning_notes: learningNotes }
     ),
 
-  // ── NEXORA Simulation Lab ──────────────────────────────────────────────
+  // ── NEIMAN Simulation Lab ──────────────────────────────────────────────
   listSimulationScenarios: (companyId: string) =>
     api.get<SimulationScenario[]>(`/api/v1/companies/${companyId}/simulation/scenarios`),
 

@@ -1,4 +1,4 @@
-# NEXORA Design System
+# NEIMAN Design System
 
 > **Status:** Draft — extracted from static HTML prototypes and unified into a cohesive system
 > **Audience:** UI engineers, designers, frontend architects

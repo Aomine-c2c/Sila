@@ -1,5 +1,5 @@
 """
-NEXORA Resource Engine Evaluation and Scheduling Core.
+NEIMAN Resource Engine Evaluation and Scheduling Core.
 
 Evaluates operational requests against:
 - Availability (Compute, Intelligence, Operational pools)
@@ -42,7 +42,7 @@ from nexora.domains.resources.schemas import (
     ResourceEvaluationResult,
 )
 
-logger = logging.getLogger("nexora.resources.engine")
+logger = logging.getLogger("NEIMAN.resources.engine")
 
 
 class ResourceEngine:

@@ -2,13 +2,13 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ include "nexora-api.fullname" . }}-pdb
+  name: {{ include "NEIMAN-api.fullname" . }}-pdb
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "nexora-api.labels" . | nindent 4 }}
+    {{- include "NEIMAN-api.labels" . | nindent 4 }}
 spec:
   minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
   selector:
     matchLabels:
-      {{- include "nexora-api.selectorLabels" . | nindent 6 }}
+      {{- include "NEIMAN-api.selectorLabels" . | nindent 6 }}
 {{- end }}

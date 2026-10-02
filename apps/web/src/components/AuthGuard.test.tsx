@@ -92,9 +92,9 @@ describe('AuthGuard', () => {
 
   it('bypasses auth only when the explicit development flag is enabled', () => {
     const originalNodeEnv = Object.getOwnPropertyDescriptor(process.env, 'NODE_ENV');
-    const originalFlag = process.env.NEXT_PUBLIC_NEXORA_DEV_AUTH_BYPASS;
+    const originalFlag = process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS;
     Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true, configurable: true });
-    process.env.NEXT_PUBLIC_NEXORA_DEV_AUTH_BYPASS = 'true';
+    process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS = 'true';
     try {
       render(<AuthGuard><div>Preview dashboard</div></AuthGuard>);
       expect(screen.getByText('Preview dashboard')).toBeInTheDocument();
@@ -102,24 +102,24 @@ describe('AuthGuard', () => {
       expect(mockReplace).not.toHaveBeenCalled();
     } finally {
       if (originalNodeEnv) Object.defineProperty(process.env, 'NODE_ENV', originalNodeEnv);
-      if (originalFlag === undefined) delete process.env.NEXT_PUBLIC_NEXORA_DEV_AUTH_BYPASS;
-      else process.env.NEXT_PUBLIC_NEXORA_DEV_AUTH_BYPASS = originalFlag;
+      if (originalFlag === undefined) delete process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS;
+      else process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS = originalFlag;
     }
   });
 
   it('does not enable the bypass in production even when the flag is present', () => {
     const originalNodeEnv = Object.getOwnPropertyDescriptor(process.env, 'NODE_ENV');
-    const originalFlag = process.env.NEXT_PUBLIC_NEXORA_DEV_AUTH_BYPASS;
+    const originalFlag = process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS;
     Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true, configurable: true });
-    process.env.NEXT_PUBLIC_NEXORA_DEV_AUTH_BYPASS = 'true';
+    process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS = 'true';
     try {
       render(<AuthGuard><div>Protected production content</div></AuthGuard>);
       expect(screen.getByText('Checking your session…')).toBeInTheDocument();
       expect(authApi.me).toHaveBeenCalled();
     } finally {
       if (originalNodeEnv) Object.defineProperty(process.env, 'NODE_ENV', originalNodeEnv);
-      if (originalFlag === undefined) delete process.env.NEXT_PUBLIC_NEXORA_DEV_AUTH_BYPASS;
-      else process.env.NEXT_PUBLIC_NEXORA_DEV_AUTH_BYPASS = originalFlag;
+      if (originalFlag === undefined) delete process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS;
+      else process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS = originalFlag;
     }
   });
 });

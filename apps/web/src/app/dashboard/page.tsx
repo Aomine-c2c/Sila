@@ -76,7 +76,7 @@ export default function ControlRoomPage() {
             Welcome{user?.first_name ? `, ${user.first_name}` : ''}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            NEXORA — Autonomous Organization OS
+            NEIMAN — Autonomous Organization OS
           </p>
         </div>
 
@@ -151,7 +151,7 @@ export default function ControlRoomPage() {
           <p className="mt-1 text-sm text-muted-foreground flex items-center gap-2">
             <span>{displayCompany?.industry || 'AI Enterprise'}</span>
             <span>•</span>
-              <span className="text-primary font-medium">ORGANIZATION / OPERATING PICTURE</span>
+            <span className="text-primary font-medium">ORGANIZATION / OPERATING PICTURE</span>
           </p>
         </div>
 
@@ -161,11 +161,10 @@ export default function ControlRoomPage() {
             <button
               type="button"
               onClick={() => setActiveTab('control')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'control'
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'control'
                   ? 'bg-card text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <LayoutDashboard className="h-3.5 w-3.5" />
               Operating picture
@@ -173,11 +172,10 @@ export default function ControlRoomPage() {
             <button
               type="button"
               onClick={() => setActiveTab('graph')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'graph'
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'graph'
                   ? 'bg-card text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <GitGraph className="h-3.5 w-3.5 text-primary" />
               Organizational Graph

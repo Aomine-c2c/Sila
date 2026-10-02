@@ -1,10 +1,10 @@
-# NEXORA — Autonomous Organization OS
+# NEIMAN — Autonomous Organization OS
 
 > The AI-native platform for organizational intelligence and automation.
 
 ## Overview
 
-NEXORA is a full-stack platform that enables organizations to:
+NEIMAN is a full-stack platform that enables organizations to:
 - Define operational workflows in natural language
 - Delegate repetitive decisions to autonomous AI agents
 - Surface real-time organizational intelligence into a unified interface
@@ -14,7 +14,7 @@ NEXORA is a full-stack platform that enables organizations to:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    NEXORA Platform                       │
+│                    NEIMAN Platform                       │
 │                                                         │
 │   ┌──────────────┐     ┌──────────────────────────┐     │
 │   │   Frontend   │────▶│     API Gateway (HTTPS)  │     │
@@ -75,12 +75,12 @@ NEXORA is a full-stack platform that enables organizations to:
 ## Project Structure
 
 ```
-nexora/
+NEIMAN/
 ├── .github/
 │   └── workflows/          # CI/CD pipelines
 ├── apps/
 │   ├── api/                # FastAPI backend
-│   │   ├── nexora/
+│   │   ├── NEIMAN/
 │   │   │   ├── agents/     # Agent definitions & runner
 │   │   │   ├── auth/       # JWT, RBAC
 │   │   │   ├── blueprints/ # Company templates
@@ -127,7 +127,7 @@ nexora/
 ```bash
 # Clone the repository
 git clone <repo-url>
-cd nexora
+cd NEIMAN
 
 # Start all services
 make dev

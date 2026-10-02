@@ -1,8 +1,8 @@
-# NEXORA Architecture
+# NEIMAN Architecture
 
 ## Current structure
 
-NEXORA is a monorepo with a FastAPI service in `apps/api` and a Next.js application in `apps/web`. The API is organized by organizational domain (agents, organizations, workflows, intelligence, governance, memory, resources, and related domains). SQLAlchemy models and repositories own persisted state; service and engine modules implement domain behavior. Provider adapters normalize model calls behind intelligence routing. The frontend uses the API through typed clients and dashboard routes.
+NEIMAN is a monorepo with a FastAPI service in `apps/api` and a Next.js application in `apps/web`. The API is organized by organizational domain (agents, organizations, workflows, intelligence, governance, memory, resources, and related domains). SQLAlchemy models and repositories own persisted state; service and engine modules implement domain behavior. Provider adapters normalize model calls behind intelligence routing. The frontend uses the API through typed clients and dashboard routes.
 
 ## Trust and authority boundaries
 
@@ -21,6 +21,6 @@ See [ROADMAP.md](ROADMAP.md), [KNOWN_ISSUES.md](KNOWN_ISSUES.md), and [PRODUCTIO
 
 ## Frontend presentation boundary
 
-The frontend visual system is defined by shared CSS variables in `apps/web/src/app/globals.css` and Tailwind mappings. Its graphite/lime palette, grouped command navigation, shared fine grain, and interactive isometric headquarters express NEXORA as an organization with rooms for departments, employees, and human review. Model providers stay visually separate as infrastructure. The office maps the first three loaded department records by ID; additional departments and their employees are explicitly surfaced as overflow and remain available in the organization graph. The floorplan is presentation-only and does not own or persist organizational state. Operational status copy should be computed from loaded API state; presentation must not invent health or provider availability.
+The frontend visual system is defined by shared CSS variables in `apps/web/src/app/globals.css` and Tailwind mappings. Its graphite/lime palette, grouped command navigation, shared fine grain, and interactive isometric headquarters express NEIMAN as an organization with rooms for departments, employees, and human review. Model providers stay visually separate as infrastructure. The office maps the first three loaded department records by ID; additional departments and their employees are explicitly surfaced as overflow and remain available in the organization graph. The floorplan is presentation-only and does not own or persist organizational state. Operational status copy should be computed from loaded API state; presentation must not invent health or provider availability.
 
 The control room reads tasks from each organization's real project task endpoints and memory from the organization memory API. Missing telemetry is nullable and surfaced as unavailable; successful empty responses are shown as empty states. Rejected domain requests are listed so empty data is not confused with missing data.

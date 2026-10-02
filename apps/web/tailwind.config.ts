@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -23,7 +24,7 @@ module.exports = {
           900: '#0c4a6e',
           950: '#082f49',
         },
-        nexora: {
+        NEIMAN: {
           dark: '#0d0f0d',
           surface: '#111411',
           border: '#2b3028',

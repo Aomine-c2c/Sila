@@ -1,4 +1,4 @@
-# NEXORA Frontend Technical Debt
+# NEIMAN Frontend Technical Debt
 
 > **Status:** Audit Report
 > **Scope:** Existing static HTML prototypes + identified backend issues affecting frontend
@@ -10,7 +10,7 @@
 
 ## 1. Executive Summary
 
-The NEXORA codebase has no production frontend. The "frontend" consists of **six static HTML prototype files** in `apps/api/nexora/static/` that serve as design references. These prototypes are functional in a browser but lack:
+The NEIMAN codebase has no production frontend. The "frontend" consists of **six static HTML prototype files** in `apps/api/NEIMAN/static/` that serve as design references. These prototypes are functional in a browser but lack:
 
 - Type safety
 - Authentication
@@ -254,7 +254,7 @@ These are issues in the backend code that will cause problems for the frontend:
 | `F841`: Unused local variable | service.py, intelligence/service.py | Remove or prefix with `_` |
 | `I001`: Import order | Multiple files | Run `ruff check --fix --select I001` |
 
-### 8.2 Pyrefly Findings (from `pyrefly check nexora/domains/agents/`)
+### 8.2 Pyrefly Findings (from `pyrefly check NEIMAN/domains/agents/`)
 
 | Issue | Files | Status |
 |---|---|---|

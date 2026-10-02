@@ -1,5 +1,5 @@
 /**
- * NEXORA Auth API
+ * NEIMAN Auth API
  */
 
 import { api } from './client';

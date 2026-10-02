@@ -1,4 +1,4 @@
-"""Pydantic schemas for NEXORA Company Blueprints and Build My Company generation."""
+"""Pydantic schemas for NEIMAN Company Blueprints and Build My Company generation."""
 
 import uuid
 from datetime import datetime

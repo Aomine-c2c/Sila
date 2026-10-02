@@ -173,7 +173,7 @@ export default function DecisionsPage() {
 
       {dialog && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDialog(); }}>
-          <section className="my-auto w-full max-w-2xl rounded-2xl border border-border bg-nexora-surface p-6 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="decision-dialog-title">
+          <section className="my-auto w-full max-w-2xl rounded-2xl border border-border bg-NEIMAN-surface p-6 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="decision-dialog-title">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <h2 id="decision-dialog-title" className="text-lg font-semibold text-foreground">
@@ -261,11 +261,11 @@ function TextField({ label, value, onChange, help, required }: { label: string; 
 }
 
 function EmptyPanel({ title, message }: { title: string; message: string }) {
-  return <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border px-6 py-12 text-center"><FileText className="mb-3 h-8 w-8 text-muted-foreground" aria-hidden="true"/><h2 className="font-medium text-foreground">{title}</h2><p className="mt-1 max-w-md text-sm text-muted-foreground">{message}</p></div>;
+  return <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border px-6 py-12 text-center"><FileText className="mb-3 h-8 w-8 text-muted-foreground" aria-hidden="true" /><h2 className="font-medium text-foreground">{title}</h2><p className="mt-1 max-w-md text-sm text-muted-foreground">{message}</p></div>;
 }
 
 function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return <div className="mb-4 flex flex-col gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-200 sm:flex-row sm:items-center sm:justify-between" role="alert"><span className="flex items-center gap-2"><AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true"/>{message}</span><button type="button" className="btn btn-outline btn-sm self-start" onClick={onRetry}>Retry</button></div>;
+  return <div className="mb-4 flex flex-col gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-200 sm:flex-row sm:items-center sm:justify-between" role="alert"><span className="flex items-center gap-2"><AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />{message}</span><button type="button" className="btn btn-outline btn-sm self-start" onClick={onRetry}>Retry</button></div>;
 }
 
 function errorMessage(error: unknown): string {

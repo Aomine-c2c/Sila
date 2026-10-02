@@ -1,4 +1,4 @@
-# Multi-stage build for NEXORA API
+# Multi-stage build for NEIMAN API
 FROM python:3.11-slim as builder
 
 WORKDIR /app
@@ -18,21 +18,21 @@ FROM python:3.11-slim as production
 WORKDIR /app
 
 # Create non-root user
-RUN groupadd -r nexora && useradd -r -g nexora nexora
+RUN groupadd -r NEIMAN && useradd -r -g NEIMAN NEIMAN
 
 # Copy installed dependencies from builder
 COPY --from=builder /app/.venv /app/.venv
 
 # Copy application code
-COPY nexora/ ./nexora/
+COPY NEIMAN/ ./NEIMAN/
 COPY alembic/ ./alembic/
 COPY alembic.ini ./
 
 # Set ownership
-RUN chown -R nexora:nexora /app
+RUN chown -R NEIMAN:NEIMAN /app
 
 # Switch to non-root user
-USER nexora
+USER NEIMAN
 
 # Add venv to PATH
 ENV PATH="/app/.venv/bin:$PATH"
@@ -45,4 +45,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8000/health || exit 1
 
 # Run the application
-CMD ["uvicorn", "nexora.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "NEIMAN.main:app", "--host", "0.0.0.0", "--port", "8000"]

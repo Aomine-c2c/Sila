@@ -1,5 +1,5 @@
 """
-Pydantic Schemas for NEXORA Resource Engine.
+Pydantic Schemas for NEIMAN Resource Engine.
 Covers:
 - Resource Pools (Capacity limits, allocation, availability)
 - Resource Budgets (USD, token budgets, alerts)

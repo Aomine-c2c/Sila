@@ -1,5 +1,5 @@
 """
-NEXORA Permission System.
+NEIMAN Permission System.
 
 Hierarchy: OWNER > ADMIN > MANAGER > MEMBER > VIEWER
 

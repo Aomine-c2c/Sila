@@ -183,3 +183,27 @@ class IntelligenceDashboardResponse(BaseModel):
     recent_routing_decisions: list[dict] = Field(default_factory=list)
     available_providers: list[ModelProviderResponse] = Field(default_factory=list)
     available_models: list[ModelResponse] = Field(default_factory=list)
+
+
+# ── Live Probing & Health Benchmarking Schemas ──────────────────────────────
+
+
+class ProviderProbeRequest(BaseModel):
+    """Parameters for active live provider latency and resilience probing."""
+
+    simulate_error: str | None = None  # None | "rate_limit" | "timeout" | "500"
+    timeout_seconds: float = 10.0
+
+
+class ProviderProbeResponse(BaseModel):
+    """Result of an active probe against an AI vendor adapter."""
+
+    provider: str
+    display_name: str
+    is_healthy: bool
+    latency_ms: float
+    circuit_breaker_status: str  # CLOSED | OPEN | HALF_OPEN
+    consecutive_failures: int
+    message: str
+    timestamp: datetime
+

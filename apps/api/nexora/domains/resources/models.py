@@ -1,5 +1,5 @@
 """
-NEXORA Resource Engine Models.
+NEIMAN Resource Engine Models.
 Treats organizational resources as finite operational assets across:
 - COMPUTE: CPU cores, RAM GB, GPU, storage GB, network bandwidth
 - INTELLIGENCE: model tokens, API requests, provider quotas, inference capacity

@@ -1,5 +1,5 @@
 /**
- * NEXORA Company Blueprints & Build My Company API Client
+ * NEIMAN Company Blueprints & Build My Company API Client
  *
  * Supports:
  * - 10 Core Domain Blueprints (Software, Forex, Marketing, Social Media, Cybersecurity,

@@ -1,5 +1,5 @@
 """
-Preconfigured catalog of industry organizational blueprints for NEXORA.
+Preconfigured catalog of industry organizational blueprints for NEIMAN.
 
 Blueprints included:
 1. Software Development Company

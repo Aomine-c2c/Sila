@@ -14,7 +14,7 @@ jest.mock('@/lib/api/decisions', () => ({
 }));
 
 const company = {
-  id: 'company-1', name: 'Nexora Test Co', slug: 'nexora-test-co', status: 'ACTIVE',
+  id: 'company-1', name: 'Nexora Test Co', slug: 'NEIMAN-test-co', status: 'ACTIVE',
   owner_id: 'user-1', created_at: '', updated_at: '',
 };
 

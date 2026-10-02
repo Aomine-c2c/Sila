@@ -288,7 +288,7 @@ async def rollback_adaptation(
 
 
 # =========================================================================
-# 3. NEXORA SIMULATION LAB (Simulated Copies, Workloads, Comparison & Promotion)
+# 3. NEIMAN SIMULATION LAB (Simulated Copies, Workloads, Comparison & Promotion)
 # =========================================================================
 @router.post(
     "/simulation/scenarios",

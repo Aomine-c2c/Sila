@@ -182,13 +182,13 @@ export default function GovernancePage() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               <Shield className="h-3.5 w-3.5" />
-              NEXORA Organizational Governance Layer
+              NEIMAN Organizational Governance Layer
             </div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
               Company Constitution & Autonomy Matrix
             </h1>
             <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-              Every company in NEXORA is bounded by a living Company Constitution, hierarchical 6-tier autonomy levels (Levels 0–5), explicit human-in-the-loop approval gates for high-risk operations, and consequential action audit logs.
+              Every company in NEIMAN is bounded by a living Company Constitution, hierarchical 6-tier autonomy levels (Levels 0–5), explicit human-in-the-loop approval gates for high-risk operations, and consequential action audit logs.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -270,11 +270,10 @@ export default function GovernancePage() {
       <div className="flex border-b border-border gap-6">
         <button
           onClick={() => setActiveTab('constitution')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
-            activeTab === 'constitution'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'constitution'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <FileText className="h-4 w-4" />
           Company Constitution
@@ -282,11 +281,10 @@ export default function GovernancePage() {
 
         <button
           onClick={() => setActiveTab('matrix')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
-            activeTab === 'matrix'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'matrix'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <Sliders className="h-4 w-4" />
           Autonomy Matrix (0–5)
@@ -294,11 +292,10 @@ export default function GovernancePage() {
 
         <button
           onClick={() => setActiveTab('evaluator')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
-            activeTab === 'evaluator'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'evaluator'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <Sparkles className="h-4 w-4" />
           Action Evaluation Simulator
@@ -306,11 +303,10 @@ export default function GovernancePage() {
 
         <button
           onClick={() => setActiveTab('approvals')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
-            activeTab === 'approvals'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'approvals'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <CheckCircle2 className="h-4 w-4" />
           Approval Gates ({pendingApprovalsCount})
@@ -318,11 +314,10 @@ export default function GovernancePage() {
 
         <button
           onClick={() => setActiveTab('audits')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
-            activeTab === 'audits'
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'audits'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+            }`}
         >
           <Eye className="h-4 w-4" />
           Consequential Action Audit Viewer ({audits.length})
@@ -597,19 +592,18 @@ export default function GovernancePage() {
                 <h2 className="text-base font-semibold text-foreground">Governance Decision</h2>
                 {evaluateMutation.data && (
                   <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${
-                      evaluateMutation.data.allowed
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${evaluateMutation.data.allowed
                         ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                         : evaluateMutation.data.is_prohibited
-                        ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                        : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                    }`}
+                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                          : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                      }`}
                   >
                     {evaluateMutation.data.allowed
                       ? 'PERMITTED'
                       : evaluateMutation.data.is_prohibited
-                      ? 'PROHIBITED'
-                      : 'APPROVAL REQUIRED'}
+                        ? 'PROHIBITED'
+                        : 'APPROVAL REQUIRED'}
                   </span>
                 )}
               </div>
@@ -713,13 +707,12 @@ export default function GovernancePage() {
                       <td className="p-3 text-muted-foreground max-w-xs">{app.reason}</td>
                       <td className="p-3">
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                            app.status === 'APPROVED'
+                          className={`px-2 py-0.5 rounded text-[10px] font-semibold ${app.status === 'APPROVED'
                               ? 'bg-emerald-500/10 text-emerald-400'
                               : app.status === 'REJECTED'
-                              ? 'bg-rose-500/10 text-rose-400'
-                              : 'bg-amber-500/10 text-amber-400'
-                          }`}
+                                ? 'bg-rose-500/10 text-rose-400'
+                                : 'bg-amber-500/10 text-amber-400'
+                            }`}
                         >
                           {app.status}
                         </span>
@@ -823,13 +816,12 @@ export default function GovernancePage() {
                         <td className="p-3 text-muted-foreground max-w-sm">{a.reason}</td>
                         <td className="p-3">
                           <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                              a.result === 'SUCCESS'
+                            className={`px-2 py-0.5 rounded text-[10px] font-semibold ${a.result === 'SUCCESS'
                                 ? 'bg-emerald-500/10 text-emerald-400'
                                 : a.result === 'BLOCKED'
-                                ? 'bg-rose-500/10 text-rose-400'
-                                : 'bg-amber-500/10 text-amber-400'
-                            }`}
+                                  ? 'bg-rose-500/10 text-rose-400'
+                                  : 'bg-amber-500/10 text-amber-400'
+                              }`}
                           >
                             {a.result}
                           </span>

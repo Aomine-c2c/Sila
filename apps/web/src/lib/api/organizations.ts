@@ -1,5 +1,5 @@
 /**
- * NEXORA Organizations API
+ * NEIMAN Organizations API
  */
 
 import { api } from './client';

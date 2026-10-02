@@ -4,7 +4,7 @@ API_DIR = apps/api
 WEB_DIR = apps/web
 
 help:
-	@echo "NEXORA — Autonomous Organization OS"
+	@echo "NEIMAN — Autonomous Organization OS"
 	@echo ""
 	@echo "Usage:"
 	@echo "  make install      Install all dependencies (API + Web)"
@@ -30,7 +30,7 @@ dev:
 	docker-compose up --build
 
 dev-api:
-	cd $(API_DIR) && uv run uvicorn nexora.main:app --reload --host 0.0.0.0 --port 8000
+	cd $(API_DIR) && uv run uvicorn NEIMAN.main:app --reload --host 0.0.0.0 --port 8000
 
 dev-web:
 	cd $(WEB_DIR) && npm run dev
@@ -50,7 +50,7 @@ test-web:
 	cd $(WEB_DIR) && NODE_ENV=test npx jest
 
 test-cov:
-	cd $(API_DIR) && uv run pytest tests/ -v --tb=short --cov=nexora --cov-report=term-missing
+	cd $(API_DIR) && uv run pytest tests/ -v --tb=short --cov=NEIMAN --cov-report=term-missing
 
 migrate:
 	cd $(API_DIR) && uv run alembic upgrade head
@@ -62,14 +62,14 @@ migrate-rollback:
 	cd $(API_DIR) && uv run alembic downgrade -1
 
 lint:
-	cd $(API_DIR) && uv run ruff check nexora/ tests/
-	cd $(API_DIR) && uv run mypy nexora/
+	cd $(API_DIR) && uv run ruff check NEIMAN/ tests/
+	cd $(API_DIR) && uv run mypy NEIMAN/
 	cd $(WEB_DIR) && npm run lint
 	cd $(WEB_DIR) && npm run type-check
 
 format:
-	cd $(API_DIR) && uv run ruff format nexora/ tests/
-	cd $(API_DIR) && uv run ruff check --fix nexora/ tests/
+	cd $(API_DIR) && uv run ruff format NEIMAN/ tests/
+	cd $(API_DIR) && uv run ruff check --fix NEIMAN/ tests/
 	cd $(WEB_DIR) && npx prettier --write src/
 
 shell:

@@ -1,5 +1,5 @@
 """
-NEXORA Organizational Memory System Models.
+NEIMAN Organizational Memory System Models.
 Treats memory not as simple chat history, but as structured, contextual,
 permission-scoped, domain-separated organizational intelligence assets:
 
