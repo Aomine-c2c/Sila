@@ -25,7 +25,7 @@ describe('CommandPalette', () => {
 
   it('filters command items based on user search query', () => {
     render(<CommandPalette isOpen={true} onClose={jest.fn()} />);
-    const input = screen.getByPlaceholderText(/Type a command or search anything/i);
+    const input = screen.getByPlaceholderText(/Type a command or query/i);
 
     fireEvent.change(input, { target: { value: 'Simulation' } });
 

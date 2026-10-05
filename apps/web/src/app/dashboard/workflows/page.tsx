@@ -53,10 +53,7 @@ const WorkflowInspector = dynamic(
   () => import('@/components/workflow/WorkflowInspector').then((mod) => mod.WorkflowInspector),
   { ssr: false }
 );
-const WorkflowValidationPanel = dynamic(
-  () => import('@/components/workflow/WorkflowValidationPanel').then((mod) => mod.WorkflowValidationPanel),
-  { ssr: false }
-);
+import { WorkflowValidationPanel } from '@/components/workflow/WorkflowValidationPanel';
 import type { NodePaletteItem } from '@/components/workflow/WorkflowPalette';
 
 // Canonical Software Requirement Pipeline preset

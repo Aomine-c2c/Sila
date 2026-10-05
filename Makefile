@@ -30,7 +30,7 @@ dev:
 	docker-compose up --build
 
 dev-api:
-	cd $(API_DIR) && uv run uvicorn NEIMAN.main:app --reload --host 0.0.0.0 --port 8000
+	cd $(API_DIR) && uv run uvicorn nexora.main:app --reload --host 0.0.0.0 --port 8000
 
 dev-web:
 	cd $(WEB_DIR) && npm run dev
@@ -50,7 +50,7 @@ test-web:
 	cd $(WEB_DIR) && NODE_ENV=test npx jest
 
 test-cov:
-	cd $(API_DIR) && uv run pytest tests/ -v --tb=short --cov=NEIMAN --cov-report=term-missing
+	cd $(API_DIR) && uv run pytest tests/ -v --tb=short --cov=nexora --cov-report=term-missing
 
 migrate:
 	cd $(API_DIR) && uv run alembic upgrade head
@@ -62,8 +62,8 @@ migrate-rollback:
 	cd $(API_DIR) && uv run alembic downgrade -1
 
 lint:
-	cd $(API_DIR) && uv run ruff check NEIMAN/ tests/
-	cd $(API_DIR) && uv run mypy NEIMAN/
+	cd $(API_DIR) && uv run ruff check nexora/ tests/
+	cd $(API_DIR) && uv run mypy nexora/
 	cd $(WEB_DIR) && npm run lint
 	cd $(WEB_DIR) && npm run type-check
 

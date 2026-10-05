@@ -1,29 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Building2,
-  Plus,
-  Loader2,
-  AlertTriangle,
-  GitGraph,
-  LayoutDashboard,
-  Layers,
-  Sparkles,
-  RefreshCw,
-} from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle, Building2, Loader2, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
 import { organizationsApi } from '@/lib/api/organizations';
 import { controlRoomApi, type ControlRoomState } from '@/lib/api/controlRoom';
-import { OrganizationalGraph } from '@/components/OrganizationalGraph';
-import { OperationalPulseCards } from '@/components/OperationalPulseCards';
-import { OperationalGrid } from '@/components/OperationalGrid';
-import { OrganizationOffice } from '@/components/OrganizationOffice';
-import { MagneticGrainOrb } from '@/components/layout/MagneticGrainOrb';
+import { ControlRoomDashboard } from '@/components/control-room/ControlRoomDashboard';
 import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 import { PREVIEW_COMPANY, getControlRoomPreviewState } from '@/lib/api/controlRoomPreview';
+import { useActivityStream } from '@/hooks/useActivityStream';
 
 export default function ControlRoomPage() {
   const qc = useQueryClient();
@@ -31,8 +17,6 @@ export default function ControlRoomPage() {
   const developmentBypass = isDevelopmentAuthBypassEnabled();
   const displayCompany = developmentBypass ? PREVIEW_COMPANY : activeCompany;
   const companyId = displayCompany?.id;
-
-  const [activeTab, setActiveTab] = useState<'control' | 'graph'>('control');
 
   // Load companies if none active
   const { data: companies = [] } = useQuery({
@@ -53,10 +37,14 @@ export default function ControlRoomPage() {
     queryFn: () => controlRoomApi.getOperationalState(companyId!),
     enabled: !!companyId && !developmentBypass,
     staleTime: 15_000,
+    refetchInterval: 30_000,
   });
 
-  const state = developmentBypass ? getControlRoomPreviewState() : (fetchedState ?? getControlRoomPreviewState());
-  const isLoading = developmentBypass ? false : (queryLoading && !state);
+  const state = developmentBypass ? getControlRoomPreviewState() : (fetchedState ?? null);
+  const isLoading = !developmentBypass && queryLoading && !state;
+
+  // Live activity stream (WebSocket → SSE → polling fallback)
+  const live = useActivityStream(companyId, state?.activity ?? []);
 
   // Approval decision mutation
   const approvalMutation = useMutation({
@@ -67,7 +55,7 @@ export default function ControlRoomPage() {
     },
   });
 
-  // Empty state when no company exists
+  // Empty state: no company selected yet
   if (!companyId) {
     return (
       <div className="animate-fade-in space-y-6">
@@ -86,10 +74,14 @@ export default function ControlRoomPage() {
               <Building2 className="h-7 w-7" aria-hidden="true" />
             </div>
             <div className="max-w-md">
-              <h2 className="text-lg font-semibold text-foreground">Organization context needs a real session</h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">The local preview opens the interface without signing in. Organization data and write actions come from the authenticated API, so they are not loaded in this mode.</p>
+              <h2 className="text-lg font-semibold text-foreground">Organization context requires a real session</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                The local preview opens the interface without signing in. Organization data and write actions come from the authenticated API, so they are not loaded in this mode.
+              </p>
             </div>
-            <Link href="/dashboard/organizations" className="btn btn-outline">Explore organization interface</Link>
+            <Link href="/dashboard/organizations" className="btn btn-outline">
+              Explore organization interface
+            </Link>
           </div>
         ) : companies.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-border py-24">
@@ -134,167 +126,63 @@ export default function ControlRoomPage() {
     );
   }
 
-  return (
-    <div className="animate-fade-in space-y-6">
-      {/* Top Mission Control Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/70 pb-5">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              {displayCompany?.name}
-            </h1>
-            <span className="badge badge-default text-xs">
-              <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-primary inline-block" />
-              {displayCompany?.status}
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground flex items-center gap-2">
-            <span>{displayCompany?.industry || 'AI Enterprise'}</span>
-            <span>•</span>
-            <span className="text-primary font-medium">ORGANIZATION / OPERATING PICTURE</span>
-          </p>
-        </div>
-
-        {/* View Switcher Tabs & Refresh */}
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center rounded-xl bg-secondary/60 p-1 border border-border/60">
-            <button
-              type="button"
-              onClick={() => setActiveTab('control')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'control'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-                }`}
-            >
-              <LayoutDashboard className="h-3.5 w-3.5" />
-              Operating picture
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('graph')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'graph'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-                }`}
-            >
-              <GitGraph className="h-3.5 w-3.5 text-primary" />
-              Organizational Graph
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => refetch()}
-            disabled={isRefetching}
-            className="btn btn-outline h-9 px-3 text-xs gap-1.5"
-            title={developmentBypass ? 'Reload the synthetic preview data' : 'Refresh real-time operational telemetry'}
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefetching ? 'animate-spin text-primary' : ''}`} />
-            {developmentBypass ? 'Reload sample' : 'Sync'}
-          </button>
-        </div>
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+        <p className="text-sm font-mono text-muted-foreground">
+          Synthesizing organization operating picture…
+        </p>
       </div>
+    );
+  }
 
-      {/* Loading state */}
-      {isLoading && (
-        <div className="flex flex-col items-center justify-center py-24 gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm font-mono text-muted-foreground">Synthesizing organization operating telemetry…</p>
-        </div>
-      )}
+  // Control Room — primary operating interface
+  if (state) {
+    return (
+      <ControlRoomDashboard
+        companyName={displayCompany!.name}
+        companyStatus={displayCompany!.status}
+        industry={displayCompany!.industry}
+        state={{
+          ...state,
+          // Merge live events into the state's activity array
+          activity: live.events.length > 0 ? live.events : state.activity,
+        }}
+        live={{
+          connection: live.connection,
+          transport: live.transport,
+          freshIds: live.freshIds,
+        }}
+        isRefetching={isRefetching}
+        previewMode={developmentBypass}
+        onDecideApproval={
+          developmentBypass
+            ? undefined
+            : (approvalId, decision) => approvalMutation.mutate({ approvalId, decision })
+        }
+      />
+    );
+  }
 
-      {/* Operational State Loaded */}
-      {!isLoading && state && (
-        <div className="space-y-6">
-          {activeTab === 'control' && (
-            <>
-              {/* Central Core: Magnetic Grain Orb & Radial Navigation Constellation */}
-              <div className="flex flex-col items-center justify-center p-4 rounded-3xl border border-primary/20 bg-gradient-to-b from-card/60 via-card/30 to-background backdrop-blur-xl relative overflow-hidden shadow-2xl">
-                <MagneticGrainOrb />
-              </div>
-
-              <OrganizationOffice
-                companyName={displayCompany!.name}
-                departments={state.departments}
-                agents={state.agents}
-                projects={state.projects}
-                tasks={state.tasks}
-                approvals={state.approvals}
-                providers={state.providers}
-                resources={state.resources}
-                memoryItems={state.memories.length}
-                activePolicies={state.policies.filter((policy) => policy.is_active).length}
-                onOpenGraph={() => setActiveTab('graph')}
-              />
-            </>
-          )}
-
-          {/* Executive Pulse Row (What is company doing? What are agents doing? Blocked? Resources?) */}
-          <OperationalPulseCards
-            agents={state.agents}
-            projects={state.projects}
-            tasks={state.tasks}
-            approvals={state.approvals}
-            audits={state.audits}
-            resources={state.resources}
-            decisions={state.decisions}
-          />
-
-          {state.unavailableSections.length > 0 && (
-            <div className="flex flex-col gap-2 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between" role="status">
-              <p className="text-xs text-amber-200/90">Some operating data could not be loaded ({state.unavailableSections.join(', ')}). Those figures are omitted.</p>
-              <button type="button" onClick={() => refetch()} className="shrink-0 text-left text-xs font-semibold text-primary hover:underline">Retry data</button>
-            </div>
-          )}
-
-          {/* Tab 1: Unified Mission Control Layout */}
-          {activeTab === 'control' && (
-            <div className="space-y-6 animate-fade-in">
-              {/* 15 Domains Operational Grid */}
-              <div className="space-y-2 pt-2">
-                <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold">
-                  Organization activity & governance
-                </h2>
-                <OperationalGrid
-                  companyId={companyId}
-                  departments={state.departments}
-                  agents={state.agents}
-                  projects={state.projects}
-                  tasks={state.tasks}
-                  approvals={state.approvals}
-                  audits={state.audits}
-                  resources={state.resources}
-                  decisions={state.decisions}
-                  policies={state.policies}
-                  memories={state.memories}
-                  providers={state.providers}
-                  previewMode={developmentBypass}
-                  onDecideApproval={developmentBypass ? undefined : (approvalId, decision) =>
-                    approvalMutation.mutate({ approvalId, decision })
-                  }
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Tab 2: Full-screen Organizational Graph Explorer */}
-          {activeTab === 'graph' && (
-            <div className="animate-fade-in space-y-4">
-              <OrganizationalGraph
-                companyName={displayCompany!.name}
-                companyStatus={displayCompany!.status}
-                departments={state.departments}
-                agents={state.agents}
-                projects={state.projects}
-                tasks={state.tasks}
-                decisions={state.decisions}
-                roles={state.roles}
-                audits={state.audits}
-              />
-            </div>
-          )}
-        </div>
-      )}
+  // Fallback: state didn't load (partial API failure)
+  return (
+    <div className="flex flex-col items-center justify-center py-32 gap-4">
+      <AlertTriangle className="h-8 w-8 text-amber-400" aria-hidden="true" />
+      <div className="text-center">
+        <p className="font-medium text-foreground">Operating picture unavailable</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Could not load organization state. The API may be temporarily unavailable.
+        </p>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="mt-4 btn btn-outline h-9 px-4 text-xs"
+        >
+          Retry
+        </button>
+      </div>
     </div>
   );
 }

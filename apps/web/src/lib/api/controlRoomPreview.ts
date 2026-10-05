@@ -1,5 +1,7 @@
+import type { ActivityEvent } from '@neiman/events';
 import type { NexoraCompany } from '@/store/auth';
 import type { ControlRoomState } from './controlRoom';
+import type { OrganizationalAdaptation } from './evolution';
 
 /** Synthetic dashboard fixtures for local design review. Never persisted or written to an API. */
 export const PREVIEW_COMPANY: NexoraCompany = {
@@ -19,6 +21,99 @@ export const PREVIEW_COMPANY: NexoraCompany = {
 const companyId = PREVIEW_COMPANY.id;
 const at = '2026-09-30T09:00:00.000Z';
 const identity = (title: string) => ({ title, avatar: null });
+
+export const PREVIEW_ACTIVITY: ActivityEvent[] = [
+  {
+    id: 'preview-activity-analysis',
+    company_id: companyId,
+    event_type: 'agent_completed',
+    severity: 'INFO',
+    title: 'completed system analysis',
+    summary: 'Architecture Agent completed system analysis.',
+    agent_id: 'preview-agent-eli',
+    agent_name: 'Architecture Agent',
+    department_id: 'preview-dept-intelligence',
+    department_name: 'Intelligence',
+    project_id: 'preview-project-quality',
+    project_name: 'Evidence-first answers',
+    payload: {},
+    timestamp: '2026-09-30T09:42:00.000Z',
+  },
+  {
+    id: 'preview-activity-concern',
+    company_id: companyId,
+    event_type: 'task_failed',
+    severity: 'HIGH',
+    title: 'raised a concern',
+    summary: 'Security Agent raised a concern.',
+    agent_id: 'preview-agent-noah',
+    agent_name: 'Security Agent',
+    department_id: 'preview-dept-operations',
+    department_name: 'Operations',
+    project_id: 'preview-project-quality',
+    project_name: 'Evidence-first answers',
+    payload: { concern: 'Source coverage blocked evaluation' },
+    timestamp: '2026-09-30T09:44:00.000Z',
+  },
+  {
+    id: 'preview-activity-approval-request',
+    company_id: companyId,
+    event_type: 'approval_requested',
+    severity: 'HIGH',
+    title: 'requested approval',
+    summary: 'CTO Agent requested approval.',
+    agent_id: 'preview-agent-mara',
+    agent_name: 'CTO Agent',
+    department_id: 'preview-dept-product',
+    department_name: 'Product Lab',
+    project_id: 'preview-project-onboarding',
+    project_name: 'A calmer onboarding',
+    payload: { action: 'Send onboarding research brief' },
+    timestamp: '2026-09-30T09:47:00.000Z',
+  },
+  {
+    id: 'preview-activity-human-gate',
+    company_id: companyId,
+    event_type: 'approval_requested',
+    severity: 'CRITICAL',
+    title: 'Human approval required',
+    summary: 'Human approval required.',
+    agent_id: null,
+    agent_name: null,
+    department_id: null,
+    department_name: null,
+    project_id: 'preview-project-onboarding',
+    project_name: 'A calmer onboarding',
+    payload: { gate: 'external_communication' },
+    timestamp: '2026-09-30T09:50:00.000Z',
+  },
+];
+
+const PREVIEW_EVOLUTION: OrganizationalAdaptation[] = [
+  {
+    id: 'preview-adaptation-1',
+    company_id: companyId,
+    title: 'Route research workloads by evidence capability',
+    adaptation_type: 'CHANGE_MODEL_ROUTING',
+    stage: 'VALIDATE',
+    status: 'PENDING_APPROVAL',
+    trigger_diagnosis: 'Research tasks used a general route despite stronger long-context capability being available.',
+    evidence: [{ sample_size: 48, finding: 'Source coverage improved in evaluation.' }],
+    previous_state: { strategy: 'BALANCED' },
+    proposed_state: { research: 'google/gemini-2.5-pro' },
+    expected_improvement: 'Improve source coverage while keeping spend within the current budget.',
+    risk_assessment: 'Low risk; staged routing with rollback available.',
+    risk_level: 'LOW',
+    simulation_results: { synthetic_runs: 30, latency_reduction_pct: 8, cost_savings_pct: 4, failure_rate_synthetic: 2.1 },
+    validation_passed: true,
+    snapshot_id: 'preview-snapshot-1',
+    approved_by: null,
+    deployed_at: null,
+    actual_result: {},
+    created_at: at,
+    updated_at: at,
+  },
+];
 
 export function getControlRoomPreviewState(): ControlRoomState {
   const departments = [
@@ -79,6 +174,8 @@ export function getControlRoomPreviewState(): ControlRoomState {
       { id: 'preview-provider-google', name: 'Gemini 2.5 Pro', provider: 'google', status: 'ONLINE', active_requests: 1, avg_latency_ms: 940, total_tokens: 9300, cost_usd: 1.42 },
       { id: 'preview-provider-local', name: 'Qwen 3 · Local', provider: 'local', status: 'DEGRADED', active_requests: 0, avg_latency_ms: 2210, total_tokens: 7300, cost_usd: 0 },
     ],
+    activity: PREVIEW_ACTIVITY,
+    evolutionProposals: PREVIEW_EVOLUTION,
     unavailableSections: [],
   };
 }

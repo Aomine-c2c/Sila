@@ -71,6 +71,7 @@ module.exports = {
         'slide-down': 'slideDown 0.3s ease-out',
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'spin-slow': 'spin 3s linear infinite',
+        'flash-highlight': 'flashHighlight 2.2s ease-out forwards',
       },
       keyframes: {
         fadeIn: {
@@ -85,7 +86,13 @@ module.exports = {
           '0%': { transform: 'translateY(-10px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+        flashHighlight: {
+          '0%': { backgroundColor: 'hsl(43 100% 50% / 0.18)', borderRadius: '0.5rem' },
+          '60%': { backgroundColor: 'hsl(43 100% 50% / 0.10)', borderRadius: '0.5rem' },
+          '100%': { backgroundColor: 'transparent', borderRadius: '0.5rem' },
+        },
       },
+
     },
   },
   plugins: [],

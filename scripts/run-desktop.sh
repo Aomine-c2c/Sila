@@ -60,10 +60,10 @@ if curl -s --connect-timeout 1 "${API_URL}/api/v1/health" >/dev/null 2>&1 || cur
 else
     echo "[*] Starting background FastAPI backend on port ${API_PORT}..."
     if command -v uv >/dev/null 2>&1; then
-        (cd "${API_DIR}" && uv run uvicorn NEIMAN.main:app --host 127.0.0.1 --port "${API_PORT}" --log-level warning) &
+        (cd "${API_DIR}" && uv run uvicorn nexora.main:app --host 127.0.0.1 --port "${API_PORT}" --log-level warning) &
         API_PID=$!
     else
-        (cd "${API_DIR}" && python3 -m uvicorn NEIMAN.main:app --host 127.0.0.1 --port "${API_PORT}" --log-level warning) &
+        (cd "${API_DIR}" && python3 -m uvicorn nexora.main:app --host 127.0.0.1 --port "${API_PORT}" --log-level warning) &
         API_PID=$!
     fi
 

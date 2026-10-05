@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- **NEIMAN Company Control Room & Activity Stream**:
+  - **Unified Operating Cockpit (`/dashboard`)**:
+    - Embedded `ControlRoomDashboard` as the central operating cockpit, retiring fragmented legacy cards and grids.
+    - Designed around the key operator questions: *What is happening?*, *What needs attention?*, *What are agents doing?*, *What is consuming resources?*, *What is blocked?*, *What decisions require approval?*, and *What changed recently?*.
+    - Interactive quick-action banner, agent roster with active execution indicators, resource utilization gauges, blocked task telemetry, inline approval resolution, and evolution proposals.
+    - Added comprehensive empty state onboarding for newly instantiated companies with clear setup actions.
+  - **Real-Time Organization Activity Stream**:
+    - Connected `OrganizationActivityTimeline` to `useActivityStream` with WebSocket support and seamless Server-Sent Events (SSE) fallback.
+    - Enhanced timeline with subtle amber pulse flash (`flash-highlight`) and smooth entrance animation (`slide-down`) on incoming events without distracting layout shifts.
+  - **Test Suite & Build Solidification**:
+    - Resolved direct import vs dynamic chunk rendering in `WorkflowValidationPanel` for instantaneous modal feedback and consistent test assertions.
+    - Added quick navigation items (`Control Room`, `Departments`, `Simulation Lab`) and aligned query regex in `CommandPalette.test.tsx`.
+    - Confirmed 100% clean test execution across both web frontend (51/51 tests passing) and backend (127/127 tests passing).
+
 - **Frontend Security Audit & Hardening**:
   - **Zero-Trust Tauri Capability Boundaries**:
     - Deep Link Injection Protection (`handle_deep_link`): Enforced `neiman://` scheme validation, prohibited CRLF/null characters, and enforced a 2048-character length boundary.

@@ -1,120 +1,139 @@
 'use client';
 
-import React from 'react';
 import Link from 'next/link';
-import {
-  Clock,
-  Shield,
-  Bot,
-  AlertTriangle,
-  CheckCircle2,
-  XCircle,
-  ArrowRight,
-  Sparkles,
-  ExternalLink,
-} from 'lucide-react';
+import { Clock } from 'lucide-react';
+import type { ActivityEvent } from '@neiman/events';
 import type { AuditLog } from '@/lib/api/controlRoom';
 
+export type TimelineTone = 'complete' | 'attention' | 'approval' | 'blocked' | 'activity';
+
+export interface TimelineItem {
+  id: string;
+  at: string;
+  headline: string;
+  tone: TimelineTone;
+}
+
 interface OrganizationActivityTimelineProps {
-  audits: AuditLog[];
+  events?: ActivityEvent[];
+  audits?: AuditLog[];
   maxItems?: number;
+  freshIds?: Set<string>;
+  emptyHint?: string;
+}
+
+const TONE_DOT: Record<TimelineTone, string> = {
+  complete: 'bg-emerald-400',
+  attention: 'bg-amber-400',
+  approval: 'bg-amber-400',
+  blocked: 'bg-rose-400',
+  activity: 'bg-sky-400',
+};
+
+export function formatClock(dateString?: string) {
+  if (!dateString) return '--:--';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return '--:--';
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+export function toneForActivity(event: ActivityEvent): TimelineTone {
+  if (event.event_type === 'approval_requested') return 'approval';
+  if (event.event_type === 'task_failed' || event.event_type === 'provider_failed') return 'blocked';
+  if (event.severity === 'CRITICAL' || event.severity === 'HIGH') return 'attention';
+  if (event.event_type === 'agent_completed' || event.event_type === 'workflow_completed' || event.event_type === 'approval_completed') {
+    return 'complete';
+  }
+  return 'activity';
+}
+
+export function activityHeadline(event: ActivityEvent) {
+  if (event.summary?.trim()) return event.summary.trim();
+  if (event.agent_name && event.title) return `${event.agent_name} ${event.title}`.trim();
+  return event.title || 'Organization event';
+}
+
+function auditHeadline(audit: AuditLog) {
+  const actor = audit.actor_type === 'AGENT' ? 'Agent' : audit.actor_type === 'USER' ? 'Human' : 'System';
+  if (audit.target) return `${actor} ${audit.action} — ${audit.target}`;
+  return `${actor} ${audit.action}`;
+}
+
+function toneForAudit(audit: AuditLog): TimelineTone {
+  const blob = `${audit.action} ${audit.result ?? ''}`.toLowerCase();
+  if (blob.includes('approval') || blob.includes('pending')) return 'approval';
+  if (blob.includes('blocked') || blob.includes('denied') || blob.includes('concern')) return 'blocked';
+  if (blob.includes('complet')) return 'complete';
+  return 'activity';
+}
+
+export function buildTimelineItems(events: ActivityEvent[] = [], audits: AuditLog[] = []): TimelineItem[] {
+  const fromEvents: TimelineItem[] = events.map((event) => ({
+    id: event.id,
+    at: event.timestamp,
+    headline: activityHeadline(event),
+    tone: toneForActivity(event),
+  }));
+  if (fromEvents.length > 0) {
+    return fromEvents.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  }
+  return audits
+    .map((audit) => ({
+      id: audit.id,
+      at: audit.created_at,
+      headline: auditHeadline(audit),
+      tone: toneForAudit(audit),
+    }))
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 }
 
 export function OrganizationActivityTimeline({
-  audits,
-  maxItems = 6,
+  events = [],
+  audits = [],
+  maxItems = 8,
+  freshIds,
+  emptyHint = 'When agents start work, events appear here with a clock time.',
 }: OrganizationActivityTimelineProps) {
-  // Sort audits chronologically, newest first
-  const displayAudits = audits.slice(0, maxItems);
+  const items = buildTimelineItems(events, audits).slice(0, maxItems);
 
-  const formatTimestamp = (dateString?: string) => {
-    if (!dateString) return 'Now';
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Recently';
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    } catch {
-      return 'Recently';
-    }
-  };
-
-  const getStatusIndicator = (action: string, result?: string) => {
-    const act = (action + ' ' + (result || '')).toLowerCase();
-    if (act.includes('approval') || act.includes('request') || act.includes('pending')) {
-      return {
-        dotClass: 'bg-amber-400 ring-amber-400/20',
-        textClass: 'text-amber-400',
-        icon: Shield,
-      };
-    }
-    if (act.includes('blocked') || act.includes('denied') || act.includes('paused') || act.includes('concern')) {
-      return {
-        dotClass: 'bg-rose-400 ring-rose-400/20',
-        textClass: 'text-rose-400',
-        icon: AlertTriangle,
-      };
-    }
-    return {
-      dotClass: 'bg-emerald-400 ring-emerald-400/20',
-      textClass: 'text-emerald-400',
-      icon: CheckCircle2,
-    };
-  };
+  if (items.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-border/80 px-4 py-8 text-center">
+        <Clock className="mx-auto mb-2 h-5 w-5 text-muted-foreground/70" aria-hidden="true" />
+        <p className="text-sm font-medium text-foreground">No activity yet</p>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">{emptyHint}</p>
+        <Link href="/dashboard/agents" className="mt-3 inline-block text-xs font-semibold text-primary hover:underline">
+          Hire an agent to begin
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      {displayAudits.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border/80 p-6 text-center text-xs text-muted-foreground">
-          <Clock className="h-5 w-5 mx-auto mb-2 text-muted-foreground/60" />
-          <p>No operational events recorded yet.</p>
-          <span className="text-[10px] text-muted-foreground/60 mt-1 block">
-            Actions performed by agents and councils will appear here in real-time.
-          </span>
-        </div>
-      ) : (
-        <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-px before:bg-border/80">
-          {displayAudits.map((item, idx) => {
-            const time = formatTimestamp(item.created_at);
-            const style = getStatusIndicator(item.action, item.result);
-            const Icon = style.icon;
-
-            return (
-              <div key={item.id || idx} className="relative group text-xs">
-                {/* Timeline node dot */}
-                <div
-                  className={`absolute -left-[23px] top-1 h-2.5 w-2.5 rounded-full ${style.dotClass} ring-4 bg-background border border-border`}
-                />
-
-                <div className="rounded-xl border border-border/50 bg-secondary/30 p-2.5 hover:border-primary/40 transition-colors">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-[11px] font-semibold text-foreground/90">
-                      {time}
-                    </span>
-                    {item.result && (
-                      <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded border border-border/60 ${style.textClass}`}>
-                        {item.result}
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="mt-1 text-xs text-foreground font-medium">
-                    <span className="text-primary font-semibold mr-1.5">
-                      {item.actor_type === 'AGENT' ? '🤖' : '👤'} {item.action}
-                    </span>
-                    {item.target && <span className="text-muted-foreground font-normal">on {item.target}</span>}
-                  </p>
-
-                  {item.reason && (
-                    <p className="mt-1 text-[11px] text-muted-foreground/80 line-clamp-2">
-                      {item.reason}
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    <ol className="relative space-y-4 pl-14 before:absolute before:bottom-2 before:left-[2.15rem] before:top-2 before:w-px before:bg-border">
+      {items.map((item) => {
+        const isFresh = freshIds?.has(item.id);
+        return (
+          <li
+            key={item.id}
+            className={`relative ${isFresh ? 'animate-slide-down animate-flash-highlight' : ''}`}
+          >
+            <time
+              dateTime={item.at}
+              className="absolute left-0 top-0 w-10 font-mono text-[11px] font-semibold tabular-nums text-foreground"
+            >
+              {formatClock(item.at)}
+            </time>
+            <span
+              className={`absolute left-[1.9rem] top-1.5 h-2 w-2 rounded-full ring-4 ring-background ${TONE_DOT[item.tone]} ${
+                item.tone === 'approval' || item.tone === 'blocked' ? 'animate-pulse' : ''
+              }`}
+              aria-hidden="true"
+            />
+            <p className="text-sm leading-6 text-foreground">{item.headline}</p>
+          </li>
+        );
+      })}
+    </ol>
   );
 }

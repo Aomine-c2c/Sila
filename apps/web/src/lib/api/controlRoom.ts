@@ -6,6 +6,8 @@
 import { api } from './client';
 import type { Agent } from './agents';
 import type { Department, OrgRole } from './organizations';
+import type { ActivityEvent } from '@neiman/events';
+import type { OrganizationalAdaptation } from './evolution';
 import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 import { getControlRoomPreviewState } from './controlRoomPreview';
 
@@ -128,6 +130,8 @@ export interface ControlRoomState {
   policies: Policy[];
   memories: MemoryItem[];
   providers: ModelProviderInfo[];
+  activity: ActivityEvent[];
+  evolutionProposals: OrganizationalAdaptation[];
   unavailableSections: string[];
 }
 
@@ -151,6 +155,8 @@ export const controlRoomApi = {
       resourceRes,
       intelligenceRes,
       memoryRes,
+      activityRes,
+      evolutionRes,
     ] = await Promise.allSettled([
       api.get<Agent[]>(`/api/v1/companies/${companyId}/agents`),
       api.get<Department[]>(`/api/v1/companies/${companyId}/departments`),
@@ -163,6 +169,8 @@ export const controlRoomApi = {
       api.get<any>(`/api/v1/companies/${companyId}/resources/control-center`),
       api.get<any>(`/api/v1/companies/${companyId}/intelligence/dashboard`),
       api.get<MemoryItem[]>(`/api/v1/companies/${companyId}/memory/items?limit=50`),
+      api.get<ActivityEvent[]>(`/api/v1/companies/${companyId}/activity?limit=40`),
+      api.get<OrganizationalAdaptation[]>(`/api/v1/companies/${companyId}/evolution/adaptations`),
     ]);
 
     const agents = agentsRes.status === 'fulfilled' ? agentsRes.value : [];
@@ -198,6 +206,8 @@ export const controlRoomApi = {
       cost_usd: null,
     }));
     const memories = memoryRes.status === 'fulfilled' ? memoryRes.value : [];
+    const activity = activityRes.status === 'fulfilled' ? activityRes.value : [];
+    const evolutionProposals = evolutionRes.status === 'fulfilled' ? evolutionRes.value : [];
     const taskResults = await Promise.allSettled(projects.map((project) =>
       api.get<Task[]>(`/api/v1/companies/${companyId}/projects/${project.id}/tasks`),
     ));
@@ -214,6 +224,8 @@ export const controlRoomApi = {
       ...(resourceRes.status === 'rejected' ? ['resource telemetry'] : []),
       ...(intelligenceRes.status === 'rejected' ? ['provider telemetry'] : []),
       ...(memoryRes.status === 'rejected' ? ['organization memory'] : []),
+      ...(activityRes.status === 'rejected' ? ['activity stream'] : []),
+      ...(evolutionRes.status === 'rejected' ? ['evolution proposals'] : []),
       ...(taskResults.some((result) => result.status === 'rejected') ? ['some project tasks'] : []),
     ];
 
@@ -231,6 +243,8 @@ export const controlRoomApi = {
       policies,
       memories,
       providers,
+      activity,
+      evolutionProposals,
       unavailableSections,
     };
   },

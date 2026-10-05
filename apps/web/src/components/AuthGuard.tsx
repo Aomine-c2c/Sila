@@ -80,16 +80,29 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-center" role="alert">
         <p className="text-sm text-muted-foreground">NEIMAN could not verify your session.</p>
-        <button
-          type="button"
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          onClick={() => {
-            setCheckFailed(false);
-            setRetry((count) => count + 1);
-          }}
-        >
-          Try again
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            onClick={() => {
+              setCheckFailed(false);
+              setRetry((count) => count + 1);
+            }}
+          >
+            Try again
+          </button>
+          <button
+            type="button"
+            className="rounded-lg border border-border bg-secondary/60 px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary transition-colors"
+            onClick={() => {
+              logout();
+              const returnTo = encodeURIComponent(pathname || '/dashboard');
+              router.replace(`/auth/login?next=${returnTo}`);
+            }}
+          >
+            Sign in again
+          </button>
+        </div>
       </div>
     );
   }
