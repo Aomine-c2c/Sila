@@ -255,11 +255,16 @@ export const desktopUpdates = {
   async restartToApply(): Promise<void> {
     if (isTauriDesktop()) {
       try {
-        const { relaunch } = await import('@tauri-apps/plugin-process');
-        await relaunch();
+        // Try @tauri-apps/plugin-process relaunch if available
+        const processPlugin = await import('@tauri-apps/plugin-process' as any).catch(() => null);
+        if (processPlugin && typeof processPlugin.relaunch === 'function') {
+          await processPlugin.relaunch();
+          return;
+        }
       } catch {
-        window.location.reload();
+        // Fall back to window reload
       }
+      window.location.reload();
     } else {
       window.location.reload();
     }

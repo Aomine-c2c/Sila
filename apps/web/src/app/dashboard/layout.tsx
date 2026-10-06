@@ -25,6 +25,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { isTauriDesktop, desktopEvents, desktopWindowState } from '@/lib/desktop/tauriBridge';
 import { SystemSetupWizard } from '@/components/layout/SystemSetupWizard';
 import { UpdateReadyModal } from '@/components/layout/UpdateReadyModal';
+import { AgentOrb } from '@/components/ui/AgentOrb';
 
 export default function DashboardLayout({
   children,
@@ -132,7 +133,7 @@ export default function DashboardLayout({
         <div className="flex flex-1 flex-col min-w-0 h-screen overflow-hidden">
           {/* Top bar with Breadcrumbs, Global Search, ThemeToggle, & User Menu */}
           <header className="NEIMAN-topbar sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/80 px-4 backdrop-blur-xl lg:px-6 gap-4">
-            {/* Left: Domain Breadcrumbs */}
+            {/* Left: Domain Breadcrumbs & Live AI Thinking Beacon */}
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex items-center gap-2 text-xs font-mono shrink-0">
                 <Link
@@ -147,6 +148,12 @@ export default function DashboardLayout({
                 <span className="text-foreground font-semibold uppercase tracking-widest truncate text-xs font-mono">
                   {currentDomain}
                 </span>
+              </div>
+
+              {/* Cognitive Status Orb Indicator */}
+              <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-border/40 font-mono text-[10px] text-muted-foreground">
+                <AgentOrb status="ACTIVE" size={20} />
+                <span className="uppercase tracking-widest text-[#EDEDED] hidden lg:inline">COGNITION: ACTIVE</span>
               </div>
             </div>
 
