@@ -229,6 +229,7 @@ pub fn run() {
             commands::handle_deep_link,
             commands::check_app_updates,
             commands::export_report_file,
+            commands::inspect_local_project,
         ])
         .run(tauri::generate_context!())
         .expect("error while building tauri application");

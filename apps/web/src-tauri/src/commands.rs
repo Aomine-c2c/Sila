@@ -235,3 +235,81 @@ pub fn export_report_file(
     fs::write(&target, content).map_err(|e| e.to_string())?;
     Ok(target.to_string_lossy().to_string())
 }
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct LocalProjectInspection {
+    pub exists: bool,
+    pub path: String,
+    pub is_git_repo: bool,
+    pub current_branch: Option<String>,
+    pub head_commit: Option<String>,
+    pub remote_origin: Option<String>,
+    pub file_count: usize,
+}
+
+/// Safely inspects a local filesystem directory for project metadata and git configuration.
+#[tauri::command]
+pub fn inspect_local_project(path: String) -> Result<LocalProjectInspection, String> {
+    let p = PathBuf::from(&path);
+    if !p.exists() || !p.is_dir() {
+        return Ok(LocalProjectInspection {
+            exists: false,
+            path,
+            is_git_repo: false,
+            current_branch: None,
+            head_commit: None,
+            remote_origin: None,
+            file_count: 0,
+        });
+    }
+
+    let git_dir = p.join(".git");
+    let is_git = git_dir.exists();
+    let mut branch = None;
+    let mut commit = None;
+    let mut remote = None;
+
+    if is_git {
+        // Read HEAD
+        if let Ok(head_str) = fs::read_to_string(git_dir.join("HEAD")) {
+            let trimmed = head_str.trim();
+            if trimmed.starts_with("ref: refs/heads/") {
+                let b = trimmed.replace("ref: refs/heads/", "");
+                let branch_name = b.trim().to_string();
+                // Read ref commit
+                if let Ok(rev) = fs::read_to_string(git_dir.join("refs/heads").join(&branch_name)) {
+                    commit = Some(rev.trim().chars().take(8).collect());
+                }
+                branch = Some(branch_name);
+            } else if trimmed.len() >= 8 {
+                commit = Some(trimmed.chars().take(8).collect());
+                branch = Some("detached".to_string());
+            }
+        }
+
+        // Read config to extract remote origin url
+        if let Ok(cfg_str) = fs::read_to_string(git_dir.join("config")) {
+            for line in cfg_str.lines() {
+                let trimmed = line.trim();
+                if trimmed.starts_with("url = ") {
+                    let u = trimmed.replace("url = ", "");
+                    remote = Some(u.trim().to_string());
+                    break;
+                }
+            }
+        }
+    }
+
+    // Count top-level entries safely
+    let file_count = fs::read_dir(&p).map(|d| d.count()).unwrap_or(0);
+
+    Ok(LocalProjectInspection {
+        exists: true,
+        path: p.to_string_lossy().to_string(),
+        is_git_repo: is_git,
+        current_branch: branch,
+        head_commit: commit,
+        remote_origin: remote,
+        file_count,
+    })
+}

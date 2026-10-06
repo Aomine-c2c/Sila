@@ -349,3 +349,123 @@ class AuditIntegrityChamber:
             audit_id, company_id, actor_id, action, target, result, timestamp, previous_signature
         )
         return hmac.compare_digest(expected, signature)
+
+
+# ── 8. Filler Scrubber & High-Density Token Compressor ────────────────────────
+
+class FillerScrubber:
+    """
+    Strips conversational filler, discursive meta-commentary, and pleasantries.
+    Compresses bloated natural language outputs into high-density technical fragments.
+    Preserves:
+    - Code blocks & syntax formatting
+    - URLs & file paths
+    - Key technical metrics, IDs, hashes, and error messages
+    """
+
+    # Opening conversational pleasantries and filler phrases
+    _PREAMBLE_PATTERNS = [
+        r"^(?:(?:Certainly|Sure|Sure thing|Of course|Alright|Okay|Great|Got it|Understood|No problem)[!.,\s]*)+",
+        r"^(?:Here (?:is|are)(?: the)?|Below (?:is|are)(?: the)?|Please find(?: the)?)[^:\n]*:?\s*",
+        r"^(?:I(?:'d| would)? (?:be happy|like) to (?:help|assist|provide)[^:\n]*:?\s*)",
+        r"^(?:As an AI (?:language model|assistant)[^,\n]*,?\s*)",
+        r"^(?:Based on your request|According to your request|As requested)[^,\n]*,?\s*",
+        r"^(?:In response to your query|Regarding your question)[^,\n]*,?\s*",
+    ]
+
+    # Transitional and conversational hedging mid-text
+    _HEDGING_PATTERNS = [
+        r"(?i)\b(?:please note that|it is important to (?:note|remember) that|keep in mind that)\b\s*",
+        r"(?i)\b(?:feel free to (?:let me know|ask|reach out)|don't hesitate to reach out)\b[.!?,]?",
+        r"(?i)\b(?:hope this helps|let me know if you need anything else|let me know if you have any questions)\b[.!?,]?",
+        r"(?i)\b(?:as (?:mentioned|stated|discussed) earlier|as you (?:may )?know)\b,?\s*",
+    ]
+
+    # Meta wrap-up phrases
+    _POSTAMBLE_PATTERNS = [
+        r"(?i)(?:\n\s*)?(?:In summary|To summarize|In conclusion|Overall)[^:\n]*:?\s*",
+        r"(?i)(?:\n\s*)?(?:Summary:\s*)",
+    ]
+
+    @classmethod
+    def strip_filler(cls, text: str) -> str:
+        """
+        Removes introductory pleasantries, polite hedges, and closing meta-filler
+        while strictly preserving code blocks, json blocks, and technical content.
+        """
+        if not text or not text.strip():
+            return ""
+
+        # Protect markdown code blocks during scrubbing
+        code_blocks: list[str] = []
+        def _extract_code(match: re.Match) -> str:
+            code_blocks.append(match.group(0))
+            return f"__CODE_BLOCK_{len(code_blocks) - 1}__"
+
+        processed = re.sub(r"```[\s\S]*?```", _extract_code, text)
+
+        # 1. Strip preambles from beginning of text
+        for pat in cls._PREAMBLE_PATTERNS:
+            processed = re.sub(pat, "", processed, flags=re.IGNORECASE).lstrip()
+
+        # 2. Strip conversational hedging patterns
+        for pat in cls._HEDGING_PATTERNS:
+            processed = re.sub(pat, "", processed, flags=re.IGNORECASE)
+
+        # 3. Strip closing meta-summaries if redundant
+        for pat in cls._POSTAMBLE_PATTERNS:
+            processed = re.sub(pat, "", processed, flags=re.IGNORECASE)
+
+        # 4. Clean extra trailing/leading whitespace and double empty lines
+        processed = re.sub(r"\n{3,}", "\n\n", processed).strip()
+
+        # 5. Restore code blocks
+        for idx, block in enumerate(code_blocks):
+            processed = processed.replace(f"__CODE_BLOCK_{idx}__", block)
+
+        return processed
+
+    @classmethod
+    def compress_to_fragments(cls, text: str) -> str:
+        """
+        Cleans conversational filler and converts loose narrative paragraphs
+        into dense, fragment-structured bullet clauses where appropriate.
+        """
+        cleaned = cls.strip_filler(text)
+        if not cleaned:
+            return ""
+
+        # If already formatted with lists, bullets, or code, return stripped text
+        lines = cleaned.splitlines()
+        has_structural_formatting = any(
+            line.strip().startswith(("-", "*", "1.", "2.", "3.", "#", "```", "|"))
+            for line in lines
+        )
+        if has_structural_formatting:
+            return cleaned
+
+        # Otherwise convert discursive multi-sentence paragraphs into clean fragments
+        paragraphs = [p.strip() for p in cleaned.split("\n\n") if p.strip()]
+        dense_clauses: list[str] = []
+
+        for p in paragraphs:
+            # Split sentences
+            sentences = re.split(r"(?<=[.!?])\s+", p)
+            for s in sentences:
+                s_clean = s.strip()
+                if not s_clean:
+                    continue
+                # Strip weak transitional words at sentence starts
+                s_clean = re.sub(
+                    r"^(?:Additionally|Furthermore|Moreover|In addition|Also|However|Therefore|Thus|Hence|Consequently|Basically|Essentially)[,\s]+",
+                    "",
+                    s_clean,
+                    flags=re.IGNORECASE,
+                ).strip()
+                if s_clean:
+                    dense_clauses.append(s_clean)
+
+        if len(dense_clauses) > 1:
+            return "\n".join(f"- {c}" for c in dense_clauses)
+        return cleaned
+

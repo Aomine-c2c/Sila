@@ -151,8 +151,10 @@ class ContextAssemblyEngine:
 
         total_estimated_tokens = 20  # base framing tokens
         for score, item in selected_items:
-            # Excerpt content to prevent bloat
-            excerpt = item.summary if item.summary else item.content[:300]
+            from nexora.core.security import FillerScrubber
+
+            raw_text = item.summary if item.summary else item.content[:300]
+            excerpt = FillerScrubber.strip_filler(raw_text)
             if len(item.content) > 300 and not item.summary:
                 excerpt += "..."
 

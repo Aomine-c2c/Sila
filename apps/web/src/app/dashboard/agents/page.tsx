@@ -30,6 +30,7 @@ import { organizationsApi } from '@/lib/api/organizations';
 import { useOrganizationContext } from '@/lib/organizationContext';
 import { ApiError } from '@/lib/api/client';
 import { AgentProfileDrawer } from '@/components/AgentProfileDrawer';
+import { AgentOrb } from '@/components/ui/AgentOrb';
 
 const AUTONOMY_LABELS: Record<string, string> = {
   SUPERVISED: 'Supervised',
@@ -96,10 +97,16 @@ function AgentCard({
           : 'border-border hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5'
       }`}
     >
-      {/* Header */}
+      {/* Header with Thinking Orb & Autonomy Badge */}
       <div className="flex items-start justify-between gap-3">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${statusBg}`}>
-          <Bot className={`h-5 w-5 ${statusColor}`} aria-hidden="true" />
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded border border-border bg-black/60">
+            <AgentOrb status={agent.status} size={32} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">AGENT</span>
+            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${statusColor}`}>{agent.status}</span>
+          </div>
         </div>
         <span className={`badge ${autonomyClass}`}>
           {AUTONOMY_LABELS[agent.autonomy] ?? agent.autonomy}

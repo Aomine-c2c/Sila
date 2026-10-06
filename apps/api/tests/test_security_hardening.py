@@ -211,3 +211,28 @@ class TestSecurityHardening:
             headers=auth_headers,
         )
         assert resp2.status_code == 403
+
+    # ── 10. Filler Scrubber & Token Compression ───────────────────────────────
+    async def test_filler_scrubber_and_compression(self):
+        """Conversational filler is stripped and text is compressed to dense fragments."""
+        from nexora.core.security import FillerScrubber
+
+        verbose_payload = (
+            "Certainly! I'd be happy to assist with this task. "
+            "Here is the system state: The execution completed cleanly. "
+            "Additionally, the worker nodes are online. "
+            "Furthermore, please note that database latency is under 5ms. "
+            "Hope this helps! Let me know if you need anything else."
+        )
+
+        stripped = FillerScrubber.strip_filler(verbose_payload)
+        assert "Certainly" not in stripped
+        assert "happy to assist" not in stripped
+        assert "Hope this helps" not in stripped
+        assert "please note that" not in stripped
+
+        compressed = FillerScrubber.compress_to_fragments(verbose_payload)
+        assert "- The execution completed cleanly." in compressed
+        assert "- the worker nodes are online." in compressed
+        assert "5ms" in compressed
+

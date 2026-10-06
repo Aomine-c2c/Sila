@@ -19,10 +19,16 @@ import {
   CheckSquare,
   Bot,
   Activity,
+  FolderGit2,
+  Github,
+  RefreshCw,
+  ExternalLink,
+  FolderOpen,
 } from 'lucide-react';
 import Link from 'next/link';
 import { projectsApi, Project, ProjectStatus, CreateProjectRequest, Milestone, Task } from '@/lib/api/projects';
 import { agentsApi, Agent } from '@/lib/api/agents';
+import { desktopLocalProject, LocalProjectInspection } from '@/lib/desktop/tauriBridge';
 import { governanceApi, GovernanceAuditLog } from '@/lib/api/governance';
 import { decisionsApi, DecisionRecord } from '@/lib/api/decisions';
 import { useOrganizationContext } from '@/lib/organizationContext';
@@ -51,6 +57,13 @@ export default function ProjectsPage() {
 
   // Creation Modal State
   const [showCreate, setShowCreate] = useState(false);
+  const [projectSourceType, setProjectSourceType] = useState<'standard' | 'local' | 'github'>('standard');
+  const [localPathInput, setLocalPathInput] = useState('');
+  const [githubUrlInput, setGithubUrlInput] = useState('');
+  const [branchInput, setBranchInput] = useState('main');
+  const [isInspecting, setIsInspecting] = useState(false);
+  const [inspectionResult, setInspectionResult] = useState<LocalProjectInspection | null>(null);
+
   const [form, setForm] = useState<CreateProjectRequest>({
     name: '',
     objective: '',
@@ -99,19 +112,54 @@ export default function ProjectsPage() {
     enabled: !!companyId,
   });
 
+  const resetCreateForm = () => {
+    setShowCreate(false);
+    setForm({ name: '', objective: '', description: '', status: 'ACTIVE', budget: undefined });
+    setProjectSourceType('standard');
+    setLocalPathInput('');
+    setGithubUrlInput('');
+    setBranchInput('main');
+    setInspectionResult(null);
+    setFormError(null);
+  };
+
   // Create project mutation
   const createMutation = useMutation({
     mutationFn: (body: CreateProjectRequest) => projectsApi.create(companyId, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['projects', companyId] });
-      setShowCreate(false);
-      setForm({ name: '', objective: '', description: '', status: 'ACTIVE', budget: undefined });
-      setFormError(null);
+      resetCreateForm();
     },
     onError: (err) => {
       setFormError(err instanceof ApiError ? err.message : 'Failed to create project.');
     },
   });
+
+  const handleInspectLocal = async (path: string) => {
+    if (!path.trim()) return;
+    setIsInspecting(true);
+    try {
+      const result = await desktopLocalProject.inspect(path.trim());
+      setInspectionResult(result);
+      if (result.exists) {
+        if (!form.name.trim()) {
+          const parts = path.trim().replace(/\/+$/, '').split('/');
+          const dirName = parts[parts.length - 1] || 'Local Project';
+          setForm((f) => ({ ...f, name: dirName }));
+        }
+        if (result.remote_origin && !githubUrlInput.trim()) {
+          setGithubUrlInput(result.remote_origin);
+        }
+        if (result.current_branch) {
+          setBranchInput(result.current_branch);
+        }
+      }
+    } catch (e: unknown) {
+      console.warn('Inspection failed:', e);
+    } finally {
+      setIsInspecting(false);
+    }
+  };
 
   // Update milestones mutation
   const updateMilestonesMutation = useMutation({
@@ -155,7 +203,45 @@ export default function ProjectsPage() {
       setFormError('Project name is required.');
       return;
     }
-    createMutation.mutate(form);
+
+    const payload: CreateProjectRequest = { ...form };
+
+    if (projectSourceType === 'local' || projectSourceType === 'github') {
+      const repoMeta: Record<string, unknown> = {
+        source_type: projectSourceType === 'local' && githubUrlInput.trim() ? 'HYBRID' : projectSourceType.toUpperCase(),
+        local_path: localPathInput.trim() || undefined,
+        github_url: githubUrlInput.trim() || undefined,
+        branch: branchInput.trim() || 'main',
+        commit: inspectionResult?.head_commit || undefined,
+        is_git_repo: inspectionResult?.is_git_repo ?? (!!localPathInput.trim() || !!githubUrlInput.trim()),
+        inspected_at: new Date().toISOString(),
+      };
+      payload.metadata = {
+        ...(payload.metadata || {}),
+        repo: repoMeta,
+      };
+
+      // Also attach as a metadata milestone so it is stored directly in the database
+      const repoMilestone: Milestone = {
+        title: `Repo Linked: ${branchInput.trim() || 'main'}`,
+        description: JSON.stringify(repoMeta),
+        due_date: null,
+        completed: true,
+      };
+      payload.milestones = [...(payload.milestones || []), repoMilestone];
+
+      // Save to local persistence cache keyed by project title
+      if (typeof window !== 'undefined') {
+        try {
+          const key = `neiman_repo_${form.name.trim()}`;
+          localStorage.setItem(key, JSON.stringify(repoMeta));
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    createMutation.mutate(payload);
   };
 
   // Telemetry Calculations for active project
@@ -345,6 +431,131 @@ export default function ProjectsPage() {
           {/* ============================================================== */}
           {activeProjectTab === 'overview' && (
             <div className="space-y-4">
+              {/* PROJECT SOURCE CARD (LOCAL & GITHUB LINKAGE) */}
+              {(() => {
+                let repo = (activeProject.metadata?.repo as {
+                  source_type?: string;
+                  local_path?: string;
+                  github_url?: string;
+                  branch?: string;
+                  commit?: string;
+                  is_git_repo?: boolean;
+                  inspected_at?: string;
+                } | undefined);
+
+                // Fallback 1: check milestones for embedded repo metadata
+                if (!repo && activeProject.milestones) {
+                  const m = activeProject.milestones.find((x) => x.title?.startsWith('Repo Linked:'));
+                  if (m?.description) {
+                    try {
+                      repo = JSON.parse(m.description);
+                    } catch {
+                      // ignore
+                    }
+                  }
+                }
+
+                // Fallback 2: check localStorage
+                if (!repo && typeof window !== 'undefined') {
+                  try {
+                    const raw = localStorage.getItem(`neiman_repo_${activeProject.name}`);
+                    if (raw) repo = JSON.parse(raw);
+                  } catch {
+                    // ignore
+                  }
+                }
+
+                return (
+                  <div className="rounded-xl border border-border bg-[#0D0D0D]/60 p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <FolderGit2 className="h-4 w-4 text-[#D71921]" />
+                        <span className="text-xs font-mono font-bold tracking-wider text-foreground uppercase">
+                          Project Source & Version Control
+                        </span>
+                        {repo?.source_type && (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-secondary text-primary border border-border">
+                            {repo.source_type}
+                          </span>
+                        )}
+                      </div>
+                      {repo?.inspected_at && (
+                        <span className="text-[10px] font-mono text-muted-foreground">
+                          Inspected: {new Date(repo.inspected_at).toLocaleTimeString()}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                      {/* Local Folder Path */}
+                      <div className="p-2.5 rounded-lg bg-black/40 border border-border/60 space-y-1">
+                        <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] uppercase font-mono">
+                          <FolderOpen className="h-3 w-3" />
+                          <span>Local Directory</span>
+                        </div>
+                        <p className="font-mono text-foreground text-[11px] truncate" title={repo?.local_path || 'No local directory linked'}>
+                          {repo?.local_path || <span className="text-muted-foreground italic">Not linked</span>}
+                        </p>
+                      </div>
+
+                      {/* Git Branch */}
+                      <div className="p-2.5 rounded-lg bg-black/40 border border-border/60 space-y-1">
+                        <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] uppercase font-mono">
+                          <GitBranch className="h-3 w-3" />
+                          <span>Active Branch</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-foreground font-semibold text-[11px]">
+                            {repo?.branch || 'main'}
+                          </span>
+                          {repo?.is_git_repo && (
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block" title="Git repository detected" />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Head Commit */}
+                      <div className="p-2.5 rounded-lg bg-black/40 border border-border/60 space-y-1">
+                        <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] uppercase font-mono">
+                          <Activity className="h-3 w-3" />
+                          <span>Commit SHA</span>
+                        </div>
+                        <p className="font-mono text-muted-foreground text-[11px]">
+                          {repo?.commit ? (
+                            <span className="px-1.5 py-0.5 rounded bg-secondary/80 font-mono text-foreground text-[10px]">
+                              {repo.commit}
+                            </span>
+                          ) : (
+                            <span className="italic">N/A</span>
+                          )}
+                        </p>
+                      </div>
+
+                      {/* GitHub Link */}
+                      <div className="p-2.5 rounded-lg bg-black/40 border border-border/60 space-y-1 flex flex-col justify-between">
+                        <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] uppercase font-mono">
+                          <Github className="h-3 w-3" />
+                          <span>GitHub Repository</span>
+                        </div>
+                        {repo?.github_url ? (
+                          <a
+                            href={repo.github_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-mono text-primary hover:underline truncate"
+                          >
+                            <span className="truncate">{repo.github_url.replace('https://github.com/', '')}</span>
+                            <ExternalLink className="h-3 w-3 shrink-0" />
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground text-[11px] italic">No remote URL</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* VIEW 1: LIST VIEW */}
               {viewMode === 'list' && (
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -788,9 +999,149 @@ export default function ProjectsPage() {
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-md glass rounded-2xl p-6 ring-1 ring-border shadow-2xl">
-            <h2 className="text-lg font-semibold text-foreground mb-4">Create New Project</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="w-full max-w-lg glass rounded-2xl p-6 ring-1 ring-border shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <div>
+                <h2 className="text-base font-bold text-foreground">Create New Project</h2>
+                <p className="text-[11px] text-muted-foreground">Define scope or link existing repositories directly</p>
+              </div>
+              <span className="font-mono text-[10px] uppercase px-2 py-0.5 rounded bg-secondary text-primary border border-border">
+                {projectSourceType}
+              </span>
+            </div>
+
+            {/* Source Type Selector */}
+            <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-black/40 border border-border/60">
+              <button
+                type="button"
+                onClick={() => setProjectSourceType('standard')}
+                className={`py-1.5 text-xs font-mono rounded-lg transition-all ${
+                  projectSourceType === 'standard'
+                    ? 'bg-secondary text-foreground font-bold shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Standard
+              </button>
+              <button
+                type="button"
+                onClick={() => setProjectSourceType('local')}
+                className={`py-1.5 text-xs font-mono rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                  projectSourceType === 'local'
+                    ? 'bg-secondary text-foreground font-bold shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <FolderOpen className="h-3 w-3 text-[#D71921]" />
+                Local Folder
+              </button>
+              <button
+                type="button"
+                onClick={() => setProjectSourceType('github')}
+                className={`py-1.5 text-xs font-mono rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                  projectSourceType === 'github'
+                    ? 'bg-secondary text-foreground font-bold shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Github className="h-3 w-3" />
+                GitHub
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3.5">
+              {/* Conditional Local Folder Linking Section */}
+              {projectSourceType === 'local' && (
+                <div className="p-3 rounded-xl border border-border/70 bg-secondary/20 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-mono font-semibold text-foreground">
+                      Local Directory Path <span className="text-[#D71921]">*</span>
+                    </label>
+                    <span className="text-[10px] font-mono text-muted-foreground">Native FS</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      className="input flex-1 text-xs font-mono"
+                      placeholder="/home/sila/Projects/MyProject"
+                      value={localPathInput}
+                      onChange={(e) => setLocalPathInput(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      disabled={!localPathInput.trim() || isInspecting}
+                      onClick={() => handleInspectLocal(localPathInput)}
+                      className="btn btn-outline text-xs px-3 font-mono flex items-center gap-1 shrink-0"
+                    >
+                      {isInspecting ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      )}
+                      <span>Inspect</span>
+                    </button>
+                  </div>
+
+                  {inspectionResult && (
+                    <div className="p-2.5 rounded-lg bg-black/50 border border-border/60 text-[11px] font-mono space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Git Status:</span>
+                        <span className={inspectionResult.is_git_repo ? 'text-emerald-400 font-bold' : 'text-amber-400'}>
+                          {inspectionResult.is_git_repo ? '✓ Git Repository Detected' : 'Plain Directory'}
+                        </span>
+                      </div>
+                      {inspectionResult.current_branch && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Branch:</span>
+                          <span className="text-foreground">{inspectionResult.current_branch}</span>
+                        </div>
+                      )}
+                      {inspectionResult.head_commit && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Commit:</span>
+                          <span className="text-foreground">{inspectionResult.head_commit}</span>
+                        </div>
+                      )}
+                      {inspectionResult.remote_origin && (
+                        <div className="flex items-center justify-between truncate">
+                          <span className="text-muted-foreground">Remote:</span>
+                          <span className="text-primary truncate ml-2">{inspectionResult.remote_origin}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Conditional GitHub Linking Section */}
+              {(projectSourceType === 'github' || (projectSourceType === 'local' && inspectionResult?.remote_origin)) && (
+                <div className="p-3 rounded-xl border border-border/70 bg-secondary/20 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-mono font-semibold text-foreground">
+                      GitHub Repository URL
+                    </label>
+                    <span className="text-[10px] font-mono text-muted-foreground">Remote Origin</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      className="input flex-1 text-xs font-mono"
+                      placeholder="https://github.com/owner/repository"
+                      value={githubUrlInput}
+                      onChange={(e) => setGithubUrlInput(e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      className="input w-24 text-xs font-mono text-center"
+                      placeholder="main"
+                      title="Branch"
+                      value={branchInput}
+                      onChange={(e) => setBranchInput(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-medium text-foreground mb-1">
                   Project Title <span className="text-red-400">*</span>
@@ -865,10 +1216,7 @@ export default function ProjectsPage() {
                 <button
                   type="button"
                   className="btn btn-outline flex-1 text-xs"
-                  onClick={() => {
-                    setShowCreate(false);
-                    setFormError(null);
-                  }}
+                  onClick={() => resetCreateForm()}
                 >
                   Cancel
                 </button>

@@ -42,6 +42,7 @@ import {
 import { evolutionApi, SimulationScenario, SimulationRun } from '@/lib/api/evolution';
 import { useOrganizationContext } from '@/lib/organizationContext';
 import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
+import { AgentOrb } from '@/components/ui/AgentOrb';
 
 // Detailed sandbox branch model
 interface SandboxScenario {
@@ -1002,22 +1003,32 @@ export default function SimulationLabPage() {
         </div>
       </div>
 
-      {/* Simulation Progress Meter (if running) */}
+      {/* Simulation Progress Meter (if running) with Real-Time Thinking Orb */}
       {activeSandbox.status === 'RUNNING' && (
-        <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-2 animate-pulse">
-          <div className="flex justify-between text-xs font-mono">
-            <span className="text-primary font-bold">SIMULATION WORKLOAD IN PROGRESS...</span>
-            <span className="text-foreground">{simProgress}%</span>
+        <div className="p-4 rounded border border-[#D71921]/40 bg-[#0D0D0D] space-y-3 font-mono">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-3">
+              <AgentOrb status="WORKING" size={32} color="#D71921" />
+              <div>
+                <span className="text-[#D71921] font-bold uppercase tracking-wider block">
+                  COGNITIVE SIMULATION WORKLOAD IN PROGRESS
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  Synthesizing agent trajectories & Monte Carlo state transitions
+                </span>
+              </div>
+            </div>
+            <span className="text-foreground text-sm font-bold">{simProgress}%</span>
           </div>
-          <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-secondary/80 rounded-none overflow-hidden">
             <div
-              className="h-full bg-primary transition-all duration-300"
+              className="h-full bg-[#D71921] transition-all duration-300"
               style={{ width: `${simProgress}%` }}
             />
           </div>
-          <div className="flex justify-between text-[11px] text-muted-foreground font-mono">
+          <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>Executing {workloadTaskCount} benchmark tasks across {activeSandbox.config.resources.parallelSlots} parallel slots</span>
-            <span>Concurrency: Active</span>
+            <span className="text-[#EDEDED]">CONCURRENCY: ACTIVE</span>
           </div>
         </div>
       )}

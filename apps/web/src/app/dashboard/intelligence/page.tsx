@@ -132,6 +132,21 @@ export default function IntelligenceExchangePage() {
     },
   });
 
+  // Mutation: Add Provider
+  const addProviderMutation = useMutation({
+    mutationFn: (data: {
+      name: string;
+      display_name: string;
+      description?: string;
+      website_url?: string;
+      is_local?: boolean;
+    }) => intelligenceApi.createProvider(companyId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['intelligence-dashboard', companyId] });
+      refetch();
+    },
+  });
+
   const handleSimulate = (e: React.FormEvent) => {
     e.preventDefault();
     const simFlags: Record<string, string> = {};
@@ -392,6 +407,10 @@ export default function IntelligenceExchangePage() {
               queryClient.invalidateQueries({ queryKey: ['intelligence-dashboard', companyId] });
               return res;
             }}
+            onAddProvider={async (data) => {
+              await addProviderMutation.mutateAsync(data);
+            }}
+            isAddingProvider={addProviderMutation.isPending}
           />
         </div>
       )}

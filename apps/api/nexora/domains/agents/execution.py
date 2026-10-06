@@ -240,7 +240,12 @@ class AgentExecutionEngine:
             preferred_model = override_model or intel_cfg.get("model")
             required_caps = agent.capabilities or ["reasoning"]
 
-            from nexora.core.security import ModelOutputBoundary, PromptSanitizer, ToolSandbox
+            from nexora.core.security import (
+                FillerScrubber,
+                ModelOutputBoundary,
+                PromptSanitizer,
+                ToolSandbox,
+            )
 
             # 1. Prompt Injection Scanning on task title and instructions
             raw_prompt_text = f"Task: {task.title}. Instructions: {agent.system_instructions or 'Execute with precision.'}"
@@ -346,11 +351,13 @@ class AgentExecutionEngine:
             if is_smuggled:
                 raise ForbiddenError(f"Security Alert: Untrusted model response intercepted: {smuggle_err}")
 
+            # Strip conversational filler & enforce dense fragments
+            scrubbed_summary = FillerScrubber.compress_to_fragments(gen_resp.text)
+
             output_result = {
                 "task_title": task.title,
-                "summary": gen_resp.text,
+                "summary": scrubbed_summary,
                 "outcome_achieved": task.expected_outcome
-
                 or "Task requirements satisfied successfully.",
                 "tools_utilized": executed_tools,
                 "model_used": gen_resp.model_used,

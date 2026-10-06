@@ -206,5 +206,33 @@ export const intelligenceApi = {
 
   resetCircuitBreakers: (companyId: string): Promise<{ status: string; message: string }> =>
     api.post<{ status: string; message: string }>(`/api/v1/companies/${companyId}/intelligence/circuit-breakers/reset`, {}),
+
+  createProvider: (companyId: string, body: {
+    name: string;
+    display_name: string;
+    description?: string;
+    website_url?: string;
+    is_local?: boolean;
+  }): Promise<ModelProvider> =>
+    api.post<ModelProvider>(`/api/v1/companies/${companyId}/intelligence/providers`, body),
+
+  createModel: (companyId: string, body: {
+    provider_id: string;
+    model_identifier: string;
+    display_name: string;
+    description?: string;
+    capabilities?: string[];
+    modalities?: string[];
+    tool_support?: boolean;
+    structured_output_support?: boolean;
+    context_capacity?: number;
+    max_output_tokens?: number;
+    input_cost_per_million?: number;
+    output_cost_per_million?: number;
+    avg_latency_ms?: number;
+    availability_rate?: number;
+    privacy_classification?: string;
+  }): Promise<Model> =>
+    api.post<Model>(`/api/v1/companies/${companyId}/intelligence/models`, body),
 };
 

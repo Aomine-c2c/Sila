@@ -152,6 +152,24 @@ export const desktopWindowState = {
 };
 
 // =========================================================================
+// 3.5 SYSTEM TELEMETRY
+// =========================================================================
+export const desktopTelemetry = {
+  async getSnapshot(): Promise<SystemTelemetrySnapshot> {
+    if (isTauriDesktop()) {
+      return await invokeTauri<SystemTelemetrySnapshot>('get_desktop_telemetry');
+    }
+    return {
+      os: typeof navigator !== 'undefined' ? navigator.platform : 'Linux',
+      arch: 'x86_64',
+      app_version: '0.1.0-web',
+      memory_rss_mb: 48,
+      is_desktop: false,
+    };
+  }
+};
+
+// =========================================================================
 // 4. DESKTOP NOTIFICATIONS (Cross-Platform Native & Browser fallback)
 // =========================================================================
 export const desktopNotify = {
@@ -321,19 +339,32 @@ export const desktopEvents = {
 };
 
 // =========================================================================
-// 8. TELEMETRY & SYSTEM CAPABILITIES
+// 9. LOCAL PROJECT & REPOSITORY INSPECTION
 // =========================================================================
-export const desktopTelemetry = {
-  async getSnapshot(): Promise<SystemTelemetrySnapshot> {
+export interface LocalProjectInspection {
+  exists: boolean;
+  path: string;
+  is_git_repo: boolean;
+  current_branch?: string | null;
+  head_commit?: string | null;
+  remote_origin?: string | null;
+  file_count: number;
+}
+
+export const desktopLocalProject = {
+  async inspect(path: string): Promise<LocalProjectInspection> {
     if (isTauriDesktop()) {
-      return await invokeTauri<SystemTelemetrySnapshot>('get_desktop_telemetry');
+      return await invokeTauri<LocalProjectInspection>('inspect_local_project', { path });
     }
+    // Web environment simulation fallback
     return {
-      os: typeof navigator !== 'undefined' ? (navigator.platform || 'WebBrowser') : 'Server',
-      arch: 'web',
-      app_version: '0.1.0-web',
-      memory_rss_mb: 42,
-      is_desktop: false,
+      exists: true,
+      path,
+      is_git_repo: true,
+      current_branch: 'main',
+      head_commit: '7a2f1c8d',
+      remote_origin: 'https://github.com/Aomine-c2c/Sila.git',
+      file_count: 24,
     };
   }
 };

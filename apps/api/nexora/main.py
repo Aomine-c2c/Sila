@@ -174,19 +174,22 @@ def create_app() -> FastAPI:
         except Exception as e:
             components["database"] = f"error: {e}"
 
-        # Redis check
-        try:
-            redis_url = urllib.parse.urlparse(settings.REDIS_URL)
-            host = redis_url.hostname or "localhost"
-            port = redis_url.port or 6379
-            reader, writer = await asyncio.open_connection(host, port)
-            writer.close()
-            await writer.wait_closed()
-            components["redis"] = "ok"
-        except Exception as e:
-            components["redis"] = f"error: {e}"
+        # Redis check (optional in local/embedded deployment)
+        if settings.REDIS_URL and settings.REDIS_URL != "none":
+            try:
+                redis_url = urllib.parse.urlparse(settings.REDIS_URL)
+                host = redis_url.hostname or "localhost"
+                port = redis_url.port or 6379
+                reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=1.0)
+                writer.close()
+                await writer.wait_closed()
+                components["redis"] = "ok"
+            except Exception as e:
+                components["redis"] = "optional (offline)"
+        else:
+            components["redis"] = "not_configured"
 
-        overall = "ok" if all(v == "ok" for v in components.values()) else "degraded"
+        overall = "ok" if components.get("database") == "ok" else "error"
 
         return {
             "status": overall,
