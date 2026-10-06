@@ -286,3 +286,48 @@ class MemoryService:
             )
 
         return updated
+
+    # -------------------------------------------------------------
+    # KNOWLEDGE GRAPH & AUTO-EXTRACTION
+    # -------------------------------------------------------------
+    async def extract_and_store_graph_facts(
+        self, company_id: uuid.UUID, text: str, provenance: str | None = None
+    ) -> int:
+        """Auto-extracts entity relationships from unstructured text and registers them in Knowledge Graph."""
+        from nexora.domains.memory.context_engine import KnowledgeGraphFactExtractor
+        triples = KnowledgeGraphFactExtractor.extract_triples(text)
+        created_count = 0
+        for subj, pred, obj in triples:
+            s_ent = await self.repo.get_or_create_entity(company_id=company_id, name=subj)
+            o_ent = await self.repo.get_or_create_entity(company_id=company_id, name=obj)
+            await self.repo.create_relation(
+                company_id=company_id,
+                source_id=s_ent.id,
+                target_id=o_ent.id,
+                relation_type=pred,
+                provenance=provenance,
+            )
+            created_count += 1
+        return created_count
+
+    async def get_knowledge_graph(self, company_id: uuid.UUID, limit: int = 100):
+        """Returns nodes and edges for Knowledge Graph explorer."""
+        # Ensure seed entities exist if empty
+        entities, relations = await self.repo.get_knowledge_graph(company_id, limit=limit)
+        if not entities:
+            # Seed foundational system nodes
+            e_sys = await self.repo.get_or_create_entity(company_id, "NEIMAN OS", "SYSTEM", "Autonomous Organization Core Kernel")
+            e_gov = await self.repo.get_or_create_entity(company_id, "Governance Council", "GOVERNANCE", "Autonomy Boundary Gatekeeper")
+            e_sec = await self.repo.get_or_create_entity(company_id, "Security Sandbox", "SECURITY", "Tool execution and filesystem chroot")
+            e_intel = await self.repo.get_or_create_entity(company_id, "Intelligence Exchange", "ENGINE", "Multi-provider model router")
+            e_db = await self.repo.get_or_create_entity(company_id, "PostgreSQL/SQLite", "DATABASE", "Organizational ledger and memory triplestore")
+
+            await self.repo.create_relation(company_id, e_sys.id, e_gov.id, "ENFORCES")
+            await self.repo.create_relation(company_id, e_gov.id, e_sec.id, "MANAGES")
+            await self.repo.create_relation(company_id, e_sys.id, e_intel.id, "UTILIZES")
+            await self.repo.create_relation(company_id, e_sys.id, e_db.id, "DEPENDS_ON")
+
+            entities, relations = await self.repo.get_knowledge_graph(company_id, limit=limit)
+
+        return entities, relations
+

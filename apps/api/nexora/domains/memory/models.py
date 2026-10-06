@@ -188,3 +188,43 @@ class DecisionRecord(NexoraBase):
     decided_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
+
+
+class KnowledgeEntity(NexoraBase):
+    """
+    Named entity or concept in the Organizational Knowledge Graph.
+    Can represent agents, tools, policies, systems, services, or internal assets.
+    """
+
+    __tablename__ = "knowledge_entities"
+
+    company_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
+    entity_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True, default="CONCEPT")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    properties: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+
+
+class KnowledgeRelation(NexoraBase):
+    """
+    Directed semantic triple relation between two KnowledgeEntities:
+    [Subject] --(predicate)--> [Object] with weight and provenance.
+    """
+
+    __tablename__ = "knowledge_relations"
+
+    company_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    source_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("knowledge_entities.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    target_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("knowledge_entities.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    relation_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    weight: Mapped[float] = mapped_column(Float, default=1.0, nullable=False)
+    provenance: Mapped[str | None] = mapped_column(String(255), nullable=True)
+

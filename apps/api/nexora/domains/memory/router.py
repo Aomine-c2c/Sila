@@ -170,3 +170,67 @@ async def record_decision_outcome(
     """
     service = MemoryService(db)
     return await service.record_decision_outcome(company_id, decision_id, data)
+
+
+# ==========================================
+# KNOWLEDGE GRAPH TRIPLES
+# ==========================================
+
+
+@router.get("/graph", response_model=dict)
+async def get_knowledge_graph(
+    company_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+    limit: int = Query(100, ge=1, le=500),
+    _: None = Depends(require_member()),
+):
+    """
+    Returns full or sub-graph nodes and edges for the company knowledge graph.
+    """
+    service = MemoryService(db)
+    entities, relations = await service.get_knowledge_graph(company_id, limit=limit)
+    return {
+        "entities": [
+            {
+                "id": str(e.id),
+                "name": e.name,
+                "entity_type": e.entity_type,
+                "description": e.description,
+                "properties": e.properties,
+            }
+            for e in entities
+        ],
+        "relations": [
+            {
+                "id": str(r.id),
+                "source_id": str(r.source_id),
+                "target_id": str(r.target_id),
+                "relation_type": r.relation_type,
+                "weight": r.weight,
+                "provenance": r.provenance,
+            }
+            for r in relations
+        ],
+        "total_entities": len(entities),
+        "total_relations": len(relations),
+    }
+
+
+@router.post("/graph/extract", response_model=dict)
+async def extract_knowledge_facts(
+    company_id: uuid.UUID,
+    data: dict,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_member()),
+):
+    """
+    Extracts semantic triples from raw text and registers them into the Knowledge Graph.
+    """
+    service = MemoryService(db)
+    text = data.get("text", "")
+    provenance = data.get("provenance", "manual_extraction")
+    count = await service.extract_and_store_graph_facts(company_id, text, provenance=provenance)
+    return {"status": "ok", "facts_extracted": count}
+

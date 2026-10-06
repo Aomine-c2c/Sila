@@ -101,8 +101,7 @@ export default function AdminSettingsPage() {
   const activeCompany = useOrganizationContext();
   const previewMode = isDevelopmentAuthBypassEnabled();
 
-  // Tier toggle (Simple Settings vs Advanced Settings)
-  const [activeTier, setActiveTier] = useState<SettingsTier>('simple');
+  // Current active administration section
   const [activeSection, setActiveSection] = useState<AdminSectionKey>('organization');
 
   // Simulated RBAC role selector for testing
@@ -153,14 +152,8 @@ export default function AdminSettingsPage() {
     return hasRoleAccess(simulatedRole, requiredRole);
   };
 
-  // Filter sections by selected Tier (Simple vs Advanced)
-  const visibleSections = SECTIONS.filter((sec) => {
-    if (activeTier === 'simple') {
-      return sec.tier === 'simple' || sec.tier === 'both';
-    } else {
-      return sec.tier === 'advanced' || sec.tier === 'both';
-    }
-  });
+  // Direct unified section list without nested tier tab confusion
+  const visibleSections = SECTIONS;
 
   const currentSectionMeta = SECTIONS.find((s) => s.key === activeSection) || SECTIONS[0];
 
@@ -263,62 +256,13 @@ export default function AdminSettingsPage() {
       {/* Desktop Runtime & Capability Indicator */}
       <DesktopStatusCard />
 
-      {/* TIER SWITCHER: SIMPLE SETTINGS vs ADVANCED SETTINGS */}
-      <div className="flex items-center justify-between border-b border-border/60 pb-3">
-        <div className="flex items-center gap-2 p-1 rounded-xl bg-secondary/50 border border-border">
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTier('simple');
-              if (currentSectionMeta.tier === 'advanced') {
-                setActiveSection('organization');
-              }
-            }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all ${
-              activeTier === 'simple'
-                ? 'bg-card text-foreground shadow-sm border border-border ring-1 ring-primary/30'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Sliders className="h-3.5 w-3.5 text-primary" />
-            Simple Settings
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTier('advanced');
-              if (currentSectionMeta.tier === 'simple') {
-                setActiveSection('permissions');
-              }
-            }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all ${
-              activeTier === 'advanced'
-                ? 'bg-card text-foreground shadow-sm border border-border ring-1 ring-primary/30'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Code className="h-3.5 w-3.5 text-amber-400" />
-            Advanced Settings (Engine & Security)
-          </button>
-        </div>
-
-        <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
-          <Info className="h-3.5 w-3.5 text-primary" />
-          <span>
-            {activeTier === 'simple'
-              ? 'Showing everyday workspace, team, and preference controls'
-              : 'Showing high-privilege security, API, and engine internals'}
-          </span>
-        </div>
-      </div>
-
       {/* MAIN TWO-COLUMN ADMIN LAYOUT */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: 15-Section Navigation List */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
+        {/* Left Column: Categorized Section Navigation */}
         <div className="lg:col-span-3 space-y-1">
-          <div className="px-2 py-1.5 text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-bold">
-            {activeTier === 'simple' ? 'Simple Categories' : 'Advanced Categories'}
+          <div className="px-2 py-1.5 text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-bold flex items-center justify-between">
+            <span>Administration Sections</span>
+            <span className="text-[9px] text-primary">{visibleSections.length} Categories</span>
           </div>
 
           <div className="space-y-1">

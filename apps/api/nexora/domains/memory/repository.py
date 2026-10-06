@@ -225,3 +225,85 @@ class MemoryRepository:
         await self.db.flush()
         await self.db.refresh(record)
         return record
+
+    # -------------------------------------------------------------
+    # KNOWLEDGE GRAPH TRIPLES
+    # -------------------------------------------------------------
+    async def get_or_create_entity(
+        self,
+        company_id: uuid.UUID,
+        name: str,
+        entity_type: str = "CONCEPT",
+        description: str | None = None,
+        properties: dict[str, Any] | None = None,
+    ):
+        from nexora.domains.memory.models import KnowledgeEntity
+        stmt = select(KnowledgeEntity).where(
+            KnowledgeEntity.company_id == company_id,
+            KnowledgeEntity.name == name,
+        )
+        res = await self.db.execute(stmt)
+        existing = res.scalars().first()
+        if existing:
+            return existing
+
+        entity = KnowledgeEntity(
+            company_id=company_id,
+            name=name,
+            entity_type=entity_type,
+            description=description,
+            properties=properties or {},
+        )
+        self.db.add(entity)
+        await self.db.flush()
+        await self.db.refresh(entity)
+        return entity
+
+    async def create_relation(
+        self,
+        company_id: uuid.UUID,
+        source_id: uuid.UUID,
+        target_id: uuid.UUID,
+        relation_type: str,
+        weight: float = 1.0,
+        provenance: str | None = None,
+    ):
+        from nexora.domains.memory.models import KnowledgeRelation
+        stmt = select(KnowledgeRelation).where(
+            KnowledgeRelation.company_id == company_id,
+            KnowledgeRelation.source_id == source_id,
+            KnowledgeRelation.target_id == target_id,
+            KnowledgeRelation.relation_type == relation_type,
+        )
+        res = await self.db.execute(stmt)
+        existing = res.scalars().first()
+        if existing:
+            existing.weight += 0.5
+            await self.db.flush()
+            return existing
+
+        rel = KnowledgeRelation(
+            company_id=company_id,
+            source_id=source_id,
+            target_id=target_id,
+            relation_type=relation_type,
+            weight=weight,
+            provenance=provenance,
+        )
+        self.db.add(rel)
+        await self.db.flush()
+        await self.db.refresh(rel)
+        return rel
+
+    async def get_knowledge_graph(self, company_id: uuid.UUID, limit: int = 100):
+        from nexora.domains.memory.models import KnowledgeEntity, KnowledgeRelation
+        stmt_e = select(KnowledgeEntity).where(KnowledgeEntity.company_id == company_id).limit(limit)
+        res_e = await self.db.execute(stmt_e)
+        entities = list(res_e.scalars().all())
+
+        stmt_r = select(KnowledgeRelation).where(KnowledgeRelation.company_id == company_id).limit(limit)
+        res_r = await self.db.execute(stmt_r)
+        relations = list(res_r.scalars().all())
+
+        return entities, relations
+

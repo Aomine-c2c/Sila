@@ -216,4 +216,34 @@ export const memoryApi = {
     outcome: DecisionOutcomeUpdate
   ): Promise<DecisionRecord> =>
     api.post<DecisionRecord>(`/api/v1/companies/${companyId}/memory/decisions/${decisionId}/outcome`, outcome),
+
+  getKnowledgeGraph: (
+    companyId: string,
+    limit: number = 100
+  ): Promise<{
+    entities: Array<{
+      id: string;
+      name: string;
+      entity_type: string;
+      description?: string;
+      properties: Record<string, unknown>;
+    }>;
+    relations: Array<{
+      id: string;
+      source_id: string;
+      target_id: string;
+      relation_type: string;
+      weight: number;
+      provenance?: string;
+    }>;
+    total_entities: number;
+    total_relations: number;
+  }> => api.get(`/api/v1/companies/${companyId}/memory/graph?limit=${limit}`),
+
+  extractKnowledgeFacts: (
+    companyId: string,
+    payload: { text: string; provenance?: string }
+  ): Promise<{ status: string; facts_extracted: number }> =>
+    api.post(`/api/v1/companies/${companyId}/memory/graph/extract`, payload),
 };
+

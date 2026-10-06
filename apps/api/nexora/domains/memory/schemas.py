@@ -228,3 +228,56 @@ class MemorySearchQuery(BaseModel):
     project_id: uuid.UUID | None = None
     tags: list[str] | None = None
     limit: int = Field(default=20, ge=1, le=100)
+
+
+# ==========================================
+# KNOWLEDGE GRAPH SCHEMAS
+# ==========================================
+
+
+class KnowledgeEntityCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=150)
+    entity_type: str = Field(default="CONCEPT", max_length=50)
+    description: str | None = None
+    properties: dict[str, Any] = Field(default_factory=dict)
+
+
+class KnowledgeEntityResponse(BaseModel):
+    id: uuid.UUID
+    company_id: uuid.UUID
+    name: str
+    entity_type: str
+    description: str | None
+    properties: dict[str, Any]
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class KnowledgeRelationCreate(BaseModel):
+    source_id: uuid.UUID
+    target_id: uuid.UUID
+    relation_type: str = Field(..., min_length=1, max_length=100)
+    weight: float = Field(default=1.0, ge=0.0, le=10.0)
+    provenance: str | None = None
+
+
+class KnowledgeRelationResponse(BaseModel):
+    id: uuid.UUID
+    company_id: uuid.UUID
+    source_id: uuid.UUID
+    target_id: uuid.UUID
+    relation_type: str
+    weight: float
+    provenance: str | None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class KnowledgeGraphResponse(BaseModel):
+    entities: list[KnowledgeEntityResponse]
+    relations: list[KnowledgeRelationResponse]
+    total_entities: int
+    total_relations: int
+
