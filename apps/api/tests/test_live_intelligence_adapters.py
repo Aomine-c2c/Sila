@@ -4,17 +4,15 @@ Verifies that when live API keys are provided or unconfigured, the adapters
 behave properly, execute correctly, or gracefully fall back without crash.
 """
 
-import pytest
-from unittest.mock import patch, AsyncMock, Mock
-import httpx
-from nexora.config import Settings
+from unittest.mock import Mock, patch
 
+import pytest
+
+from nexora.config import Settings
 from nexora.domains.intelligence.adapters.base import (
-    OpenAILiveAdapter,
     AnthropicLiveAdapter,
     GeminiLiveAdapter,
-    LocalModelLiveAdapter,
-    ProviderRateLimitError,
+    OpenAILiveAdapter,
 )
 from nexora.domains.intelligence.schemas import ModelRequest
 

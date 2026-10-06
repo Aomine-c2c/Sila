@@ -8,13 +8,11 @@ Supports:
 - WebSocket realtime activity stream
 """
 
-import asyncio
-import json
 import os
-import uuid
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List, Optional
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any
+
 import httpx
 
 DEFAULT_API_URL = os.environ.get("NEIMAN_API_URL", "http://localhost:8000/api/v1")
@@ -33,13 +31,13 @@ class OrganizationSummary:
 class NeimanApiClient:
     """Client consuming NEIMAN REST and WebSocket endpoints."""
 
-    def __init__(self, base_url: str = DEFAULT_API_URL, token: Optional[str] = None):
+    def __init__(self, base_url: str = DEFAULT_API_URL, token: str | None = None):
         self.base_url = base_url.rstrip("/")
         self.token = token or os.environ.get("NEIMAN_API_TOKEN")
         self.headers = {"Content-Type": "application/json"}
         if self.token:
             self.headers["Authorization"] = f"Bearer {self.token}"
-        self.active_company_id: Optional[str] = None
+        self.active_company_id: str | None = None
 
     async def login(self, email: str = "elena.vance@neiman.ai", password: str = "password123") -> bool:
         """Authenticate against /auth/login and cache token."""
@@ -58,7 +56,7 @@ class NeimanApiClient:
             pass
         return False
 
-    async def get_companies(self) -> List[Dict[str, Any]]:
+    async def get_companies(self) -> list[dict[str, Any]]:
         """List companies for current user or default preview company."""
         try:
             async with httpx.AsyncClient(timeout=4.0, headers=self.headers) as client:
@@ -79,7 +77,7 @@ class NeimanApiClient:
             }
         ]
 
-    async def get_dashboard_summary(self, company_id: str) -> Dict[str, Any]:
+    async def get_dashboard_summary(self, company_id: str) -> dict[str, Any]:
         """Aggregate high-level overview metrics."""
         agents = await self.get_agents(company_id)
         projects = await self.get_projects(company_id)
@@ -88,7 +86,7 @@ class NeimanApiClient:
 
         active_agents = len([a for a in agents if a.get("status") in ("WORKING", "BUSY", "AVAILABLE")])
         active_projects = len([p for p in projects if p.get("status") in ("ACTIVE", "IN_PROGRESS")])
-        
+
         # calculate total tasks
         all_tasks = await self.get_tasks(company_id)
         running_tasks = len([t for t in all_tasks if t.get("status") in ("IN_PROGRESS", "RUNNING")])
@@ -111,7 +109,7 @@ class NeimanApiClient:
             ],
         }
 
-    async def get_agents(self, company_id: str) -> List[Dict[str, Any]]:
+    async def get_agents(self, company_id: str) -> list[dict[str, Any]]:
         """Fetch all agents for the company."""
         try:
             async with httpx.AsyncClient(timeout=4.0, headers=self.headers) as client:
@@ -175,7 +173,7 @@ class NeimanApiClient:
             },
         ]
 
-    async def get_projects(self, company_id: str) -> List[Dict[str, Any]]:
+    async def get_projects(self, company_id: str) -> list[dict[str, Any]]:
         """Fetch all projects."""
         try:
             async with httpx.AsyncClient(timeout=4.0, headers=self.headers) as client:
@@ -224,7 +222,7 @@ class NeimanApiClient:
             },
         ]
 
-    async def get_tasks(self, company_id: str) -> List[Dict[str, Any]]:
+    async def get_tasks(self, company_id: str) -> list[dict[str, Any]]:
         """Fetch all tasks across projects."""
         projects = await self.get_projects(company_id)
         all_tasks = []
@@ -250,7 +248,7 @@ class NeimanApiClient:
             {"id": "tsk-05", "title": "Generate snapshot for organizational evolution proposal", "project": "Project Gamma", "status": "IN_PROGRESS", "priority": "MEDIUM", "agent": "Evolution Strategist"},
         ]
 
-    async def get_workflows(self, company_id: str) -> List[Dict[str, Any]]:
+    async def get_workflows(self, company_id: str) -> list[dict[str, Any]]:
         """Fetch workflows."""
         try:
             async with httpx.AsyncClient(timeout=4.0, headers=self.headers) as client:
@@ -266,7 +264,7 @@ class NeimanApiClient:
             {"id": "wf-03", "name": "Consequential Action Approval Gate", "status": "ACTIVE", "trigger": "high_risk_evaluated", "steps": 2, "success_rate": "97.5%"},
         ]
 
-    async def get_resources(self, company_id: str) -> Dict[str, Any]:
+    async def get_resources(self, company_id: str) -> dict[str, Any]:
         """Fetch resource pools and control center telemetry."""
         try:
             async with httpx.AsyncClient(timeout=4.0, headers=self.headers) as client:
@@ -297,7 +295,7 @@ class NeimanApiClient:
             ],
         }
 
-    async def get_intelligence(self, company_id: str) -> Dict[str, Any]:
+    async def get_intelligence(self, company_id: str) -> dict[str, Any]:
         """Fetch model providers and routing dashboard."""
         try:
             async with httpx.AsyncClient(timeout=4.0, headers=self.headers) as client:
@@ -318,7 +316,7 @@ class NeimanApiClient:
             ],
         }
 
-    async def get_approvals(self, company_id: str) -> List[Dict[str, Any]]:
+    async def get_approvals(self, company_id: str) -> list[dict[str, Any]]:
         """Fetch pending approvals."""
         try:
             async with httpx.AsyncClient(timeout=4.0, headers=self.headers) as client:
@@ -349,7 +347,7 @@ class NeimanApiClient:
             },
         ]
 
-    async def get_activity(self, company_id: str, limit: int = 30) -> List[Dict[str, Any]]:
+    async def get_activity(self, company_id: str, limit: int = 30) -> list[dict[str, Any]]:
         """Fetch recent realtime activity events."""
         try:
             async with httpx.AsyncClient(timeout=4.0, headers=self.headers) as client:
@@ -359,7 +357,7 @@ class NeimanApiClient:
         except Exception:
             pass
 
-        now = datetime.now(timezone.utc).strftime("%H:%M:%S")
+        now = datetime.now(UTC).strftime("%H:%M:%S")
         return [
             {"timestamp": now, "severity": "INFO", "event_type": "agent_started", "agent_name": "Architect Agent", "summary": "Began system boundary evaluation"},
             {"timestamp": now, "severity": "SUCCESS", "event_type": "task_completed", "agent_name": "QA Agent", "summary": "Passed regression test suite (48/48)"},
@@ -368,7 +366,7 @@ class NeimanApiClient:
             {"timestamp": now, "severity": "SUCCESS", "event_type": "evolution_proposed", "agent_name": "Evolution Strategist", "summary": "Proposed prompt routing optimization (+12% speed)"},
         ]
 
-    async def get_evolution(self, company_id: str) -> Dict[str, Any]:
+    async def get_evolution(self, company_id: str) -> dict[str, Any]:
         """Fetch adaptations and evolution proposals."""
         try:
             async with httpx.AsyncClient(timeout=4.0, headers=self.headers) as client:
@@ -403,7 +401,7 @@ class NeimanApiClient:
             ]
         }
 
-    async def get_logs(self, company_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+    async def get_logs(self, company_id: str, limit: int = 50) -> list[dict[str, Any]]:
         """Fetch immutable audit logs."""
         try:
             async with httpx.AsyncClient(timeout=4.0, headers=self.headers) as client:
@@ -413,7 +411,7 @@ class NeimanApiClient:
         except Exception:
             pass
 
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         return [
             {"created_at": now, "actor_name": "Elena Vance (SUPERADMIN)", "action": "Configured Zero-Trust Capability Model", "target": "Desktop Runtime", "result": "SUCCESS"},
             {"created_at": now, "actor_name": "Architect Agent", "action": "Optimized Microservice Boundaries", "target": "Core Engine", "result": "SUCCESS"},

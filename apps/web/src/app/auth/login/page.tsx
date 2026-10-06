@@ -147,36 +147,37 @@ export default function LoginPage() {
             </div>
 
             {/* SINGLE CONFIGURED USER (NEIMAN ADMIN) */}
-            <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                  Primary Organization Administrator
+            <div className="mb-6 rounded-none border border-border bg-[#0D0D0D] p-4 space-y-3 font-mono">
+              <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#D71921] flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#D71921] animate-pulse" />
+                  SYS.ROOT / ADMINISTRATOR
                 </span>
-                <span className="text-[10px] font-mono text-muted-foreground">Single User Mode</span>
+                <span className="text-[9px] uppercase tracking-wider text-muted-foreground bg-muted/20 px-1.5 py-0.5 border border-border/40">SINGLE TENANT</span>
               </div>
 
               <button
                 type="button"
+                id="btn-quick-fill-admin"
                 onClick={() => {
                   setValue('email', 'admin@neiman.ai', { shouldValidate: true, shouldDirty: true });
                   setValue('password', 'password123', { shouldValidate: true, shouldDirty: true });
                 }}
-                className="w-full p-3 rounded-lg bg-card/90 border border-primary/40 hover:border-primary text-left transition-colors flex items-center justify-between shadow-sm"
+                className="w-full p-3 bg-black/60 border border-border hover:border-[#D71921] text-left transition-colors flex items-center justify-between group"
               >
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-foreground text-sm">System Administrator</span>
-                    <span className="badge badge-primary text-[9px] py-0 px-1.5">SUPERADMIN</span>
+                    <span className="font-mono text-xs uppercase tracking-wider text-foreground font-semibold">System Root Admin</span>
+                    <span className="text-[8px] tracking-widest font-mono uppercase bg-[#D71921]/10 text-[#D71921] border border-[#D71921]/30 px-1">SUPER</span>
                   </div>
-                  <span className="text-xs text-muted-foreground font-mono block">admin@neiman.ai</span>
+                  <span className="text-[11px] text-muted-foreground font-mono block">admin@neiman.ai</span>
                 </div>
-                <span className="text-xs font-mono text-primary font-semibold hover:underline">Click to Fill</span>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#D71921] group-hover:underline">Fill Creds ↗</span>
               </button>
 
-              <div className="text-[10px] font-mono text-muted-foreground/90 flex items-center justify-between pt-1 border-t border-border/40">
-                <span>Default Password: <code className="text-foreground font-bold">password123</code></span>
-                <span>Role: Workspace Owner</span>
+              <div className="text-[9px] font-mono text-muted-foreground flex items-center justify-between pt-1">
+                <span>Pass: <code className="text-foreground tracking-wider">password123</code></span>
+                <span>Role: SYSTEM_OWNER</span>
               </div>
             </div>
 

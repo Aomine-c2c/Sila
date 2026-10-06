@@ -4,52 +4,52 @@
 
 @layer base {
 
-  /* Light Mode: Crisp Cyber-Ceramic */
+  /* Light Mode: Nothing Monochromatic Ceramic */
   :root {
-    --background: 220 20% 98%;
-    --foreground: 224 45% 11%;
+    --background: 0 0% 98%;
+    --foreground: 0 0% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 224 45% 11%;
+    --card-foreground: 0 0% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 224 45% 11%;
-    --primary: 158 82% 38%;
+    --popover-foreground: 0 0% 8%;
+    --primary: 357 79% 47%; /* Nothing Red #D71921 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 93%;
-    --secondary-foreground: 224 45% 11%;
-    --muted: 220 14% 93%;
-    --muted-foreground: 220 12% 46%;
-    --accent: 220 14% 91%;
-    --accent-foreground: 224 45% 11%;
-    --destructive: 0 84% 60%;
+    --secondary: 0 0% 93%;
+    --secondary-foreground: 0 0% 8%;
+    --muted: 0 0% 92%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 90%;
+    --accent-foreground: 0 0% 8%;
+    --destructive: 357 79% 47%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 86%;
-    --input: 220 13% 86%;
-    --ring: 158 82% 38%;
-    --radius: 0.625rem;
+    --border: 0 0% 85%;
+    --input: 0 0% 85%;
+    --ring: 357 79% 47%;
+    --radius: 0.375rem; /* Clean, tactile sharp corners */
   }
 
-  /* Dark Mode: Deep Obsidian & Cyber Lime/Cyan */
+  /* Dark Mode: Nothing Ultra-Dark Obsidian & Dot Matrix */
   .dark {
-    --background: 222 25% 6%;
-    --foreground: 210 24% 96%;
-    --card: 222 22% 9%;
-    --card-foreground: 210 24% 96%;
-    --popover: 222 22% 9%;
-    --popover-foreground: 210 24% 96%;
-    --primary: 76 92% 54%;
-    --primary-foreground: 222 25% 6%;
-    --secondary: 223 18% 14%;
-    --secondary-foreground: 210 24% 96%;
-    --muted: 223 18% 14%;
-    --muted-foreground: 218 11% 65%;
-    --accent: 223 18% 16%;
-    --accent-foreground: 210 24% 96%;
-    --destructive: 0 75% 55%;
-    --destructive-foreground: 210 24% 96%;
-    --border: 220 16% 18%;
-    --input: 220 16% 18%;
-    --ring: 76 92% 54%;
-    --radius: 0.625rem;
+    --background: 0 0% 3%; /* #080808 */
+    --foreground: 0 0% 96%; /* #F5F5F5 */
+    --card: 0 0% 5%; /* #0D0D0D */
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 357 79% 47%; /* Nothing Red #D71921 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 10%; /* #1A1A1A */
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 0 0% 12%;
+    --accent-foreground: 0 0% 96%;
+    --destructive: 357 79% 47%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 14%; /* #242424 */
+    --input: 0 0% 14%;
+    --ring: 357 79% 47%;
+    --radius: 0.375rem;
   }
 }
 
@@ -61,9 +61,10 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    @apply antialiased transition-colors duration-200;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    background-image: radial-gradient(ellipse at 50% -18%, hsl(var(--primary) / 0.08), transparent 50%);
+    @apply antialiased transition-colors duration-150 font-mono tracking-tight;
+    background-image: 
+      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.07) 1px, transparent 0);
+    background-size: 20px 20px;
   }
 }
 
@@ -212,13 +213,51 @@
     box-shadow: 0 0 10px -2px hsl(var(--primary) / 0.2);
   }
 
-  .hairline-border {
-    border-width: 1px;
-    border-color: hsl(var(--border) / 0.7);
-  }
-
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* ── Nothing OS Aesthetic Utilities ── */
+  .nothing-dot-matrix {
+    background-image: radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.15) 1px, transparent 0);
+    background-size: 14px 14px;
+  }
+
+  .nothing-dot-dense {
+    background-image: radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.22) 1px, transparent 0);
+    background-size: 8px 8px;
+  }
+
+  .nothing-card {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    transition: all 0.15s ease-in-out;
+  }
+
+  .nothing-card:hover {
+    border-color: hsl(var(--foreground) / 0.35);
+  }
+
+  .nothing-red-indicator {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background-color: #D71921;
+    box-shadow: 0 0 8px rgba(215, 25, 33, 0.7);
+  }
+
+  .nothing-tag {
+    font-family: var(--font-mono), monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 2px 6px;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--secondary));
+    color: hsl(var(--foreground));
+    border-radius: 2px;
   }
 }
 

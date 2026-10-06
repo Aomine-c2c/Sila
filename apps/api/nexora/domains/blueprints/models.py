@@ -17,10 +17,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from nexora.core.base import NexoraBase
+from nexora.core.base import UUIDTimestampBase
 
 
-class CompanyBlueprint(NexoraBase):
+class CompanyBlueprint(UUIDTimestampBase):
     """
     A comprehensive preconfigured organizational blueprint that can be
     customized, duplicated, imported, exported, saved as template, and instantiated into a real Company.
@@ -124,7 +124,7 @@ class CompanyBlueprint(NexoraBase):
     metadata_tags: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
 
 
-class BlueprintGenerationProposal(NexoraBase):
+class BlueprintGenerationProposal(UUIDTimestampBase):
     """
     Stores a 'Build My Company' natural language generation proposal
     before it is approved and instantiated.

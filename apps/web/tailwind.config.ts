@@ -60,10 +60,19 @@ module.exports = {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        nothing: {
+          red: '#D71921',
+          dark: '#080808',
+          subtle: '#141414',
+          border: '#222222',
+          glyph: '#EDEDED',
+          muted: '#7A7A7A',
+        },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'JetBrains Mono', 'monospace'],
+        ndot: ['var(--font-ndot)', 'monospace'],
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',

@@ -2,15 +2,13 @@
 
 import asyncio
 import json
-import uuid
-from typing import Annotated
 
 import structlog
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 
 from nexora.domains.activity.broadcaster import activity_broadcaster
-from nexora.domains.activity.schemas import ActivityEvent, ActivityEventType, ActivitySeverity
+from nexora.domains.activity.schemas import ActivityEvent
 
 logger = structlog.get_logger(__name__)
 

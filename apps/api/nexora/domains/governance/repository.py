@@ -2,7 +2,6 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import or_, select
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.core.enums import ApprovalStatus, EscalationStatus

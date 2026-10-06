@@ -2,11 +2,9 @@
 
 import asyncio
 import json
-import random
 import uuid
 from collections import defaultdict, deque
-from datetime import datetime, timezone
-from typing import AsyncGenerator
+from datetime import UTC, datetime
 
 import structlog
 from fastapi import WebSocket
@@ -119,7 +117,7 @@ class ActivityBroadcaster:
 
     def _generate_initial_seed_events(self, company_id: str) -> list[ActivityEvent]:
         """Provides seed events covering all 14 required types across departments and severity tiers."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         seeds = [
             ActivityEvent(
                 id=str(uuid.uuid4()),

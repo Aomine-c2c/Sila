@@ -9,23 +9,23 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'default', size = 'default', ...props }, ref) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-medium transition-all duration-200 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-40 disabled:pointer-events-none active:scale-[0.98]';
+      'inline-flex items-center justify-center font-mono text-xs uppercase tracking-wider font-semibold transition-all duration-150 select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:opacity-30 disabled:pointer-events-none active:scale-[0.97]';
 
     const variants: Record<string, string> = {
       default:
-        'bg-primary text-primary-foreground font-semibold shadow-sm hover:brightness-110 active:brightness-95 hover:shadow-primary/25 hover:shadow-md',
+        'bg-[#D71921] text-white hover:bg-[#c0141c] active:bg-[#a81017] shadow-sm',
       cyber:
-        'bg-primary/10 text-primary border border-primary/40 hover:bg-primary hover:text-primary-foreground hover:shadow-lg hover:shadow-primary/20 hover:border-primary',
+        'bg-secondary/40 text-foreground border border-border hover:border-foreground/40 hover:bg-secondary/80',
       glass:
-        'glass-card text-foreground hover:bg-secondary/80 hover:border-primary/40',
+        'border border-border/80 bg-card/60 backdrop-blur-md text-foreground hover:bg-secondary/60 hover:border-foreground/30',
       outline:
-        'border border-border bg-card/50 hover:bg-secondary hover:border-primary/40 text-foreground',
+        'border border-border bg-transparent hover:bg-secondary/60 hover:border-foreground/40 text-foreground',
       ghost:
-        'hover:bg-secondary text-foreground hover:text-primary',
+        'hover:bg-secondary/60 text-muted-foreground hover:text-foreground',
       destructive:
-        'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm',
+        'bg-[#D71921] text-white hover:bg-[#c0141c] shadow-sm',
       secondary:
-        'bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border/50',
+        'bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border',
     };
 
     const sizes: Record<string, string> = {

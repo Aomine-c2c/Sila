@@ -19,9 +19,9 @@ Implements:
 import uuid
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Boolean, Float, ForeignKey, JSON, String, Text
+from sqlalchemy import JSON, Boolean, Float, ForeignKey, String, Text
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from nexora.core.base import UUIDCreatedAtBase, UUIDTimestampBase
 from nexora.core.enums import (
@@ -32,7 +32,7 @@ from nexora.core.enums import (
 )
 
 if TYPE_CHECKING:
-    from nexora.domains.organizations.models import Company
+    pass
 
 
 class PerformanceMetricRecord(UUIDCreatedAtBase):

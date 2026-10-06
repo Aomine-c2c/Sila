@@ -325,6 +325,89 @@ export default function BlueprintsPage() {
       {/* ======================================================== */}
       {activeTab === 'catalog' && (
         <div className="space-y-6">
+          {/* Zero-Cognition Quick Launch Hero Banner */}
+          <div className="rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-background to-secondary/30 p-5 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-[10px] font-mono uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">
+                  Zero-Cognition Autonomy
+                </span>
+                <h2 className="text-base font-bold text-foreground mt-1 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-amber-400" />
+                  Instant Enterprise Launch (1-Click)
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Instantiate a pre-wired enterprise with specialized departments, agents, system prompts, workflows, and risk guardrails with zero manual configuration.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              {/* Software Company Card */}
+              <div className="p-4 rounded-xl border border-indigo-500/30 bg-card/70 hover:bg-card transition-all flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">
+                      TECHNOLOGY
+                    </span>
+                    <span className="text-[10px] font-mono text-muted-foreground">NovaForge Tech</span>
+                  </div>
+                  <h3 className="font-bold text-sm text-foreground mt-2">
+                    Software Development Company
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Product Architecture &bull; Full-Stack Engineering &bull; QA & SRE Automation &bull; CI/CD Pipelines
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={instantiateMutation.isPending}
+                  onClick={() =>
+                    instantiateMutation.mutate({
+                      idOrKey: 'software_development_company',
+                      req: { company_name: 'NovaForge Technologies' },
+                    })
+                  }
+                  className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all"
+                >
+                  <Play className="h-3.5 w-3.5 fill-current" />
+                  Launch Software Company Now
+                </button>
+              </div>
+
+              {/* Forex Company Card */}
+              <div className="p-4 rounded-xl border border-emerald-500/30 bg-card/70 hover:bg-card transition-all flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                      FINANCE & ARBITRAGE
+                    </span>
+                    <span className="text-[10px] font-mono text-muted-foreground">ApexFX Global</span>
+                  </div>
+                  <h3 className="font-bold text-sm text-foreground mt-2">
+                    Forex Trading Company
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Quant Alpha Research &bull; Algorithmic Execution &bull; Risk & VaR Compliance &bull; Circuit Breakers
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={instantiateMutation.isPending}
+                  onClick={() =>
+                    instantiateMutation.mutate({
+                      idOrKey: 'forex_trading_company',
+                      req: { company_name: 'ApexFX Global Capital' },
+                    })
+                  }
+                  className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all"
+                >
+                  <Play className="h-3.5 w-3.5 fill-current" />
+                  Launch Forex Company Now
+                </button>
+              </div>
+            </div>
+          </div>
           {/* Controls Bar */}
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-NEIMAN-surface/60 border border-border p-3.5 rounded-xl">
             {/* Search */}
@@ -472,16 +555,33 @@ export default function BlueprintsPage() {
                         </button>
                       </div>
 
-                      <button
-                        onClick={() => {
-                          setInstantiateModalBp(bp);
-                          setCustomCompanyName(bp.company_definition?.name || bp.name);
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground transition-all shadow-sm"
-                      >
-                        <Play className="h-3.5 w-3.5 fill-current" />
-                        Instantiate
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          disabled={instantiateMutation.isPending}
+                          onClick={() => {
+                            instantiateMutation.mutate({
+                              idOrKey: bp.key || bp.id,
+                              req: { company_name: bp.company_definition?.name || bp.name },
+                            });
+                          }}
+                          title="Instant 1-Click Launch with defaults"
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-xs"
+                        >
+                          <Play className="h-3 w-3 fill-current" />
+                          Quick Launch
+                        </button>
+                        <button
+                          onClick={() => {
+                            setInstantiateModalBp(bp);
+                            setCustomCompanyName(bp.company_definition?.name || bp.name);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground transition-all shadow-sm"
+                        >
+                          <Sliders className="h-3.5 w-3.5" />
+                          Customize
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );

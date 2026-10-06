@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from nexora.database import get_db
 from nexora.config import get_settings
+from nexora.database import get_db
 from nexora.domains.auth.models import User
 from nexora.domains.auth.schemas import TokenResponse, UserLogin, UserRegister, UserResponse
 from nexora.domains.auth.service import AuthService, create_access_token

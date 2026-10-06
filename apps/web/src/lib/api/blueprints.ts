@@ -243,22 +243,22 @@ export const blueprintsApi = {
   /** List all system & custom templates, optionally filter by category */
   listBlueprints: async (category?: string): Promise<CompanyBlueprint[]> => {
     const params = category ? `?category=${encodeURIComponent(category)}` : '';
-    return api.get<CompanyBlueprint[]>(`/blueprints${params}`);
+    return api.get<CompanyBlueprint[]>(`/api/v1/blueprints${params}`);
   },
 
   /** Inspect full specification of a blueprint */
   getBlueprint: async (idOrKey: string): Promise<CompanyBlueprint> => {
-    return api.get<CompanyBlueprint>(`/blueprints/${encodeURIComponent(idOrKey)}`);
+    return api.get<CompanyBlueprint>(`/api/v1/blueprints/${encodeURIComponent(idOrKey)}`);
   },
 
   /** Create custom blueprint */
   createBlueprint: async (data: CompanyBlueprintCreate): Promise<CompanyBlueprint> => {
-    return api.post<CompanyBlueprint>('/blueprints', data);
+    return api.post<CompanyBlueprint>('/api/v1/blueprints', data);
   },
 
   /** Update/customize blueprint before activation */
   updateBlueprint: async (blueprintId: string, data: CompanyBlueprintUpdate): Promise<CompanyBlueprint> => {
-    return api.patch<CompanyBlueprint>(`/blueprints/${blueprintId}`, data);
+    return api.patch<CompanyBlueprint>(`/api/v1/blueprints/${blueprintId}`, data);
   },
 
   /** Instantiate blueprint into real operational company */
@@ -266,37 +266,37 @@ export const blueprintsApi = {
     idOrKey: string,
     req: InstantiateBlueprintRequest = {}
   ): Promise<InstantiateBlueprintResponse> => {
-    return api.post<InstantiateBlueprintResponse>(`/blueprints/${encodeURIComponent(idOrKey)}/instantiate`, req);
+    return api.post<InstantiateBlueprintResponse>(`/api/v1/blueprints/${encodeURIComponent(idOrKey)}/instantiate`, req);
   },
 
   /** Duplicate blueprint */
   duplicateBlueprint: async (blueprintId: string): Promise<CompanyBlueprint> => {
-    return api.post<CompanyBlueprint>(`/blueprints/${blueprintId}/duplicate`, {});
+    return api.post<CompanyBlueprint>(`/api/v1/blueprints/${blueprintId}/duplicate`, {});
   },
 
   /** Export blueprint specification as JSON */
   exportBlueprint: async (blueprintId: string): Promise<Record<string, unknown>> => {
-    return api.get<Record<string, unknown>>(`/blueprints/${blueprintId}/export`);
+    return api.get<Record<string, unknown>>(`/api/v1/blueprints/${blueprintId}/export`);
   },
 
   /** Import blueprint from JSON specification */
   importBlueprint: async (payload: Record<string, unknown>): Promise<CompanyBlueprint> => {
-    return api.post<CompanyBlueprint>('/blueprints/import', payload);
+    return api.post<CompanyBlueprint>('/api/v1/blueprints/import', payload);
   },
 
   /** Save active company as reusable blueprint template */
   saveAsTemplate: async (req: SaveAsTemplateRequest): Promise<CompanyBlueprint> => {
-    return api.post<CompanyBlueprint>('/blueprints/save-template', req);
+    return api.post<CompanyBlueprint>('/api/v1/blueprints/save-template', req);
   },
 
   /** BUILD MY COMPANY: Natural language organizational synthesis */
   buildMyCompany: async (req: BuildMyCompanyRequest): Promise<BuildMyCompanyProposal> => {
-    return api.post<BuildMyCompanyProposal>('/blueprints/build-my-company', req);
+    return api.post<BuildMyCompanyProposal>('/api/v1/blueprints/build-my-company', req);
   },
 
   /** Inspect a synthesized proposal */
   getProposal: async (proposalId: string): Promise<BuildMyCompanyProposal> => {
-    return api.get<BuildMyCompanyProposal>(`/blueprints/build-my-company/${proposalId}`);
+    return api.get<BuildMyCompanyProposal>(`/api/v1/blueprints/build-my-company/${proposalId}`);
   },
 
   /** Modify proposal (allows user to change everything before review & approval) */
@@ -308,7 +308,7 @@ export const blueprintsApi = {
       preferred_autonomy_level?: number;
     }
   ): Promise<BuildMyCompanyProposal> => {
-    return api.patch<BuildMyCompanyProposal>(`/blueprints/build-my-company/${proposalId}`, data);
+    return api.patch<BuildMyCompanyProposal>(`/api/v1/blueprints/build-my-company/${proposalId}`, data);
   },
 
   /** SIMULATE: Dry-run benchmark workload against proposal before approval */
@@ -316,7 +316,7 @@ export const blueprintsApi = {
     proposalId: string,
     data: { test_workload_size?: number; concurrency_level?: number } = {}
   ): Promise<BuildMyCompanyProposal> => {
-    return api.post<BuildMyCompanyProposal>(`/blueprints/build-my-company/${proposalId}/simulate`, data);
+    return api.post<BuildMyCompanyProposal>(`/api/v1/blueprints/build-my-company/${proposalId}/simulate`, data);
   },
 
   /** APPROVE & INSTANTIATE: Never silently creates organization without confirmation */
@@ -329,7 +329,7 @@ export const blueprintsApi = {
     } = {}
   ): Promise<InstantiateBlueprintResponse> => {
     return api.post<InstantiateBlueprintResponse>(
-      `/blueprints/build-my-company/${proposalId}/instantiate`,
+      `/api/v1/blueprints/build-my-company/${proposalId}/instantiate`,
       data
     );
   },

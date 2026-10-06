@@ -23,6 +23,8 @@ import { NotificationsCenter } from '@/components/layout/NotificationsCenter';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { isTauriDesktop, desktopEvents, desktopWindowState } from '@/lib/desktop/tauriBridge';
+import { SystemSetupWizard } from '@/components/layout/SystemSetupWizard';
+import { UpdateReadyModal } from '@/components/layout/UpdateReadyModal';
 
 export default function DashboardLayout({
   children,
@@ -39,17 +41,24 @@ export default function DashboardLayout({
   const segments = pathname.split('/').filter(Boolean);
   const currentDomain = segments.length > 1 ? segments[1].replace(/-/g, ' ') : 'Overview';
 
+  const [setupWizardOpen, setSetupWizardOpen] = useState(false);
+
   useEffect(() => {
-    // If no active company is loaded, automatically fetch and select the default company
+    // If no active company is loaded, check if any companies exist; if none, show setup wizard
     if (!activeCompany && !developmentBypass) {
       organizationsApi
         .list()
         .then((companies) => {
           if (companies && companies.length > 0) {
             setActiveCompany(companies[0]);
+          } else {
+            setSetupWizardOpen(true);
           }
         })
-        .catch(() => { });
+        .catch(() => {
+          // If network / API empty, prompt wizard
+          setSetupWizardOpen(true);
+        });
     }
   }, [activeCompany, developmentBypass, setActiveCompany]);
 
@@ -128,14 +137,14 @@ export default function DashboardLayout({
               <div className="flex items-center gap-2 text-xs font-mono shrink-0">
                 <Link
                   href="/dashboard"
-                  className="text-muted-foreground/80 hover:text-foreground transition-colors font-bold text-sm tracking-tight flex items-center gap-2"
+                  className="text-muted-foreground hover:text-foreground transition-colors font-bold text-xs tracking-widest flex items-center gap-2 uppercase"
                   title="Return to Core Overview"
                 >
-                  <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                  NEIMAN
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#D71921] shadow-[0_0_6px_#D71921]" />
+                  SYS
                 </Link>
-                <ChevronRight className="h-3 w-3 text-muted-foreground/40 shrink-0" />
-                <span className="text-primary font-semibold uppercase tracking-wider truncate text-xs">
+                <span className="text-muted-foreground/40 font-mono">/</span>
+                <span className="text-foreground font-semibold uppercase tracking-widest truncate text-xs font-mono">
                   {currentDomain}
                 </span>
               </div>
@@ -147,16 +156,16 @@ export default function DashboardLayout({
               <div className="hidden md:flex items-center w-44 lg:w-56">
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-2 rounded-lg border border-border/80 bg-card/60 px-3 py-1.5 text-xs text-muted-foreground hover:border-primary/40 hover:bg-secondary/70 hover:text-foreground transition-all duration-200"
+                  className="flex w-full items-center justify-between gap-2 rounded border border-border bg-secondary/30 px-2.5 py-1.5 text-xs font-mono text-muted-foreground hover:border-foreground/30 hover:bg-secondary/70 hover:text-foreground transition-all duration-150"
                   onClick={() => setCommandPaletteOpen(true)}
                   aria-label="Open command palette"
                 >
                   <div className="flex items-center gap-2">
-                    <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>Search...</span>
+                    <Search className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-[11px] uppercase tracking-wider">Search...</span>
                   </div>
-                  <kbd className="inline-flex items-center gap-0.5 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground border border-border/60">
-                    <Command className="h-2.5 w-2.5" /> K
+                  <kbd className="inline-flex items-center gap-0.5 rounded-sm bg-secondary px-1 py-0.5 text-[9px] font-mono text-muted-foreground border border-border">
+                    <Command className="h-2 w-2" /> K
                   </kbd>
                 </button>
               </div>
@@ -168,8 +177,8 @@ export default function DashboardLayout({
               {!developmentBypass ? (
                 <OrganizationSwitcher />
               ) : (
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
-                  <Eye className="h-3 w-3" aria-hidden="true" /> UI preview
+                <div className="inline-flex items-center gap-1.5 rounded border border-[#D71921]/30 bg-[#D71921]/10 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-[#D71921]">
+                  <Eye className="h-3 w-3" aria-hidden="true" /> PREVIEW
                 </div>
               )}
 
@@ -181,28 +190,28 @@ export default function DashboardLayout({
                 <button
                   id="user-menu-trigger"
                   type="button"
-                  className="flex items-center gap-2 rounded-lg bg-card/70 border border-border/70 p-1 sm:px-2.5 sm:py-1.5 hover:bg-secondary hover:border-primary/40 transition-colors"
+                  className="flex items-center gap-2 rounded border border-border p-1 sm:px-2 sm:py-1 hover:bg-secondary hover:border-foreground/30 transition-colors font-mono"
                   onClick={() => setShowUserMenu((v) => !v)}
                   aria-expanded={showUserMenu}
                   aria-haspopup="true"
                   aria-label="User account menu"
                 >
-                  <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-[#D71921] text-[10px] font-mono font-bold text-white shadow-sm">
                     {initials}
                   </div>
                   {user && (
                     <div className="hidden lg:block text-left max-w-[120px]">
-                      <p className="text-xs font-medium text-foreground truncate leading-none">
+                      <p className="text-[11px] font-mono font-medium text-foreground truncate leading-none uppercase">
                         {user.first_name && user.last_name
                           ? `${user.first_name} ${user.last_name}`
                           : user.username}
                       </p>
-                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                      <p className="text-[9px] font-mono text-muted-foreground truncate mt-0.5">
                         {user.email}
                       </p>
                     </div>
                   )}
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
                 </button>
 
                 {showUserMenu && (
@@ -263,6 +272,16 @@ export default function DashboardLayout({
           isOpen={commandPaletteOpen}
           onClose={() => setCommandPaletteOpen(false)}
         />
+
+        {/* First-Time Setup & Onboarding Wizard */}
+        <SystemSetupWizard
+          isOpen={setupWizardOpen}
+          onClose={() => setSetupWizardOpen(false)}
+          onCompleted={() => setSetupWizardOpen(false)}
+        />
+
+        {/* Native Auto-Update Prompt (Silent background download -> restart prompt) */}
+        <UpdateReadyModal />
       </div>
     </AuthGuard>
   );

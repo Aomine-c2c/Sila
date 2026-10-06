@@ -139,6 +139,9 @@ pub fn run() {
                 )?;
             }
 
+            // Register official Tauri v2 auto-updater plugin
+            app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+
             // 1. Build System Tray Menu
             let toggle_item = MenuItem::with_id(app, "toggle", "Open NEIMAN OS", true, None::<&str>)?;
             let activity_item = MenuItem::with_id(app, "activity", "Live Activity Stream", true, None::<&str>)?;

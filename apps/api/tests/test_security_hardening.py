@@ -14,6 +14,7 @@ Rigorous automated testing for:
 """
 
 import uuid
+
 import pytest
 from httpx import AsyncClient
 
@@ -23,7 +24,7 @@ from nexora.core.security import (
     PromptSanitizer,
     ToolSandbox,
 )
-from nexora.exceptions import ForbiddenError, ValidationError
+from nexora.exceptions import ForbiddenError
 
 pytestmark = pytest.mark.asyncio
 

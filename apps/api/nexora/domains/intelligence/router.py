@@ -169,6 +169,7 @@ async def reset_circuit_breakers(
     service = IntelligenceService(db)
     service.router.registry.reset_circuit_breakers()
     from sqlalchemy import update
+
     from nexora.domains.intelligence.models import ModelProvider
     await db.execute(update(ModelProvider).values(is_healthy=True, consecutive_failures=0))
     await db.flush()

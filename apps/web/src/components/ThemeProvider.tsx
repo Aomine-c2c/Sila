@@ -12,15 +12,15 @@ interface ThemeProviderContextType {
 }
 
 const ThemeProviderContext = createContext<ThemeProviderContextType>({
-  theme: 'light',
-  resolvedTheme: 'light',
+  theme: 'dark',
+  resolvedTheme: 'dark',
   setTheme: () => null,
   toggleTheme: () => null,
 });
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'light',
+  defaultTheme = 'dark',
   storageKey = 'NEIMAN-theme',
 }: {
   children: React.ReactNode;
@@ -28,7 +28,7 @@ export function ThemeProvider({
   storageKey?: string;
 }) {
   const [theme, setThemeState] = useState<Theme>(defaultTheme);
-  const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>('light');
+  const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>('dark');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+- **Live Simulation Lab Execution & Real-Time Telemetry Broadcast**:
+  - **Live Backend Integration (`/dashboard/simulation`)**:
+    - Connected Simulation Lab to real backend `evolutionApi.listSimulationScenarios`, `evolutionApi.runSimulationBenchmark`, and `evolutionApi.promoteSimulationScenario`.
+    - Wired live multi-stream benchmarking executing real workload batches with live latency, error, cost, and quality telemetry.
+    - Synchronized pre-configured simulation sandboxes for Software Development and Forex Trading with automatic server scenario mapping.
+  - **Real-Time Organization Event Broadcasting**:
+    - Integrated `activity_broadcaster.broadcast` within `EvolutionService.run_simulation_benchmark` emitting `ActivityEventType.SIMULATION_COMPLETED`.
+    - Integrated promotion event broadcast emitting `ActivityEventType.EVOLUTION_PROPOSED` and zero-risk rollback safety snapshot IDs into the real-time Control Room timeline.
+  - **Zero-Risk Organizational Promotion**:
+    - Automated immutable safety snapshots (`OrganizationalSnapshot`) prior to applying sandbox parameters to live organizations.
+    - Seamless fallback to client sandbox trial when offline or disconnected.
+
+- **Zero-Cognition Enterprise Blueprints & Onboarding Wizard**:
+  - **First-Time Setup & Model Linking Wizard (`SystemSetupWizard`)**:
+    - Guided 3-step setup: 1) System Overview & Core Principles, 2) Heterogeneous AI Model Linking (Google Gemini, Anthropic Claude, OpenAI, and Local Ollama / Offline), and 3) 1-Click Company Launch.
+    - Integrated directly into [`DashboardLayout`](file:///home/sila/Projects/Sila/apps/web/src/app/dashboard/layout.tsx) to automatically assist operators with no active organization, eliminating initial cognitive setup friction.
+    - Added integrated prompt bar allowing instant natural-language synthesis of custom organizations via linked AI models.
+  - **Instant 1-Click Launch Hero on Blueprints Catalog (`/dashboard/blueprints`)**:
+    - Embedded prominent Zero-Touch Quick Launch cards for **Software Development Company** (`NovaForge Technologies`) and **Forex Trading Company** (`ApexFX Global Capital`).
+    - Added direct `Quick Launch` buttons on every catalog blueprint card alongside `Customize`, enabling instantaneous enterprise activation without required manual parameter tuning.
+  - **Full Quality & Test Verification**:
+    - Production bundle compilation: All 28 Next.js routes built cleanly.
+    - Test suites: 51 / 51 frontend tests and 127 / 127 backend tests passing.
+
 - **NEIMAN Company Control Room & Activity Stream**:
   - **Unified Operating Cockpit (`/dashboard`)**:
     - Embedded `ControlRoomDashboard` as the central operating cockpit, retiring fragmented legacy cards and grids.

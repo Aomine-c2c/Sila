@@ -32,7 +32,7 @@ import curses
 import os
 import sys
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Add api directory to sys.path so we reuse the exact domain client
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../api")))
@@ -48,9 +48,9 @@ class NeimanTUIApp:
     def __init__(self, stdscr):
         self.stdscr = stdscr
         self.client = NeimanApiClient()
-        self.active_company: Dict[str, Any] = {}
-        self.companies: List[Dict[str, Any]] = []
-        
+        self.active_company: dict[str, Any] = {}
+        self.companies: list[dict[str, Any]] = []
+
         # UI State
         self.current_view = "dashboard"
         self.status_message = "Initializing NEIMAN Operational Core..."
@@ -58,20 +58,20 @@ class NeimanTUIApp:
         self.is_running = True
         self.command_mode = False
         self.command_buffer = ""
-        self.inspect_data: Optional[Dict[str, Any]] = None
-        
+        self.inspect_data: dict[str, Any] | None = None
+
         # Cached data
-        self.dashboard_data: Dict[str, Any] = {}
-        self.agents_data: List[Dict[str, Any]] = []
-        self.projects_data: List[Dict[str, Any]] = []
-        self.tasks_data: List[Dict[str, Any]] = []
-        self.workflows_data: List[Dict[str, Any]] = []
-        self.resources_data: Dict[str, Any] = {}
-        self.intelligence_data: Dict[str, Any] = {}
-        self.approvals_data: List[Dict[str, Any]] = []
-        self.activity_data: List[Dict[str, Any]] = []
-        self.evolution_data: Dict[str, Any] = {}
-        self.logs_data: List[Dict[str, Any]] = []
+        self.dashboard_data: dict[str, Any] = {}
+        self.agents_data: list[dict[str, Any]] = []
+        self.projects_data: list[dict[str, Any]] = []
+        self.tasks_data: list[dict[str, Any]] = []
+        self.workflows_data: list[dict[str, Any]] = []
+        self.resources_data: dict[str, Any] = {}
+        self.intelligence_data: dict[str, Any] = {}
+        self.approvals_data: list[dict[str, Any]] = []
+        self.activity_data: list[dict[str, Any]] = []
+        self.evolution_data: dict[str, Any] = {}
+        self.logs_data: list[dict[str, Any]] = []
 
         # Color pairs setup
         curses.start_color()
@@ -95,12 +95,12 @@ class NeimanTUIApp:
         if not logged_in:
             # Fallback to demo persona
             await self.client.login("elena.vance@neiman.ai", "password123")
-            
+
         self.companies = await self.client.get_companies()
         if self.companies:
             self.active_company = self.companies[0]
             self.client.active_company_id = self.active_company.get("id")
-            
+
         self.status_message = "Connected to NEIMAN Core OS. Press [:] for command prompt."
         await self.refresh_current_view()
 
@@ -140,12 +140,12 @@ class NeimanTUIApp:
             if title:
                 title_str = f" {title} "
                 self.stdscr.addstr(y, x + 2, title_str, curses.color_pair(1) | curses.A_BOLD)
-            
+
             # Sides
             for i in range(1, h - 1):
                 self.stdscr.addstr(y + i, x, "│", curses.color_pair(2))
                 self.stdscr.addstr(y + i, x + w - 1, "│", curses.color_pair(2))
-                
+
             # Bottom border
             self.stdscr.addstr(y + h - 1, x, "└" + "─" * (w - 2) + "┘", curses.color_pair(2))
         except curses.error:
@@ -555,7 +555,7 @@ class NeimanTUIApp:
             self.is_running = False
         else:
             self.status_message = f"Unknown command: '{cmd_line}'. Type 'dashboard', 'agents', 'projects', 'tasks', 'resources', 'models', 'approvals', 'logs', or 'quit'."
-            
+
         await self.refresh_current_view()
 
     async def run(self):

@@ -28,6 +28,8 @@ from nexora.core.enums import (
     PerformanceDimension,
     RetentionPolicy,
 )
+from nexora.domains.activity.broadcaster import activity_broadcaster
+from nexora.domains.activity.schemas import ActivityEvent, ActivityEventType, ActivitySeverity
 from nexora.domains.agents.repository import AgentRepository
 from nexora.domains.intelligence.evolution_models import (
     CustomKPIDefinition,
@@ -741,6 +743,36 @@ class EvolutionService:
         scenario.status = "EVALUATED"
         await self.db.commit()
         await self.db.refresh(run)
+
+        # Broadcast Simulation Completed event to Control Room
+        try:
+            await activity_broadcaster.broadcast(
+                company_id=str(company_id),
+                event=ActivityEvent(
+                    id=str(uuid.uuid4()),
+                    company_id=str(company_id),
+                    event_type=ActivityEventType.SIMULATION_COMPLETED,
+                    severity=ActivitySeverity.INFO,
+                    title=f"Simulation Benchmark Completed: {scenario.name}",
+                    summary=(
+                        f"Executed {tasks_count} tasks in {duration_ms}ms with {tasks_succeeded} succeeded "
+                        f"and {tasks_failed} failed. Cost: ${total_sim_cost} USD."
+                    ),
+                    department_name="Simulation Lab",
+                    project_name="Autonomous Evolution",
+                    payload={
+                        "scenario_id": str(scenario.id),
+                        "run_id": str(run.id),
+                        "tasks_count": tasks_count,
+                        "concurrency": concurrency,
+                        "duration_ms": duration_ms,
+                        "metrics_comparison": metrics_comparison,
+                    },
+                ),
+            )
+        except Exception:
+            pass
+
         return run
 
     async def promote_simulation_scenario(
@@ -797,5 +829,34 @@ class EvolutionService:
 
         await self.db.commit()
         await self.db.refresh(scenario)
+
+        # Broadcast Evolution Proposed / Decision Created event to Control Room
+        try:
+            await activity_broadcaster.broadcast(
+                company_id=str(company_id),
+                event=ActivityEvent(
+                    id=str(uuid.uuid4()),
+                    company_id=str(company_id),
+                    event_type=ActivityEventType.EVOLUTION_PROPOSED,
+                    severity=ActivitySeverity.HIGH,
+                    title=f"Simulation Promoted to Production: {scenario.name}",
+                    summary=(
+                        f"Sandbox configuration from '{scenario.name}' promoted by {req.approver}. "
+                        f"Safety snapshot {snapshot.id} preserved for zero-risk rollback."
+                    ),
+                    department_name="Executive Governance",
+                    project_name="Autonomous Evolution",
+                    payload={
+                        "scenario_id": str(scenario.id),
+                        "snapshot_id": str(snapshot.id),
+                        "approver": req.approver,
+                        "notes": req.notes,
+                        "simulated_config": sim_config,
+                    },
+                ),
+            )
+        except Exception:
+            pass
+
         return scenario
 

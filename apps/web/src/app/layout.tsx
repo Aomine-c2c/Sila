@@ -1,5 +1,5 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import type { Metadata, Viewport } from 'next';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/Providers';
 
@@ -8,6 +8,19 @@ const inter = Inter({
   variable: '--font-inter',
   display: 'swap',
 });
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+});
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#080808' },
+  ],
+};
 
 export const metadata: Metadata = {
   title: 'NEIMAN — Autonomous Organization OS',
@@ -18,10 +31,6 @@ export const metadata: Metadata = {
     description: 'Build, govern, and evolve AI-powered organizations at scale.',
     type: 'website',
   },
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0a0f' },
-  ],
 };
 
 export default function RootLayout({
@@ -31,7 +40,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased selection:bg-[#D71921] selection:text-white`}>
         {/* Skip to main content — keyboard accessibility */}
         <a
           href="#main-content"

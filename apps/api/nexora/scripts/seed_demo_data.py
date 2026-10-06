@@ -15,24 +15,10 @@ Uses Faker to generate rich, realistic organizational datasets across all 15 dom
 import asyncio
 import random
 import uuid
+
 from faker import Faker
 
 # Domain models
-import nexora.domains.auth.models
-import nexora.domains.organizations.models
-import nexora.domains.agents.models
-import nexora.domains.blueprints.models
-import nexora.domains.councils.models
-import nexora.domains.decisions.models
-import nexora.domains.governance.models
-import nexora.domains.intelligence.models
-import nexora.domains.memory.models
-import nexora.domains.policies.models
-import nexora.domains.projects.models
-import nexora.domains.resources.models
-import nexora.domains.workflows.models
-
-from nexora.database import AsyncSessionLocal
 from nexora.core.enums import (
     AgentAutonomy,
     AgentStatus,
@@ -58,16 +44,22 @@ from nexora.core.enums import (
     WorkflowStatus,
     WorkflowTriggerType,
 )
-
-from nexora.domains.auth.service import AuthService
-from nexora.domains.organizations.models import Company, Department, OrgRole, OrganizationalDNA, CompanyMember
+from nexora.database import AsyncSessionLocal
 from nexora.domains.agents.models import Agent
-from nexora.domains.projects.models import Project, Task
-from nexora.domains.policies.models import Policy
-from nexora.domains.decisions.models import Decision
-from nexora.domains.workflows.models import Workflow, WorkflowExecution
+from nexora.domains.auth.service import AuthService
 from nexora.domains.councils.models import AgentCouncil, CouncilDeliberation
+from nexora.domains.decisions.models import Decision
 from nexora.domains.memory.models import MemoryItem
+from nexora.domains.organizations.models import (
+    Company,
+    CompanyMember,
+    Department,
+    OrganizationalDNA,
+    OrgRole,
+)
+from nexora.domains.policies.models import Policy
+from nexora.domains.projects.models import Project, Task
+from nexora.domains.workflows.models import Workflow, WorkflowExecution
 
 fake = Faker()
 Faker.seed(42)

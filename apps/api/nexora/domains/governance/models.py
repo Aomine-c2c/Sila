@@ -24,7 +24,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from nexora.core.base import NexoraBase
+from nexora.core.base import UUIDTimestampBase
 from nexora.core.enums import (
     ApprovalStatus,
     EscalationStatus,
@@ -33,7 +33,7 @@ from nexora.core.enums import (
 )
 
 
-class CompanyConstitution(NexoraBase):
+class CompanyConstitution(UUIDTimestampBase):
     """
     The fundamental legal and operational charter for a Company in NEIMAN.
     Governs all agents, workflows, and automated decisions.
@@ -113,7 +113,7 @@ class CompanyConstitution(NexoraBase):
     company: Mapped["Company"] = relationship("Company", lazy="select")  # noqa: F821
 
 
-class AutonomyConfig(NexoraBase):
+class AutonomyConfig(UUIDTimestampBase):
     """
     Configurable autonomy levels (0 to 5) configured hierarchically at:
     Company -> Department -> Role -> Agent -> Tool -> Task Type -> Action.
@@ -183,7 +183,7 @@ class AutonomyConfig(NexoraBase):
     rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
-class ApprovalRequest(NexoraBase):
+class ApprovalRequest(UUIDTimestampBase):
     """
     Formal approval ticket required for high-risk operations, Level 2 autonomy actions,
     or actions exceeding policy thresholds.
@@ -232,7 +232,7 @@ class ApprovalRequest(NexoraBase):
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-class EscalationRecord(NexoraBase):
+class EscalationRecord(UUIDTimestampBase):
     """
     Formal record of an organizational escalation when an agent is blocked,
     encounters a prohibited action attempt, or experiences severe policy conflict.
@@ -269,7 +269,7 @@ class EscalationRecord(NexoraBase):
     )
 
 
-class GovernanceAuditLog(NexoraBase):
+class GovernanceAuditLog(UUIDTimestampBase):
     """
     Consequential Action Audit Log.
     Every consequential action in NEIMAN records:

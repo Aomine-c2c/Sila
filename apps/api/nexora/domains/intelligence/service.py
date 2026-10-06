@@ -4,6 +4,7 @@ Manages providers, models, routing policies, seed data, and dashboard aggregatio
 """
 
 import uuid
+from datetime import UTC
 
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -281,8 +282,8 @@ class IntelligenceService:
         verify circuit breaker state, and optionally test fault tolerance via error injection.
         """
         await self.seed_default_providers_if_empty()
-        from datetime import datetime, timezone
         import time
+        from datetime import datetime
 
         # Find provider in database
         q = select(ModelProvider).where(ModelProvider.name == provider_name)
@@ -305,7 +306,7 @@ class IntelligenceService:
                 circuit_breaker_status=adapter.circuit_breaker.state.value,
                 consecutive_failures=provider.consecutive_failures,
                 message=f"Fast-failed: Circuit breaker is {adapter.circuit_breaker.state.value} due to consecutive failures.",
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
 
         start_time = time.perf_counter()
@@ -328,7 +329,7 @@ class IntelligenceService:
                 circuit_breaker_status=adapter.circuit_breaker.state.value,
                 consecutive_failures=provider.consecutive_failures,
                 message=f"Simulated {err_type.upper()} fault recorded. Failure count: {provider.consecutive_failures}/{adapter.circuit_breaker.failure_threshold}",
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
 
         try:
@@ -362,7 +363,7 @@ class IntelligenceService:
                 circuit_breaker_status=adapter.circuit_breaker.state.value,
                 consecutive_failures=0,
                 message=f"Probe successful ({latency_ms}ms). Provider is online and healthy.",
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
 
         except Exception as e:
@@ -381,6 +382,6 @@ class IntelligenceService:
                 circuit_breaker_status=adapter.circuit_breaker.state.value,
                 consecutive_failures=provider.consecutive_failures,
                 message=f"Probe failed: {str(e)}",
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
 

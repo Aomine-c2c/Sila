@@ -134,22 +134,22 @@ export function Sidebar() {
         <Link
           href="/dashboard"
           className={cn(
-            'flex items-center gap-2.5 transition-opacity duration-200 overflow-hidden',
+            'flex items-center gap-2.5 transition-opacity duration-150 overflow-hidden',
             collapsed ? 'justify-center w-full' : 'px-2'
           )}
           title="NEIMAN Core"
         >
-          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/30 text-primary shadow-sm shadow-primary/20">
-            <Compass className="h-4 w-4 animate-[spin_12s_linear_infinite]" />
-            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary animate-pulse" />
+          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded border border-border bg-secondary text-foreground shadow-sm">
+            <span className="font-mono text-xs font-black tracking-tighter">N</span>
+            <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-[#D71921] shadow-[0_0_6px_#D71921]" />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="font-mono text-sm font-bold tracking-wider text-foreground">
-                NEIMAN
+              <span className="font-mono text-xs font-black tracking-widest text-foreground uppercase">
+                NEIMAN (01)
               </span>
-              <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-                Autonomous OS
+              <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground/80">
+                ORGANIZATION OS
               </span>
             </div>
           )}
@@ -161,7 +161,7 @@ export function Sidebar() {
         {NAV_SECTIONS.map((section) => (
           <div key={section.title} className="space-y-1">
             {!collapsed && (
-              <h4 className="px-3 text-[10px] font-mono uppercase tracking-wider text-muted-foreground/70 font-semibold mb-1">
+              <h4 className="px-3 text-[9px] font-mono uppercase tracking-widest text-muted-foreground font-semibold mb-1">
                 {section.title}
               </h4>
             )}
@@ -176,37 +176,37 @@ export function Sidebar() {
                     aria-current={active ? 'page' : undefined}
                     aria-label={collapsed ? item.name : undefined}
                     className={cn(
-                      'group relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-150',
+                      'group relative flex items-center gap-3 rounded px-2.5 py-2 text-xs font-mono transition-all duration-100',
                       active
-                        ? 'bg-primary/15 text-primary border border-primary/30 shadow-sm shadow-primary/10 font-semibold'
-                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent'
+                        ? 'bg-secondary text-foreground border border-border font-semibold'
+                        : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground border border-transparent'
                     )}
                     title={collapsed ? item.name : undefined}
                   >
                     <Icon
                       className={cn(
-                        'h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110',
-                        active ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+                        'h-3.5 w-3.5 shrink-0 transition-transform duration-150',
+                        active ? 'text-[#D71921]' : 'text-muted-foreground group-hover:text-foreground'
                       )}
                       aria-hidden="true"
                     />
                     {!collapsed && (
-                      <span className="truncate flex-1 tracking-tight">
+                      <span className="truncate flex-1 tracking-tight text-[11px] uppercase">
                         {item.name}
                       </span>
                     )}
                     {!collapsed && item.badge && (
                       <Badge
-                        variant={active ? 'cyber' : 'outline'}
-                        className="text-[9px] px-1.5 py-0 h-4 uppercase shrink-0"
+                        variant={active ? 'destructive' : 'outline'}
+                        className="text-[9px] px-1 py-0 h-3.5 uppercase shrink-0 font-mono"
                         aria-label={`${item.name} - ${item.badge}`}
                       >
                         {item.badge}
                       </Badge>
                     )}
-                    {/* Active Pip Indicator */}
+                    {/* Active Nothing Red Pip Indicator */}
                     {active && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 rounded-r-full bg-primary" aria-hidden="true" />
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-3 bg-[#D71921]" aria-hidden="true" />
                     )}
                   </Link>
                 );

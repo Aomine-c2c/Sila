@@ -172,11 +172,37 @@ export const desktopNotify = {
 };
 
 // =========================================================================
-// 5. UPDATE ARCHITECTURE
+// 5. UPDATE ARCHITECTURE (Tauri v2 Native Auto-Updater & Fallback)
 // =========================================================================
+export interface NativeUpdateInfo {
+  available: boolean;
+  version?: string;
+  currentVersion?: string;
+  body?: string;
+  date?: string;
+}
+
 export const desktopUpdates = {
+  /**
+   * Check for an update from GitHub Releases.
+   */
   async checkForUpdates(): Promise<UpdateCheckResult> {
     if (isTauriDesktop()) {
+      try {
+        const { check } = await import('@tauri-apps/plugin-updater');
+        const update = await check();
+        if (update?.available) {
+          return {
+            update_available: true,
+            current_version: update.currentVersion || '0.1.0',
+            latest_version: update.version || '0.1.0',
+            release_notes: update.body || 'New operational release available on GitHub.',
+            download_url: null,
+          };
+        }
+      } catch (err) {
+        console.warn('Native update check encountered non-fatal error:', err);
+      }
       return await invokeTauri<UpdateCheckResult>('check_app_updates');
     }
     return {
@@ -186,6 +212,57 @@ export const desktopUpdates = {
       release_notes: 'Web edition running latest production bundle.',
       download_url: null,
     };
+  },
+
+  /**
+   * Silently downloads and installs the update in the background, then signals ready to restart.
+   */
+  async downloadAndInstall(onProgress?: (progress: number) => void): Promise<boolean> {
+    if (!isTauriDesktop()) return false;
+    try {
+      const { check } = await import('@tauri-apps/plugin-updater');
+      const update = await check();
+      if (update?.available) {
+        let downloaded = 0;
+        let contentLength = 0;
+        await update.downloadAndInstall((event) => {
+          switch (event.event) {
+            case 'Started':
+              contentLength = event.data.contentLength || 0;
+              break;
+            case 'Progress':
+              downloaded += event.data.chunkLength;
+              if (contentLength > 0 && onProgress) {
+                onProgress(Math.round((downloaded / contentLength) * 100));
+              }
+              break;
+            case 'Finished':
+              if (onProgress) onProgress(100);
+              break;
+          }
+        });
+        return true;
+      }
+    } catch (err) {
+      console.error('Silent update installation failed:', err);
+    }
+    return false;
+  },
+
+  /**
+   * Restarts the application to apply the downloaded update.
+   */
+  async restartToApply(): Promise<void> {
+    if (isTauriDesktop()) {
+      try {
+        const { relaunch } = await import('@tauri-apps/plugin-process');
+        await relaunch();
+      } catch {
+        window.location.reload();
+      }
+    } else {
+      window.location.reload();
+    }
   }
 };
 
