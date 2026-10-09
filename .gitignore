@@ -52,3 +52,8 @@ apps/api/alembic/__pycache__/
 
 # Build artifacts
 apps/api/.venv/
+
+# Rust
+target/
+**/target/
+Cargo.lock
