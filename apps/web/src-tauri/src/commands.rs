@@ -4,43 +4,59 @@ use std::path::PathBuf;
 use tauri::{AppHandle, Emitter, Runtime, State};
 
 use crate::{
-    deobfuscate, obfuscate, DesktopConfig, DesktopState, SystemTelemetrySnapshot,
-    UpdateCheckResult, WindowStateData, VAULT_KEY,
+    decrypt_credential, encrypt_credential, DesktopConfig, DesktopState, SystemTelemetrySnapshot,
+    UpdateCheckResult, WindowStateData, VAULT_KEY_256,
 };
 
-/// Returns desktop platform information without granting shell access.
+/// Returns real desktop platform and process memory telemetry.
 #[tauri::command]
 pub fn get_desktop_telemetry() -> SystemTelemetrySnapshot {
+    let mut mem_rss = 84u64;
+    let mut sys = sysinfo::System::new();
+    let current_pid = sysinfo::get_current_pid().ok();
+    if let Some(pid) = current_pid {
+        sys.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[pid]), true);
+        if let Some(process) = sys.process(pid) {
+            mem_rss = process.memory() / (1024 * 1024);
+        }
+    }
+
     SystemTelemetrySnapshot {
         os: std::env::consts::OS.to_string(),
         arch: std::env::consts::ARCH.to_string(),
         app_version: env!("CARGO_PKG_VERSION").to_string(),
-        memory_rss_mb: 84, // Estimated base desktop footprint
+        memory_rss_mb: if mem_rss > 0 { mem_rss } else { 84 },
         is_desktop: true,
     }
 }
 
-/// Securely stores an auth token or secret in the desktop memory vault & obfuscated disk cache.
-#[tauri::command]
-pub fn set_secure_credential(
-    state: State<'_, DesktopState>,
-    key: String,
-    value: String,
-) -> Result<(), String> {
+pub fn validate_credential_inputs(key: &str, value: &str) -> Result<(), String> {
     if key.is_empty() || key.len() > 128 || !key.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
         return Err("Invalid credential key: Must be alphanumeric, underscores, or hyphens (max 128 chars)".to_string());
     }
     if value.len() > 65536 {
         return Err("Credential payload too large: Exceeds maximum 64KB limit".to_string());
     }
+    Ok(())
+}
+
+/// Securely stores an auth token or secret in the desktop memory vault & AES-256-GCM encrypted disk cache.
+#[tauri::command]
+pub fn set_secure_credential(
+    state: State<'_, DesktopState>,
+    key: String,
+    value: String,
+) -> Result<(), String> {
+    validate_credential_inputs(&key, &value)?;
+
 
     let mut vault = state.credentials_vault.lock().unwrap();
     vault.insert(key.clone(), value.clone());
 
-    // Persist obfuscated credential
+    // Persist authenticated AES-256-GCM encrypted credential
     if let Some(parent) = state.config_path.parent() {
         let creds_file = parent.join("vault.bin");
-        let obfuscated = obfuscate(&value, VAULT_KEY);
+        let encrypted = encrypt_credential(&value, &VAULT_KEY_256)?;
         let mut disk_vault: HashMap<String, String> = if creds_file.exists() {
             fs::read_to_string(&creds_file)
                 .ok()
@@ -49,7 +65,7 @@ pub fn set_secure_credential(
         } else {
             HashMap::new()
         };
-        disk_vault.insert(key, obfuscated);
+        disk_vault.insert(key, encrypted);
         let _ = fs::write(&creds_file, serde_json::to_string(&disk_vault).unwrap_or_default());
     }
 
@@ -67,14 +83,14 @@ pub fn get_secure_credential(
         return Ok(Some(val.clone()));
     }
 
-    // Try reading from encrypted disk vault
+    // Try reading from AES-256-GCM encrypted disk vault
     if let Some(parent) = state.config_path.parent() {
         let creds_file = parent.join("vault.bin");
         if creds_file.exists() {
             if let Ok(content) = fs::read_to_string(&creds_file) {
                 if let Ok(disk_vault) = serde_json::from_str::<HashMap<String, String>>(&content) {
-                    if let Some(obfuscated) = disk_vault.get(&key) {
-                        if let Ok(clean) = deobfuscate(obfuscated, VAULT_KEY) {
+                    if let Some(ciphertext) = disk_vault.get(&key) {
+                        if let Ok(clean) = decrypt_credential(ciphertext, &VAULT_KEY_256) {
                             return Ok(Some(clean));
                         }
                     }
@@ -82,6 +98,7 @@ pub fn get_secure_credential(
             }
         }
     }
+
 
     Ok(None)
 }
@@ -313,3 +330,39 @@ pub fn inspect_local_project(path: String) -> Result<LocalProjectInspection, Str
         file_count,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_desktop_telemetry_fields() {
+        let telemetry = get_desktop_telemetry();
+        assert!(telemetry.is_desktop);
+        assert!(!telemetry.os.is_empty());
+        assert!(!telemetry.arch.is_empty());
+        assert!(telemetry.memory_rss_mb > 0);
+    }
+
+    #[test]
+    fn test_report_filename_security() {
+        assert!(export_report_file("../evil.json".to_string(), "{}".to_string()).is_err());
+        assert!(export_report_file("evil.sh".to_string(), "{}".to_string()).is_err());
+        assert!(export_report_file("null\0byte.json".to_string(), "{}".to_string()).is_err());
+    }
+
+    #[test]
+    fn test_credential_key_bounds() {
+        // Invalid characters
+        assert!(validate_credential_inputs("bad key with spaces", "val").is_err());
+        // Empty key
+        assert!(validate_credential_inputs("", "val").is_err());
+        // Valid key
+        assert!(validate_credential_inputs("valid_key-123", "val").is_ok());
+        // Payload size bounds
+        let oversized = "x".repeat(70000);
+        assert!(validate_credential_inputs("key", &oversized).is_err());
+    }
+}
+
+

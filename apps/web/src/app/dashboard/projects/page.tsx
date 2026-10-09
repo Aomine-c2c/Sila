@@ -287,7 +287,7 @@ export default function ProjectsPage() {
         </button>
       </div>
 
-      {/* 2. PROJECT SELECTOR & VIEW MODE TOGGLE */}
+      {/* 2. PROJECT SELECTOR */}
       {projects.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-4 p-3 rounded-2xl border border-border bg-card">
           <div className="flex items-center gap-3">
@@ -306,32 +306,9 @@ export default function ProjectsPage() {
             </select>
           </div>
 
-          {/* 4 Interchangeable View Modes */}
-          <div className="flex items-center gap-1 border border-border/80 rounded-xl p-1 bg-secondary/40">
-            {[
-              { id: 'list', label: 'List', icon: ListIcon },
-              { id: 'board', label: 'Board', icon: Kanban },
-              { id: 'timeline', label: 'Timeline', icon: Calendar },
-              { id: 'graph', label: 'Dependency Graph', icon: GitBranch },
-            ].map((v) => {
-              const Icon = v.icon;
-              const isActive = viewMode === v.id;
-              return (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => setViewMode(v.id as typeof viewMode)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span>{v.label}</span>
-                </button>
-              );
-            })}
+          <div className="text-xs font-mono text-muted-foreground flex items-center gap-3">
+            <span>{projects.length} Registered Projects</span>
+            <span className="badge badge-outline text-[10px] text-primary">{activeProject?.status || 'ACTIVE'}</span>
           </div>
         </div>
       )}
@@ -397,33 +374,66 @@ export default function ProjectsPage() {
             </div>
           </div>
 
-          {/* Project Sub-tabs: Overview, Milestones, Agent Assignments, Project Activity, Project Resources */}
-          <div className="flex border-b border-border/60 gap-4 text-xs font-semibold">
-            {[
-              { id: 'overview', label: 'Project Tasks & Backlog', icon: CheckSquare },
-              { id: 'milestones', label: `Milestones (${projectMilestones.length})`, icon: Calendar },
-              { id: 'agents', label: `Agent Assignments (${assignedAgents.length})`, icon: Bot },
-              { id: 'activity', label: 'Project Activity', icon: Activity },
-              { id: 'resources', label: 'Project Resources', icon: Coins },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeProjectTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveProjectTab(tab.id as typeof activeProjectTab)}
-                  className={`flex items-center gap-1.5 pb-2.5 border-b-2 transition-all ${
-                    isActive
-                      ? 'border-primary text-primary font-bold'
-                      : 'border-transparent text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
+          {/* Project Navigation Bar with Scoped View Modes */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-1">
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide text-xs font-semibold">
+              {[
+                { id: 'overview', label: 'Tasks & Backlog', icon: CheckSquare },
+                { id: 'milestones', label: `Milestones (${projectMilestones.length})`, icon: Calendar },
+                { id: 'agents', label: `Agent Assignments (${assignedAgents.length})`, icon: Bot },
+                { id: 'activity', label: 'Project Activity', icon: Activity },
+                { id: 'resources', label: 'Project Resources', icon: Coins },
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeProjectTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveProjectTab(tab.id as typeof activeProjectTab)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-mono transition-all shrink-0 border ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground border-primary font-bold shadow-sm'
+                        : 'bg-secondary/20 text-muted-foreground border-transparent hover:text-foreground hover:bg-secondary/50'
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* View Mode controls when viewing Tasks */}
+            {activeProjectTab === 'overview' && (
+              <div className="flex items-center gap-1 border border-border/80 rounded-xl p-1 bg-secondary/30 shrink-0 self-start sm:self-auto">
+                <span className="text-[10px] font-mono text-muted-foreground px-1.5 uppercase hidden md:inline">View:</span>
+                {[
+                  { id: 'list', label: 'List', icon: ListIcon },
+                  { id: 'board', label: 'Board', icon: Kanban },
+                  { id: 'timeline', label: 'Timeline', icon: Calendar },
+                  { id: 'graph', label: 'Dependency Graph', icon: GitBranch },
+                ].map((v) => {
+                  const Icon = v.icon;
+                  const isActive = viewMode === v.id;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setViewMode(v.id as typeof viewMode)}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono font-medium transition-all ${
+                        isActive
+                          ? 'bg-card text-foreground shadow-sm border border-border/80 font-bold'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Icon className="h-3 w-3" />
+                      <span>{v.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* ============================================================== */}

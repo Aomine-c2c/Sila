@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -37,6 +37,7 @@ import {
   Info,
   Filter,
   Sparkles,
+  Search,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import { useAccountContext, useOrganizationContext } from '@/lib/organizationContext';
@@ -153,7 +154,14 @@ export default function AdminSettingsPage() {
   };
 
   // Direct unified section list without nested tier tab confusion
-  const visibleSections = SECTIONS;
+  const [searchQuery, setSearchQuery] = useState('');
+  const filteredSections = useMemo(() => {
+    if (!searchQuery.trim()) return SECTIONS;
+    const q = searchQuery.toLowerCase();
+    return SECTIONS.filter(
+      (s) => s.label.toLowerCase().includes(q) || s.key.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
 
   const currentSectionMeta = SECTIONS.find((s) => s.key === activeSection) || SECTIONS[0];
 
@@ -256,83 +264,82 @@ export default function AdminSettingsPage() {
       {/* Desktop Runtime & Capability Indicator */}
       <DesktopStatusCard />
 
-      {/* MAIN TWO-COLUMN ADMIN LAYOUT */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
-        {/* Left Column: Categorized Section Navigation */}
-        <div className="lg:col-span-3 space-y-1">
-          <div className="px-2 py-1.5 text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-bold flex items-center justify-between">
-            <span>Administration Sections</span>
-            <span className="text-[9px] text-primary">{visibleSections.length} Categories</span>
+      {/* SEARCH & HORIZONTAL CATEGORY STRIP (NO NESTED LEFT SIDEBAR) */}
+      <div className="space-y-3 pt-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Filter administration sections (e.g. security, api, ai-providers)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input pl-9 text-xs w-full bg-secondary/30 font-mono"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground hover:text-foreground"
+              >
+                Clear
+              </button>
+            )}
           </div>
-
-          <div className="space-y-1">
-            {visibleSections.map((sec) => {
-              const Icon = sec.icon;
-              const isSelected = activeSection === sec.key;
-              const permitted = hasAccess(sec.requiredRole);
-
-              return (
-                <button
-                  key={sec.key}
-                  type="button"
-                  onClick={() => setActiveSection(sec.key)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-mono transition-all text-left ${
-                    isSelected
-                      ? 'bg-primary/10 text-primary border border-primary/30 font-bold shadow-sm'
-                      : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <Icon className={`h-4 w-4 shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                    <span className="truncate">{sec.label}</span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {sec.dangerous && (
-                      <span className="badge badge-destructive text-[9px] px-1 py-0 h-4">
-                        DANGER
-                      </span>
-                    )}
-                    {!permitted && (
-                      <span title={`Requires ${sec.requiredRole}`}>
-                        <Lock className="h-3 w-3 text-muted-foreground/60" />
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* User & Session Card */}
-          <div className="pt-4 border-t border-border/60 mt-4 px-2 space-y-2 text-xs">
-            <div className="text-[10px] font-mono text-muted-foreground uppercase">CURRENT USER</div>
-            <div className="p-2.5 rounded-xl bg-secondary/30 border border-border flex items-center gap-2.5">
-              <div className="h-7 w-7 rounded-lg bg-primary/20 text-primary font-bold flex items-center justify-center text-xs">
-                {user?.username?.[0]?.toUpperCase() || 'U'}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-foreground truncate text-xs">{user?.username || 'admin'}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{user?.email || 'admin@neiman.ai'}</p>
-              </div>
-            </div>
+          <div className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground shrink-0">
+            <span>Showing:</span>
+            <span className="badge badge-outline text-[10px] text-primary">{filteredSections.length} Sections</span>
           </div>
         </div>
 
-        {/* Right Column: Active Section Panel */}
-        <div className="lg:col-span-9">
-          {/* RBAC PERMISSION CHECK */}
-          {!hasAccess(currentSectionMeta.requiredRole) ? (
-            <div className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-8 text-center space-y-3">
-              <Lock className="h-10 w-10 text-rose-400 mx-auto" />
-              <h3 className="text-base font-bold text-foreground">Access Restricted by RBAC</h3>
-              <p className="text-xs text-muted-foreground max-w-md mx-auto">
-                You do not have permission to view or modify <strong className="text-foreground">{currentSectionMeta.label}</strong>.
-                This section requires <span className="badge badge-outline text-xs font-mono">{currentSectionMeta.requiredRole}</span> privileges.
-                Switch your simulated role above to inspect.
-              </p>
-            </div>
-          ) : (
+        {/* Horizontal Category Pill Bar */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-hide border-b border-border/60">
+          {filteredSections.map((sec) => {
+            const Icon = sec.icon;
+            const isSelected = activeSection === sec.key;
+            const permitted = hasAccess(sec.requiredRole);
+
+            return (
+              <button
+                key={sec.key}
+                type="button"
+                onClick={() => setActiveSection(sec.key)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-mono whitespace-nowrap transition-all shrink-0 border ${
+                  isSelected
+                    ? 'bg-primary text-primary-foreground border-primary font-bold shadow-sm'
+                    : 'bg-card text-muted-foreground border-border/70 hover:bg-secondary/60 hover:text-foreground'
+                }`}
+              >
+                <Icon className={`h-3.5 w-3.5 ${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
+                <span>{sec.label}</span>
+                {sec.dangerous && (
+                  <span className={`text-[8px] px-1 py-0 rounded font-bold ${isSelected ? 'bg-black/30 text-white' : 'bg-destructive/20 text-destructive'}`}>
+                    DANGER
+                  </span>
+                )}
+                {!permitted && (
+                  <Lock className="h-2.5 w-2.5 opacity-60 ml-0.5" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* FULL-WIDTH ACTIVE SECTION CONTENT PANEL */}
+      <div className="w-full">
+        {/* RBAC PERMISSION CHECK */}
+        {!hasAccess(currentSectionMeta.requiredRole) ? (
+          <div className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-8 text-center space-y-3">
+            <Lock className="h-10 w-10 text-rose-400 mx-auto" />
+            <h3 className="text-base font-bold text-foreground">Access Restricted by RBAC</h3>
+            <p className="text-xs text-muted-foreground max-w-md mx-auto">
+              You do not have permission to view or modify <strong className="text-foreground">{currentSectionMeta.label}</strong>.
+              This section requires <span className="badge badge-outline text-xs font-mono">{currentSectionMeta.requiredRole}</span> privileges.
+              Switch your simulated role above to inspect.
+            </p>
+          </div>
+        ) : (
             <div className="rounded-2xl border border-border bg-card p-6 space-y-6">
               {/* Section Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-4">
@@ -905,6 +912,5 @@ export default function AdminSettingsPage() {
           )}
         </div>
       </div>
-    </div>
   );
 }

@@ -86,28 +86,49 @@ pub struct DesktopState {
     pub window_state_path: PathBuf,
 }
 
-// Simple deterministic XOR cipher for local credential obfuscation
-pub fn obfuscate(input: &str, key: &[u8]) -> String {
-    let bytes = input.as_bytes();
-    let xor_bytes: Vec<u8> = bytes
-        .iter()
-        .enumerate()
-        .map(|(i, &b)| b ^ key[i % key.len()])
-        .collect();
-    hex::encode(xor_bytes)
+// Authenticated AES-256-GCM cipher for zero-trust local credential vault
+use aes_gcm::{
+    aead::{Aead, KeyInit, OsRng},
+    Aes256Gcm, Nonce,
+};
+
+pub fn encrypt_credential(input: &str, key_bytes: &[u8; 32]) -> Result<String, String> {
+    let cipher = Aes256Gcm::new_from_slice(key_bytes).map_err(|e| e.to_string())?;
+    use rand::RngCore;
+    let mut nonce_bytes = [0u8; 12];
+    OsRng.fill_bytes(&mut nonce_bytes);
+    let nonce = Nonce::from_slice(&nonce_bytes);
+
+    let ciphertext = cipher
+        .encrypt(nonce, input.as_bytes())
+        .map_err(|e| format!("Encryption error: {}", e))?;
+
+    // Pack nonce (12 bytes) + ciphertext together as hex
+    let mut packed = nonce_bytes.to_vec();
+    packed.extend_from_slice(&ciphertext);
+    Ok(hex::encode(packed))
 }
 
-pub fn deobfuscate(hex_input: &str, key: &[u8]) -> Result<String, String> {
-    let bytes = hex::decode(hex_input).map_err(|e| e.to_string())?;
-    let orig_bytes: Vec<u8> = bytes
-        .iter()
-        .enumerate()
-        .map(|(i, &b)| b ^ key[i % key.len()])
-        .collect();
-    String::from_utf8(orig_bytes).map_err(|e| e.to_string())
+pub fn decrypt_credential(hex_input: &str, key_bytes: &[u8; 32]) -> Result<String, String> {
+    let packed = hex::decode(hex_input).map_err(|e| e.to_string())?;
+    if packed.len() < 12 {
+        return Err("Malformed ciphertext payload: under 12 bytes".to_string());
+    }
+
+    let (nonce_bytes, ciphertext) = packed.split_at(12);
+    let cipher = Aes256Gcm::new_from_slice(key_bytes).map_err(|e| e.to_string())?;
+    let nonce = Nonce::from_slice(nonce_bytes);
+
+    let plaintext = cipher
+        .decrypt(nonce, ciphertext)
+        .map_err(|e| format!("Decryption failure: {}", e))?;
+
+    String::from_utf8(plaintext).map_err(|e| e.to_string())
 }
 
-pub const VAULT_KEY: &[u8] = b"NEIMAN_ZERO_TRUST_DESKTOP_SEC_2026";
+// 32-byte Zero-Trust Master Vault Key
+pub const VAULT_KEY_256: [u8; 32] = *b"NEIMAN_ZERO_TRUST_DESKTOP_SEC_32";
+
 
 // =========================================================================
 // RUNTIME SETUP WITH SYSTEM TRAY & CAPABILITIES
@@ -234,3 +255,47 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while building tauri application");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_vault_encryption_roundtrip() {
+        let plaintext = "secret_api_key_sample_token_xyz987";
+        let encrypted = encrypt_credential(plaintext, &VAULT_KEY_256).expect("Encryption failed");
+        assert_ne!(encrypted, plaintext);
+        assert!(!encrypted.is_empty());
+
+        let decrypted = decrypt_credential(&encrypted, &VAULT_KEY_256).expect("Decryption failed");
+        assert_eq!(decrypted, plaintext);
+    }
+
+    #[test]
+    fn test_vault_encryption_random_nonces() {
+        let plaintext = "identical_secret";
+        let enc1 = encrypt_credential(plaintext, &VAULT_KEY_256).unwrap();
+        let enc2 = encrypt_credential(plaintext, &VAULT_KEY_256).unwrap();
+        assert_ne!(enc1, enc2, "Nonces must be unique per encryption call");
+    }
+
+    #[test]
+    fn test_vault_decryption_tamper_detection() {
+        let plaintext = "tamper_proof_secret";
+        let encrypted = encrypt_credential(plaintext, &VAULT_KEY_256).unwrap();
+        let mut tampered = hex::decode(&encrypted).unwrap();
+        if let Some(byte) = tampered.last_mut() {
+            *byte ^= 0xFF; // Flip bits in ciphertext or authentication tag
+        }
+        let tampered_hex = hex::encode(tampered);
+        let res = decrypt_credential(&tampered_hex, &VAULT_KEY_256);
+        assert!(res.is_err(), "Tampered ciphertext must fail authenticated decryption");
+    }
+
+    #[test]
+    fn test_vault_malformed_input() {
+        let res = decrypt_credential("1234", &VAULT_KEY_256);
+        assert!(res.is_err());
+    }
+}
+

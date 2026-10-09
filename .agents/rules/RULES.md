@@ -1,5 +1,5 @@
 ---
-trigger: manual
+trigger: always_on
 ---
 
 # NEIMAN Architecture & Engineering Rules
@@ -39,12 +39,3 @@ trigger: manual
 * **Sentence Fragments over Prose Paragraphs**: Bullet points, compact clauses, dense status labels. Eliminate decorative transitions.
 * **100% Technical Rigor**: Preserve exact file links, symbol names, commit SHAs, line numbers, and error codes verbatim. High information density, zero tokens wasted.
 * **Engine Output Scrubbing**: All autonomous agent generation steps in NEIMAN OS must strip redundant discourse markers and format execution summaries as concise, actionable telemetry.
-
-## 7. CTO & Orchestrator "Grill-Me" Decision Protocol
-* **Interactive Option Alignment**: Whenever facing branching architecture decisions, technical trade-offs, or ambiguous requirements, the CTO/Orchestrator and pair-programming assistant MUST interact via structured decision options rather than open-ended prose essays.
-* **Format of Options**:
-  - Always prefix the strongest proposal with `(Recommended)`.
-  - Provide concise, technically concrete options detailing trade-offs and impact.
-  - The UI/modal will automatically include custom write-in capability so the operator can reply with custom directives if unsatisfied with pre-generated options.
-* **One Decision at a Time**: Walk down decision dependency trees sequentially; resolve prerequisite architectural decisions before presenting downstream sub-options.
-* **Autonomous Kernel Orchestrator Alignment**: When NEIMAN OS agents or executive councils require human alignment, they must emit structured `DecisionOptionPayload` schemas with recommendations and custom override paths.
