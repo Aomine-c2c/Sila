@@ -143,13 +143,14 @@ else
         fi
         (cd "${WEB_DIR}/.next/standalone" && PORT="${WEB_PORT}" node server.js) >/dev/null 2>&1 &
         WEB_PID=$!
-    elif [ "${MODE}" = "release" ]; then
+    elif [ "${MODE}" = "release" ] && [ -f "${WEB_DIR}/.next/BUILD_ID" ]; then
         (cd "${WEB_DIR}" && npm run start -- -p "${WEB_PORT}") >/dev/null 2>&1 &
         WEB_PID=$!
     else
         (cd "${WEB_DIR}" && npm run dev -- -p "${WEB_PORT}") >/dev/null 2>&1 &
         WEB_PID=$!
     fi
+
 
     echo -n "[*] Waiting for frontend readiness..."
     for i in {1..30}; do
