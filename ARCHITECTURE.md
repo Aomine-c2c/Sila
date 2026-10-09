@@ -15,7 +15,26 @@ NEIMAN is a monorepo with a FastAPI service in `apps/api` and a Next.js applicat
 
 The current default database is SQLite for local development; PostgreSQL support is configured through `DATABASE_URL`. Long-running work currently executes in-process. Production deployment therefore requires a durable worker strategy and operational database configuration.
 
+## Rust Native Acceleration & High-Performance Surfaces
+
+1. **Native Desktop Runtime (`apps/web/src-tauri`)**:
+   - Zero-trust native container providing authenticated AES-256-GCM local credential encryption (`encrypt_credential` & `decrypt_credential` with random 96-bit nonces per call).
+   - Real-time desktop telemetry querying host and process RSS footprint (`sysinfo`).
+   - Hardened filename, path-traversal, and deep link boundary validators.
+
+2. **Autonomous Task Graph & Policy Engine (`packages/engine-rs`)**:
+   - High-throughput acyclic directed graph (`TaskDag`) execution orchestrator with dependency resolution and cycle prevention.
+   - Zero-trust security policy scanner (`PolicyEnforcer`) with adversarial boundary detection (anti-smuggling, payload bounds, capability authorization).
+   - In-memory lock-free multi-producer event broadcaster (`EventDispatcher`).
+
+3. **Native Operator Console (`apps/tui-rs`)**:
+   - Built on `ratatui` and `crossterm` providing sub-millisecond keyboard navigation, real-time telemetry observation, and headless DAG execution.
+
+4. **Cryptographic & FFI Bridge (`packages/neiman-native`)**:
+   - SHA-256 payload attestation and Python extension module bindings for zero-overhead validation in backend dispatch routines.
+
 ## Known architectural gaps
+
 
 See [ROADMAP.md](ROADMAP.md), [KNOWN_ISSUES.md](KNOWN_ISSUES.md), and [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md). In particular, the security helpers are defensive checks, not an operating-system sandbox or a complete SSRF defense against DNS rebinding.
 

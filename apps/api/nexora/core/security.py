@@ -28,6 +28,13 @@ from urllib.parse import urlsplit
 from nexora.config import get_settings
 from nexora.exceptions import ForbiddenError, ValidationError
 
+try:
+    import neiman_native  # type: ignore
+    HAS_RUST_NATIVE = True
+except ImportError:
+    HAS_RUST_NATIVE = False
+
+
 # ── 1. Permission Matrix & Boundary Hierarchy ─────────────────────────────────
 
 class ResourceDomain(str, Enum):
@@ -280,6 +287,12 @@ class ModelOutputBoundary:
         """
         Checks if model response attempts to smuggle system command payloads or unauthorized triggers.
         """
+        if HAS_RUST_NATIVE:
+            try:
+                neiman_native.py_validate_payload(model_output, 65536)
+            except ValueError as err:
+                return True, f"Output contained smuggled instruction (Rust Zero-Trust Engine): '{err}'"
+
         smuggling_patterns = [
             r"\[SYSTEM_COMMAND\]\s*(.*)",
             r"\[EXECUTE_ROOT\]\s*(.*)",
@@ -291,6 +304,7 @@ class ModelOutputBoundary:
             if match:
                 return True, f"Output contained smuggled instruction: '{match.group(0)}'"
         return False, None
+
 
 
 # ── 5. Audit Log Cryptographic Integrity Chaining ─────────────────────────────

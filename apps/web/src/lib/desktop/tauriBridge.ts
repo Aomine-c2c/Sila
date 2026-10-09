@@ -2,7 +2,7 @@
  * NEIMAN Desktop Native Bridge
  *
  * Provides a unified API surface that seamlessly toggles between:
- * 1. Tauri Native Runtime (System Tray, Encrypted Vault, Window State Persistence, Deep Links, Native Notifications, Sandbox File Export)
+ * 1. Tauri Native Runtime (System Tray, AES-256-GCM Authenticated Vault, Window State Persistence, Deep Links, Native Notifications, Sandbox File Export)
  * 2. Standard Web Browser Environment (Graceful Web Fallbacks: LocalStorage, Web Notifications, Web Blob Downloads)
  *
  * Strictly adheres to zero-trust principles: Never assumes raw shell or unrestricted fs access.
