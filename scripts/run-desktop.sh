@@ -14,9 +14,17 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TARGET="${BASH_SOURCE[0]}"
+while [ -h "$TARGET" ]; do
+    DIR="$(cd -P "$(dirname "$TARGET")" && pwd)"
+    TARGET="$(readlink "$TARGET")"
+    [[ $TARGET != /* ]] && TARGET="$DIR/$TARGET"
+done
+ROOT_DIR="$(cd -P "$(dirname "$TARGET")/.." && pwd)"
 API_DIR="${ROOT_DIR}/apps/api"
 WEB_DIR="${ROOT_DIR}/apps/web"
+
+
 
 
 MODE="release"
