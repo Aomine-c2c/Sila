@@ -168,7 +168,7 @@ fi
 # ------------------------------------------------------------------------------
 export WEBKIT_DISABLE_COMPOSITING_MODE=1
 
-APPIMAGE_PATH="${WEB_DIR}/src-tauri/target/release/bundle/appimage/NEIMAN-desktop_0.1.0_amd64.AppImage"
+APPIMAGE_PATH="${WEB_DIR}/src-tauri/target/release/bundle/appimage/NEIMAN-desktop_0.2.0_amd64.AppImage"
 STANDALONE_BIN="${WEB_DIR}/src-tauri/target/release/app"
 
 if [ "${MODE}" = "release" ]; then
