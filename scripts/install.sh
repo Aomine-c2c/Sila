@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# NEIMAN OS — System Installer & Update Manager
+# ==============================================================================
+# Installs NEIMAN onto the local Linux workstation:
+# 1. Links/copies binaries and launch commands into ~/.local/bin/neiman
+# 2. Creates desktop entry in ~/.local/share/applications/neiman.desktop
+# 3. Installs high-resolution application icon
+# 4. Sets up updater tool (~/.local/bin/neiman-update) to pull updates from GitHub
+# ==============================================================================
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd -P "${SCRIPT_DIR}/.." && pwd)"
+BIN_DIR="${HOME}/.local/bin"
+APPS_DIR="${HOME}/.local/share/applications"
+ICONS_DIR="${HOME}/.local/share/icons/hicolor/512x512/apps"
+DATA_DIR="${HOME}/.local/share/neiman"
+
+echo "================================================================="
+echo "   NEIMAN Autonomous Organization OS — System Installation       "
+echo "================================================================="
+
+mkdir -p "${BIN_DIR}" "${APPS_DIR}" "${ICONS_DIR}" "${DATA_DIR}"
+
+# 1. Install Icon
+echo "[*] Installing application icon..."
+cp "${REPO_DIR}/apps/web/src-tauri/icons/icon.png" "${ICONS_DIR}/neiman.png" 2>/dev/null || \
+cp "${REPO_DIR}/apps/web/src-tauri/icons/128x128@2x.png" "${ICONS_DIR}/neiman.png"
+
+# 2. Install Runner Command (neiman)
+echo "[*] Installing CLI launcher to ${BIN_DIR}/neiman..."
+cat << 'EOF' > "${BIN_DIR}/neiman"
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Find repo root
+REPO_DIR="%%REPO_DIR%%"
+
+if [ ! -d "${REPO_DIR}" ]; then
+    echo "Error: NEIMAN repository not found at ${REPO_DIR}" >&2
+    exit 1
+fi
+
+exec "${REPO_DIR}/run-desktop.sh" "$@"
+EOF
+
+sed -i "s|%%REPO_DIR%%|${REPO_DIR}|g" "${BIN_DIR}/neiman"
+chmod +x "${BIN_DIR}/neiman"
+
+# 3. Install Update Tool (neiman-update)
+echo "[*] Installing updater utility to ${BIN_DIR}/neiman-update..."
+cat << 'EOF' > "${BIN_DIR}/neiman-update"
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_DIR="%%REPO_DIR%%"
+
+echo "================================================================="
+echo "   NEIMAN OS — Checking and Pulling Updates from GitHub          "
+echo "================================================================="
+
+cd "${REPO_DIR}"
+
+echo "[*] Fetching latest refs from GitHub (origin)..."
+git fetch origin
+
+CURRENT_COMMIT="$(git rev-parse HEAD)"
+REMOTE_COMMIT="$(git rev-parse origin/main)"
+
+if [ "${CURRENT_COMMIT}" = "${REMOTE_COMMIT}" ]; then
+    echo "[+] System is already up to date at commit: ${CURRENT_COMMIT:0:7}"
+    echo "[*] Checking database migrations..."
+    cd "${REPO_DIR}/apps/api" && uv run alembic upgrade head
+    echo "[+] System update check complete."
+    exit 0
+fi
+
+echo "[*] New changes detected (${CURRENT_COMMIT:0:7} -> ${REMOTE_COMMIT:0:7}). Pulling..."
+git pull origin main
+
+echo "[*] Upgrading database migrations..."
+cd "${REPO_DIR}/apps/api" && uv run alembic upgrade head
+
+echo "[*] Rebuilding production frontend bundle..."
+cd "${REPO_DIR}/apps/web"
+npm install --prefer-offline
+npm run build
+
+echo "[*] Rebuilding desktop binary..."
+npx tauri build --no-bundle
+
+echo "================================================================="
+echo "[+] NEIMAN successfully updated to ${REMOTE_COMMIT:0:7}!"
+echo "================================================================="
+EOF
+
+sed -i "s|%%REPO_DIR%%|${REPO_DIR}|g" "${BIN_DIR}/neiman-update"
+chmod +x "${BIN_DIR}/neiman-update"
+
+# 4. Install Desktop Entry (.desktop)
+echo "[*] Registering desktop application entry..."
+cat << EOF > "${APPS_DIR}/neiman.desktop"
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=NEIMAN
+GenericName=Autonomous Organization OS
+Comment=NEIMAN — Multi-Agent Autonomous Organization Operating System
+Exec=${BIN_DIR}/neiman
+Icon=${ICONS_DIR}/neiman.png
+Terminal=false
+Categories=Development;Office;Utility;
+StartupNotify=true
+StartupWMClass=NEIMAN-desktop
+EOF
+
+chmod +x "${APPS_DIR}/neiman.desktop"
+
+# Refresh desktop database if available
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database "${APPS_DIR}" 2>/dev/null || true
+fi
+
+echo ""
+echo "================================================================="
+echo "[+] Installation complete!"
+echo ""
+echo "  • Desktop App: Available in application launcher / search as 'NEIMAN'"
+echo "  • Terminal:    Run 'neiman' anywhere"
+echo "  • Updates:     Run 'neiman-update' to pull latest changes from GitHub"
+echo "================================================================="
