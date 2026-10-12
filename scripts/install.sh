@@ -24,6 +24,33 @@ echo "================================================================="
 
 mkdir -p "${BIN_DIR}" "${APPS_DIR}" "${ICONS_DIR}" "${DATA_DIR}"
 
+# 0. Ensure environment and dependencies are ready
+echo "[*] Setting up API environment and dependencies..."
+cd "${REPO_DIR}/apps/api"
+if [ ! -f .env ]; then
+    cp .env.example .env 2>/dev/null || true
+fi
+if command -v uv >/dev/null 2>&1; then
+    uv sync
+fi
+
+echo "[*] Ensuring local database schema is migrated..."
+if command -v uv >/dev/null 2>&1; then
+    uv run alembic upgrade head
+fi
+
+echo "[*] Ensuring Web frontend dependencies are installed..."
+cd "${REPO_DIR}/apps/web"
+if [ ! -f .env.local ]; then
+    echo "NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS=true" > .env.local
+    echo "NEXT_PUBLIC_API_URL=http://localhost:8000" >> .env.local
+fi
+if [ ! -d "node_modules" ]; then
+    npm install --prefer-offline
+fi
+
+cd "${REPO_DIR}"
+
 # 1. Install Icons
 echo "[*] Installing application icons..."
 mkdir -p "${HOME}/.local/share/icons/hicolor/32x32/apps" \
@@ -81,7 +108,9 @@ REMOTE_COMMIT="$(git rev-parse origin/main)"
 if [ "${CURRENT_COMMIT}" = "${REMOTE_COMMIT}" ]; then
     echo "[+] System is already up to date at commit: ${CURRENT_COMMIT:0:7}"
     echo "[*] Checking database migrations..."
-    cd "${REPO_DIR}/apps/api" && uv run alembic upgrade head
+    cd "${REPO_DIR}/apps/api"
+    uv sync
+    uv run alembic upgrade head
     echo "[+] System update check complete."
     exit 0
 fi
@@ -89,8 +118,10 @@ fi
 echo "[*] New changes detected (${CURRENT_COMMIT:0:7} -> ${REMOTE_COMMIT:0:7}). Pulling..."
 git pull origin main
 
-echo "[*] Upgrading database migrations..."
-cd "${REPO_DIR}/apps/api" && uv run alembic upgrade head
+echo "[*] Syncing Python dependencies & upgrading database migrations..."
+cd "${REPO_DIR}/apps/api"
+uv sync
+uv run alembic upgrade head
 
 echo "[*] Rebuilding production frontend bundle..."
 cd "${REPO_DIR}/apps/web"
