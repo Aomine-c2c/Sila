@@ -24,10 +24,19 @@ echo "================================================================="
 
 mkdir -p "${BIN_DIR}" "${APPS_DIR}" "${ICONS_DIR}" "${DATA_DIR}"
 
-# 1. Install Icon
-echo "[*] Installing application icon..."
-cp "${REPO_DIR}/apps/web/src-tauri/icons/icon.png" "${ICONS_DIR}/neiman.png" 2>/dev/null || \
-cp "${REPO_DIR}/apps/web/src-tauri/icons/128x128@2x.png" "${ICONS_DIR}/neiman.png"
+# 1. Install Icons
+echo "[*] Installing application icons..."
+mkdir -p "${HOME}/.local/share/icons/hicolor/32x32/apps" \
+         "${HOME}/.local/share/icons/hicolor/128x128/apps" \
+         "${HOME}/.local/share/icons/hicolor/512x512/apps"
+
+cp "${REPO_DIR}/apps/web/src-tauri/icons/32x32.png" "${HOME}/.local/share/icons/hicolor/32x32/apps/neiman.png" 2>/dev/null || true
+cp "${REPO_DIR}/apps/web/src-tauri/icons/128x128.png" "${HOME}/.local/share/icons/hicolor/128x128/apps/neiman.png" 2>/dev/null || true
+cp "${REPO_DIR}/apps/web/src-tauri/icons/icon.png" "${HOME}/.local/share/icons/hicolor/512x512/apps/neiman.png" 2>/dev/null || true
+
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f -t "${HOME}/.local/share/icons/hicolor" 2>/dev/null || true
+fi
 
 # 2. Install Runner Command (neiman)
 echo "[*] Installing CLI launcher to ${BIN_DIR}/neiman..."
@@ -109,18 +118,55 @@ Name=NEIMAN
 GenericName=Autonomous Organization OS
 Comment=NEIMAN — Multi-Agent Autonomous Organization Operating System
 Exec=${BIN_DIR}/neiman
-Icon=${ICONS_DIR}/neiman.png
+Icon=neiman
 Terminal=false
 Categories=Development;Office;Utility;
+Keywords=neiman;autonomous;ai;agent;organization;
 StartupNotify=true
 StartupWMClass=NEIMAN-desktop
 EOF
 
 chmod +x "${APPS_DIR}/neiman.desktop"
 
-# Refresh desktop database if available
+# Refresh desktop database
 if command -v update-desktop-database >/dev/null 2>&1; then
     update-desktop-database "${APPS_DIR}" 2>/dev/null || true
+fi
+
+# 5. Integrate with Omarchy Menu if available
+OMARCHY_EXT="${HOME}/.config/omarchy/extensions/omarchy-menu.jsonc"
+if [ -d "${HOME}/.config/omarchy/extensions" ] || [ -f "${OMARCHY_EXT}" ]; then
+    echo "[*] Registering with Omarchy launcher menu..."
+    mkdir -p "${HOME}/.config/omarchy/extensions"
+    if [ ! -f "${OMARCHY_EXT}" ]; then
+        echo "{}" > "${OMARCHY_EXT}"
+    fi
+    if ! grep -q "apps.neiman" "${OMARCHY_EXT}" 2>/dev/null; then
+        python3 -c "
+import json
+path = '${OMARCHY_EXT}'
+with open(path, 'r') as f:
+    raw = f.read()
+# Inject before last closing brace
+neiman_entry = '''  // >>> neiman-app
+  \"apps.neiman\": {
+    \"icon\": \"󰚩\",
+    \"label\": \"NEIMAN\",
+    \"description\": \"Autonomous Organization OS\",
+    \"aliases\": [\"neiman\", \"ai\", \"organization\", \"agents\"],
+    \"action\": \"${BIN_DIR}/neiman\"
+  },
+  // <<< neiman-app\n'''
+if '}' in raw:
+    idx = raw.rfind('}')
+    updated = raw[:idx] + neiman_entry + raw[idx:]
+    with open(path, 'w') as f:
+        f.write(updated)
+" 2>/dev/null || true
+    fi
+    if command -v omarchy-menu >/dev/null 2>&1; then
+        omarchy-menu refresh 2>/dev/null || true
+    fi
 fi
 
 echo ""
