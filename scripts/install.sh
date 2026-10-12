@@ -116,7 +116,19 @@ if [ "${CURRENT_COMMIT}" = "${REMOTE_COMMIT}" ]; then
 fi
 
 echo "[*] New changes detected (${CURRENT_COMMIT:0:7} -> ${REMOTE_COMMIT:0:7}). Pulling..."
+STASHED=0
+if [ -n "$(git status --porcelain)" ]; then
+    echo "[*] Stashing local changes before updating..."
+    git stash push -m "neiman-update-autostash"
+    STASHED=1
+fi
+
 git pull origin main
+
+if [ "${STASHED}" -eq 1 ]; then
+    echo "[*] Restoring stashed local changes..."
+    git stash pop || true
+fi
 
 echo "[*] Syncing Python dependencies & upgrading database migrations..."
 cd "${REPO_DIR}/apps/api"
