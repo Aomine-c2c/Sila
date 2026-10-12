@@ -114,30 +114,58 @@ NEIMAN/
 └── README.md
 ```
 
-## Quick Start
+## Quick Start & Installation
 
-### Prerequisites
-- Docker & Docker Compose
-- Node.js 20+ (for web development)
-- Python 3.11+ (for API development)
-- uv (Python package manager)
+### Option 1: Native Workstation Installation (Recommended for Local Use)
 
-### Using Docker (Recommended)
+Install NEIMAN directly into your Linux desktop environment with one command:
 
 ```bash
 # Clone the repository
-git clone <repo-url>
-cd NEIMAN
+git clone https://github.com/Aomine-c2c/Sila.git neiman
+cd neiman
 
-# Start all services
-make dev
+# Run the installer
+./scripts/install.sh
+```
 
-# Or manually:
+This automatically:
+1. Installs the **NEIMAN** desktop launcher into your system application menu (`~/.local/share/applications/neiman.desktop`).
+2. Configures the custom cyber-obsidian application icon across system icon themes.
+3. Installs the global CLI launcher (`neiman`) into `~/.local/bin/neiman`.
+4. Installs the automated GitHub updater (`neiman-update`) into `~/.local/bin/neiman-update`.
+5. Pre-configures local SQLite storage and migrations without requiring login credentials (`DISABLE_AUTH=true`).
+
+#### Launching the App
+- **From App Launcher**: Search for **NEIMAN** in your system application menu.
+- **From Terminal**:
+  ```bash
+  neiman
+  ```
+- **From Source**:
+  ```bash
+  ./run-desktop.sh
+  ```
+
+#### Pulling Updates from GitHub
+To pull new updates, apply latest database migrations, and rebuild the application:
+```bash
+neiman-update
+```
+
+---
+
+### Option 2: Running via Docker
+
+```bash
+# Start all containerized services
 docker-compose up --build
 ```
 
 Services will be available at:
-- **Web**: http://localhost:3000
+- **Web Console**: http://localhost:3000
+- **API Documentation**: http://localhost:8000/api/docs
+- **Health Check**: http://localhost:8000/health
 - **API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/api/docs
 
