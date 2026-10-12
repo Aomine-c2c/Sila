@@ -169,14 +169,19 @@ fi
 export WEBKIT_DISABLE_COMPOSITING_MODE=1
 
 APPIMAGE_PATH="${WEB_DIR}/src-tauri/target/release/bundle/appimage/NEIMAN-desktop_0.1.0_amd64.AppImage"
+STANDALONE_BIN="${WEB_DIR}/src-tauri/target/release/app"
 
 if [ "${MODE}" = "release" ]; then
     if [ -f "${APPIMAGE_PATH}" ]; then
         echo "[*] Launching compiled AppImage release binary..."
         chmod +x "${APPIMAGE_PATH}"
         "${APPIMAGE_PATH}"
+    elif [ -f "${STANDALONE_BIN}" ]; then
+        echo "[*] Launching compiled native desktop binary..."
+        chmod +x "${STANDALONE_BIN}"
+        "${STANDALONE_BIN}"
     else
-        echo "[!] Compiled AppImage not found at ${APPIMAGE_PATH}; falling back to tauri dev..."
+        echo "[!] Compiled desktop binary not found; falling back to tauri dev..."
         cd "${WEB_DIR}"
         npx --yes @tauri-apps/cli dev
     fi

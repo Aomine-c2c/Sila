@@ -182,7 +182,7 @@ export function ControlRoomDashboard({
     <div className={`space-y-6 transition-opacity duration-300 ${isRefetching ? 'opacity-80' : 'opacity-100'}`}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Nexora Control Room</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">NEIMAN Control Room</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">{companyName}</h1>
             {companyStatus && (
