@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -122,12 +122,81 @@ export default function AdminSettingsPage() {
   const [defaultTheme, setDefaultTheme] = useState('light');
   const [density, setDensity] = useState('comfortable');
 
-  // Provider states
-  const [providers, setProviders] = useState([
-    { id: 'prov-openai', name: 'OpenAI Gateway', maskedKey: 'sk-proj-••••••••••••••••••••••••••••••••u48A', configured: true, status: 'Active (Circuit Closed)' },
-    { id: 'prov-anthropic', name: 'Anthropic Cloud', maskedKey: 'sk-ant-••••••••••••••••••••••••••••••••7F91', configured: true, status: 'Active (Circuit Closed)' },
-    { id: 'prov-google', name: 'Google Vertex / Gemini', maskedKey: 'AIzaSy••••••••••••••••••••••••••••••••3L09', configured: true, status: 'Active (Circuit Closed)' },
-  ]);
+  // Provider key state — loaded from /api/v1/system/provider-keys
+  interface ProviderKeyStatus {
+    openai_configured: boolean;
+    anthropic_configured: boolean;
+    gemini_configured: boolean;
+    ollama_host: string;
+    openai_fingerprint: string | null;
+    anthropic_fingerprint: string | null;
+    gemini_fingerprint: string | null;
+  }
+  const [providerStatus, setProviderStatus] = useState<ProviderKeyStatus | null>(null);
+  const [providerLoading, setProviderLoading] = useState(true);
+  const [providerSaving, setProviderSaving] = useState(false);
+  const [openaiKey, setOpenaiKey] = useState('');
+  const [anthropicKey, setAnthropicKey] = useState('');
+  const [geminiKey, setGeminiKey] = useState('');
+  const [ollamaHost, setOllamaHost] = useState('http://localhost:11434');
+  const [showOpenai, setShowOpenai] = useState(false);
+  const [showAnthropic, setShowAnthropic] = useState(false);
+  const [showGemini, setShowGemini] = useState(false);
+  const [providerSaveResult, setProviderSaveResult] = useState<string | null>(null);
+
+  const loadProviderStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/v1/system/provider-keys', {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        const data: ProviderKeyStatus = await res.json();
+        setProviderStatus(data);
+        setOllamaHost(data.ollama_host || 'http://localhost:11434');
+      }
+    } catch {
+      // silently fail — API may not be running
+    } finally {
+      setProviderLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProviderStatus();
+  }, [loadProviderStatus]);
+
+  const handleSaveProviderKeys = async () => {
+    setProviderSaving(true);
+    setProviderSaveResult(null);
+    try {
+      const body: Record<string, string> = {};
+      if (openaiKey) body.openai_api_key = openaiKey;
+      if (anthropicKey) body.anthropic_api_key = anthropicKey;
+      if (geminiKey) body.gemini_api_key = geminiKey;
+      if (ollamaHost) body.ollama_host = ollamaHost;
+
+      const res = await fetch('/api/v1/system/provider-keys', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const data: ProviderKeyStatus = await res.json();
+        setProviderStatus(data);
+        setOpenaiKey('');
+        setAnthropicKey('');
+        setGeminiKey('');
+        setProviderSaveResult('✓ Provider keys saved and applied.');
+        setTimeout(() => setProviderSaveResult(null), 4000);
+      } else {
+        setProviderSaveResult('⚠ Failed to save keys. Check API is running.');
+      }
+    } catch {
+      setProviderSaveResult('⚠ API unreachable.');
+    } finally {
+      setProviderSaving(false);
+    }
+  };
 
   // API Tokens state
   const [apiTokens, setApiTokens] = useState([
@@ -566,39 +635,143 @@ export default function AdminSettingsPage() {
 
               {/* ────────────────── SECTION 6: AI PROVIDERS ────────────────── */}
               {activeSection === 'ai-providers' && (
-                <div className="space-y-4 text-xs font-mono">
+                <div className="space-y-5 text-xs font-mono">
                   <div className="p-3.5 rounded-xl bg-secondary/20 border border-border text-muted-foreground">
-                    <strong className="text-foreground">Credential Security Principle:</strong> Sensitive API tokens and private keys are never exposed in plaintext after initial submission. Only masked fingerprints are returned.
+                    <strong className="text-foreground">Credential Security:</strong> Keys are stored in the local <code className="text-primary">.env</code> file only. They are never sent to external services beyond the provider's own API endpoint. Only masked fingerprints are shown after entry.
                   </div>
 
-                  <div className="space-y-3">
-                    {providers.map((p) => (
-                      <div key={p.id} className="p-4 rounded-xl bg-secondary/10 border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="space-y-1">
+                  {providerLoading ? (
+                    <div className="flex items-center gap-2 text-muted-foreground py-4">
+                      <span className="animate-spin">⟳</span> Loading provider status…
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* OpenAI */}
+                      <div className="p-4 rounded-xl bg-secondary/10 border border-border space-y-3">
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-foreground text-sm">{p.name}</span>
-                            <span className="badge badge-success text-[10px]">CONFIGURED</span>
+                            <Cpu className="h-4 w-4 text-emerald-400" />
+                            <span className="font-bold text-foreground text-sm">OpenAI</span>
+                            <span className={`badge text-[10px] ${providerStatus?.openai_configured ? 'badge-success' : 'badge-outline text-amber-400 border-amber-500/30'}`}>
+                              {providerStatus?.openai_configured ? 'CONFIGURED' : 'NOT SET'}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <span>Key Fingerprint:</span>
-                            <code className="text-primary font-bold">{p.maskedKey}</code>
-                          </div>
+                          {providerStatus?.openai_configured && (
+                            <code className="text-primary text-[11px]">{providerStatus.openai_fingerprint}</code>
+                          )}
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              alert(`Enter new API key for ${p.name} to rotate credentials securely.`);
-                            }}
-                            className="btn btn-outline text-xs h-7 px-2.5 font-mono"
-                          >
-                            Rotate Key
-                          </button>
+                        <div className="flex gap-2 items-center">
+                          <div className="relative flex-1">
+                            <input
+                              type={showOpenai ? 'text' : 'password'}
+                              value={openaiKey}
+                              onChange={(e) => setOpenaiKey(e.target.value)}
+                              placeholder={providerStatus?.openai_configured ? 'Enter new key to rotate…' : 'sk-...'}
+                              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-mono focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 pr-8"
+                            />
+                            <button type="button" onClick={() => setShowOpenai(v => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                              {showOpenai ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
+
+                      {/* Anthropic */}
+                      <div className="p-4 rounded-xl bg-secondary/10 border border-border space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Zap className="h-4 w-4 text-violet-400" />
+                            <span className="font-bold text-foreground text-sm">Anthropic (Claude)</span>
+                            <span className={`badge text-[10px] ${providerStatus?.anthropic_configured ? 'badge-success' : 'badge-outline text-amber-400 border-amber-500/30'}`}>
+                              {providerStatus?.anthropic_configured ? 'CONFIGURED' : 'NOT SET'}
+                            </span>
+                          </div>
+                          {providerStatus?.anthropic_configured && (
+                            <code className="text-primary text-[11px]">{providerStatus.anthropic_fingerprint}</code>
+                          )}
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <div className="relative flex-1">
+                            <input
+                              type={showAnthropic ? 'text' : 'password'}
+                              value={anthropicKey}
+                              onChange={(e) => setAnthropicKey(e.target.value)}
+                              placeholder={providerStatus?.anthropic_configured ? 'Enter new key to rotate…' : 'sk-ant-...'}
+                              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-mono focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 pr-8"
+                            />
+                            <button type="button" onClick={() => setShowAnthropic(v => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                              {showAnthropic ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Gemini */}
+                      <div className="p-4 rounded-xl bg-secondary/10 border border-border space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-cyan-400" />
+                            <span className="font-bold text-foreground text-sm">Google Gemini</span>
+                            <span className={`badge text-[10px] ${providerStatus?.gemini_configured ? 'badge-success' : 'badge-outline text-amber-400 border-amber-500/30'}`}>
+                              {providerStatus?.gemini_configured ? 'CONFIGURED' : 'NOT SET'}
+                            </span>
+                          </div>
+                          {providerStatus?.gemini_configured && (
+                            <code className="text-primary text-[11px]">{providerStatus.gemini_fingerprint}</code>
+                          )}
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <div className="relative flex-1">
+                            <input
+                              type={showGemini ? 'text' : 'password'}
+                              value={geminiKey}
+                              onChange={(e) => setGeminiKey(e.target.value)}
+                              placeholder={providerStatus?.gemini_configured ? 'Enter new key to rotate…' : 'AIzaSy...'}
+                              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-mono focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 pr-8"
+                            />
+                            <button type="button" onClick={() => setShowGemini(v => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                              {showGemini ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Ollama */}
+                      <div className="p-4 rounded-xl bg-secondary/10 border border-border space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Terminal className="h-4 w-4 text-orange-400" />
+                          <span className="font-bold text-foreground text-sm">Ollama (Local Models)</span>
+                          <span className="badge badge-outline text-[10px] text-orange-400 border-orange-500/30">LOCAL</span>
+                        </div>
+                        <input
+                          type="text"
+                          value={ollamaHost}
+                          onChange={(e) => setOllamaHost(e.target.value)}
+                          placeholder="http://localhost:11434"
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-mono focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                        />
+                      </div>
+
+                      {/* Save Button */}
+                      <div className="flex items-center justify-between pt-2">
+                        {providerSaveResult && (
+                          <span className={`text-xs font-mono ${providerSaveResult.startsWith('✓') ? 'text-emerald-400' : 'text-amber-400'}`}>
+                            {providerSaveResult}
+                          </span>
+                        )}
+                        <button
+                          id="save-provider-keys-btn"
+                          type="button"
+                          onClick={handleSaveProviderKeys}
+                          disabled={providerSaving}
+                          className="ml-auto btn btn-primary text-xs h-8 px-4 font-mono flex items-center gap-2 disabled:opacity-50"
+                        >
+                          {providerSaving ? <RotateCw className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                          {providerSaving ? 'Saving…' : 'Apply Provider Keys'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -45,6 +45,7 @@ from nexora.domains.policies.router import router as policy_router
 from nexora.domains.projects.router import router as project_router
 from nexora.domains.resources.router import router as resource_router
 from nexora.domains.workflows.router import router as workflow_router
+from nexora.domains.system.router import router as system_router
 from nexora.exceptions import register_exception_handlers
 from nexora.middleware import RateLimitMiddleware, RequestIDMiddleware, SecurityHeadersMiddleware
 
@@ -107,6 +108,7 @@ def create_app() -> FastAPI:
     app.include_router(council_router, prefix=API_PREFIX)
     app.include_router(evolution_router, prefix=API_PREFIX)
     app.include_router(activity_router, prefix=API_PREFIX)
+    app.include_router(system_router, prefix=API_PREFIX)
 
     # ── UI Route ───────────────────────────────────────────────────────────
     from pathlib import Path

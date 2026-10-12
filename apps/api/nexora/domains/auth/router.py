@@ -19,7 +19,7 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
     db: AsyncSession = Depends(get_db),
 ):
-    """FastAPI dependency: extracts and validates Bearer token, or defaults to admin if DISABLE_AUTH is true."""
+    """FastAPI dependency: extracts and validates Bearer token, or auto-creates system user if DISABLE_AUTH is true."""
     settings = get_settings()
     service = AuthService(db)
 
@@ -27,13 +27,28 @@ async def get_current_user(
         return await service.get_current_user(credentials.credentials)
 
     if settings.DISABLE_AUTH:
-        default_user = await service.repo.get_by_email("admin@furnitureco.com")
-        if not default_user:
-            from sqlalchemy import select
-            res = await db.execute(select(User))
-            default_user = res.scalars().first()
-        if default_user:
-            return default_user
+        # Try to find any existing user
+        from sqlalchemy import select
+        res = await db.execute(select(User))
+        existing_user = res.scalars().first()
+        if existing_user:
+            return existing_user
+
+        # Fresh DB: auto-create system admin user so the app works on first startup
+        from nexora.domains.auth.service import hash_password
+        system_user = User(
+            email="admin@neiman.local",
+            username="admin",
+            password_hash=hash_password("neiman-local"),
+            first_name="System",
+            last_name="Admin",
+            is_active=True,
+            is_superuser=True,
+        )
+        db.add(system_user)
+        await db.commit()
+        await db.refresh(system_user)
+        return system_user
 
     raise UnauthorizedError("Authentication required.")
 
