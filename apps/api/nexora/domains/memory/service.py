@@ -125,7 +125,7 @@ class MemoryService:
         data: MemoryItemCreate,
         owner_id: uuid.UUID | None = None,
     ) -> MemoryItem:
-        return await self.repo.create_memory_item(
+        item = await self.repo.create_memory_item(
             company_id=company_id,
             domain=data.domain.value,
             title=data.title,
@@ -146,6 +146,23 @@ class MemoryService:
             tags=data.tags,
             extra_metadata=data.metadata,
         )
+
+        # Index into LanceDB semantic vector store asynchronously / non-blocking
+        try:
+            from nexora.domains.memory.vector_store import LanceVectorStore
+            LanceVectorStore.get_instance().upsert_memory(
+                memory_id=str(item.id),
+                company_id=str(company_id),
+                domain=item.domain,
+                scope=item.scope,
+                title=item.title,
+                summary=item.summary or "",
+                content=item.content,
+            )
+        except Exception:
+            pass
+
+        return item
 
     async def get_memory(self, company_id: uuid.UUID, memory_id: uuid.UUID) -> MemoryItem:
         item = await self.repo.get_memory_item(memory_id, company_id)
@@ -206,6 +223,7 @@ class MemoryService:
         return ContextAssemblyEngine.assemble_minimal_context(
             request=request,
             candidate_memories=candidate_memories,
+            company_id=str(company_id),
         )
 
     # -------------------------------------------------------------

@@ -112,9 +112,9 @@ class LanceVectorStore:
         query_vec = query_vectors[0].tolist()
 
         # Build filter condition
-        where_clauses = [f'company_id = "{company_id}"']
+        where_clauses = [f"company_id = '{company_id}'"]
         if target_domains:
-            domains_str = ", ".join([f'"{d}"' for d in target_domains])
+            domains_str = ", ".join([f"'{d}'" for d in target_domains])
             where_clauses.append(f"domain IN ({domains_str})")
         where_filter = " AND ".join(where_clauses)
 
@@ -127,11 +127,10 @@ class LanceVectorStore:
             )
             return results
         except Exception:
-            # Fallback to query without domain clause if syntax edge-case occurs
             try:
                 return (
                     tbl.search(query_vec)
-                    .where(f'company_id = "{company_id}"')
+                    .where(f"company_id = '{company_id}'")
                     .limit(limit)
                     .to_list()
                 )
