@@ -189,6 +189,24 @@ APPIMAGE_PATH="${WEB_DIR}/src-tauri/target/release/bundle/appimage/NEIMAN-deskto
 STANDALONE_BIN="${WEB_DIR}/src-tauri/target/release/app"
 
 if [ "${MODE}" = "release" ]; then
+    NEED_REBUILD=false
+    if [ ! -f "${STANDALONE_BIN}" ] && [ ! -f "${APPIMAGE_PATH}" ]; then
+        echo "[!] No compiled desktop binary found. Triggering automated build..."
+        NEED_REBUILD=true
+    elif [ -f "${STANDALONE_BIN}" ]; then
+        # Check if any Rust or Web frontend sources have been modified after binary was compiled
+        NEWEST_SRC=$(find "${WEB_DIR}/src-tauri/src" "${WEB_DIR}/src" -type f -newer "${STANDALONE_BIN}" 2>/dev/null | head -n 1 || true)
+        if [ -n "${NEWEST_SRC}" ]; then
+            echo "[*] Detected source code changes (newer than compiled binary: ${NEWEST_SRC})."
+            echo "[*] Automatically compiling updated native desktop binary..."
+            NEED_REBUILD=true
+        fi
+    fi
+
+    if [ "${NEED_REBUILD}" = "true" ]; then
+        (cd "${WEB_DIR}/src-tauri" && cargo build --release)
+    fi
+
     if [ -f "${APPIMAGE_PATH}" ]; then
         echo "[*] Launching compiled AppImage release binary..."
         chmod +x "${APPIMAGE_PATH}"
