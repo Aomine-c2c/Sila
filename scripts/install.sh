@@ -46,7 +46,8 @@ if [ ! -f .env.local ]; then
     echo "NEXT_PUBLIC_API_URL=http://localhost:8000" >> .env.local
 fi
 if [ ! -d "node_modules" ]; then
-    npm install --prefer-offline
+    npm install --prefer-offline --no-fund
+    npm audit fix --prefer-offline 2>/dev/null || true
 fi
 
 # Build desktop binary if not already compiled
@@ -101,6 +102,15 @@ cat << 'EOF' > "${BIN_DIR}/neiman-update"
 set -euo pipefail
 
 REPO_DIR="%%REPO_DIR%%"
+FORCE_REBUILD=0
+
+for arg in "$@"; do
+    case "$arg" in
+        --rebuild|-f|--force)
+            FORCE_REBUILD=1
+            ;;
+    esac
+done
 
 echo "================================================================="
 echo "   NEIMAN OS — Checking and Pulling Updates from GitHub          "
@@ -114,47 +124,55 @@ git fetch origin
 CURRENT_COMMIT="$(git rev-parse HEAD)"
 REMOTE_COMMIT="$(git rev-parse origin/main)"
 
-if [ "${CURRENT_COMMIT}" = "${REMOTE_COMMIT}" ]; then
-    echo "[+] System is already up to date at commit: ${CURRENT_COMMIT:0:7}"
-    echo "[*] Checking database migrations..."
-    cd "${REPO_DIR}/apps/api"
-    uv sync
-    uv run alembic upgrade head
-    echo "[+] System update check complete."
-    exit 0
-fi
+REBUILD_NEEDED=0
 
-echo "[*] New changes detected (${CURRENT_COMMIT:0:7} -> ${REMOTE_COMMIT:0:7}). Pulling..."
-STASHED=0
-if [ -n "$(git status --porcelain)" ]; then
-    echo "[*] Stashing local changes before updating..."
-    git stash push -m "neiman-update-autostash"
-    STASHED=1
-fi
+if [ "${CURRENT_COMMIT}" != "${REMOTE_COMMIT}" ]; then
+    echo "[*] New changes detected (${CURRENT_COMMIT:0:7} -> ${REMOTE_COMMIT:0:7}). Pulling..."
+    STASHED=0
+    if [ -n "$(git status --porcelain)" ]; then
+        echo "[*] Stashing local changes before updating..."
+        git stash push -m "neiman-update-autostash"
+        STASHED=1
+    fi
 
-git pull origin main
+    git pull origin main
 
-if [ "${STASHED}" -eq 1 ]; then
-    echo "[*] Restoring stashed local changes..."
-    git stash pop || true
+    if [ "${STASHED}" -eq 1 ]; then
+        echo "[*] Restoring stashed local changes..."
+        git stash pop || true
+    fi
+    REBUILD_NEEDED=1
+elif [ "${FORCE_REBUILD}" -eq 1 ]; then
+    echo "[*] Force rebuild requested (--rebuild). Recompiling stack..."
+    REBUILD_NEEDED=1
+else
+    echo "[+] Repository is up to date at commit: ${CURRENT_COMMIT:0:7}"
+    echo "[*] Tip: Run 'neiman-update --rebuild' to force rebuild Rust and frontend binaries."
 fi
 
 echo "[*] Syncing Python dependencies & upgrading database migrations..."
 cd "${REPO_DIR}/apps/api"
-uv sync
-uv run alembic upgrade head
+if command -v uv >/dev/null 2>&1; then
+    uv sync
+    uv run alembic upgrade head
+fi
 
-echo "[*] Rebuilding production frontend bundle..."
-cd "${REPO_DIR}/apps/web"
-npm install --prefer-offline
-rm -rf .next
-npm run build
+if [ "${REBUILD_NEEDED}" -eq 1 ]; then
+    echo "[*] Rebuilding production frontend bundle..."
+    cd "${REPO_DIR}/apps/web"
+    npm install --prefer-offline --no-fund
+    echo "[*] Resolving npm audit vulnerabilities..."
+    npm audit fix --prefer-offline 2>/dev/null || true
+    rm -rf .next
+    npm run build
 
-echo "[*] Rebuilding desktop binary..."
-npx tauri build --no-bundle
+    echo "[*] Rebuilding Rust native desktop binary (Tauri)..."
+    npx tauri build --no-bundle
+    echo "[+] Rust desktop binary compiled successfully."
+fi
 
 echo "================================================================="
-echo "[+] NEIMAN successfully updated to ${REMOTE_COMMIT:0:7}!"
+echo "[+] NEIMAN update routine completed successfully!"
 echo "================================================================="
 EOF
 
