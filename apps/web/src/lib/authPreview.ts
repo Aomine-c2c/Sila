@@ -1,8 +1,7 @@
 /**
- * Local UI work can opt out of the login screen while using next dev.
- * NODE_ENV is part of the production bundle, so this cannot enable in a build.
+ * Local UI and workstation installations opt out of the login screen.
+ * Enabled whenever NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS is set to 'true'.
  */
 export function isDevelopmentAuthBypassEnabled(): boolean {
-  return process.env.NODE_ENV === 'development' &&
-    process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS === 'true';
+  return process.env.NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS === 'true';
 }

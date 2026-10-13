@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -12,6 +12,7 @@ import { useAuthStore } from '@/store/auth';
 import { ApiError } from '@/lib/api/client';
 import { organizationsApi } from '@/lib/api/organizations';
 import { configureApiClient } from '@/lib/api/client';
+import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
@@ -25,6 +26,12 @@ export default function LoginPage() {
   const { setToken, setUser, setActiveCompany } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isDevelopmentAuthBypassEnabled()) {
+      router.replace('/dashboard');
+    }
+  }, [router]);
 
   const {
     register,

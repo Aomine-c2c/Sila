@@ -42,14 +42,11 @@ export default function HomePage() {
             href="/dashboard"
             className="text-foreground hover:text-[#D71921] transition-colors uppercase font-bold"
           >
-            OPEN DASHBOARD &rarr;
+            ENTER COMMAND CENTER &rarr;
           </a>
-          <a
-            href="/auth/login"
-            className="text-muted-foreground hover:text-foreground transition-colors uppercase"
-          >
-            SIGN IN
-          </a>
+          <span className="text-[9px] font-mono uppercase text-[#D71921] bg-[#D71921]/10 px-1.5 py-0.5 border border-[#D71921]/20">
+            LOCAL SYSTEM
+          </span>
         </div>
       </div>
     </div>

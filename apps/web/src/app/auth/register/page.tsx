@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { Eye, EyeOff, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
 import { authApi } from '@/lib/api/auth';
 import { ApiError } from '@/lib/api/client';
+import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 
 const schema = z
   .object({
@@ -39,6 +40,12 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (isDevelopmentAuthBypassEnabled()) {
+      router.replace('/dashboard');
+    }
+  }, [router]);
 
   const {
     register,
