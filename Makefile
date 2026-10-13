@@ -16,6 +16,7 @@ help:
 	@echo "  make dev-web       Start Web only (local, hot-reload)"
 	@echo "  make dev-desktop   Start Desktop app in Tauri with hot-reload"
 	@echo "  make dev-tui-rs    Run native Rust TUI operator client"
+	@echo "  make build         Build unified desktop application (Next.js + Tauri Release Binary)"
 	@echo "  make tauri-build   Build production native desktop binary"
 	@echo "  make test          Run all tests (API + Web + Rust)"
 	@echo "  make test-rust     Run Rust unit and integration tests"
@@ -46,6 +47,9 @@ dev-desktop:
 
 dev-tui-rs:
 	cd $(TUI_RS_DIR) && cargo run
+
+build:
+	cd $(WEB_DIR) && npm run build:all
 
 tauri-build:
 	cd $(WEB_DIR) && npx @tauri-apps/cli build

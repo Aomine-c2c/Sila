@@ -185,15 +185,54 @@ impl BackendSupervisor {
         }
     }
 
-    /// Stops the child backend process gracefully
+    /// Stops the child backend process gracefully using SIGTERM with a 3-second grace period
     pub fn shutdown(&self) {
         if self.running_by_us.load(Ordering::SeqCst) {
             if let Ok(mut lock) = self.child.lock() {
                 if let Some(mut child) = lock.take() {
-                    log::info!("Terminating backend child process (PID: {})...", child.id());
-                    let _ = child.kill();
-                    let _ = child.wait();
-                    log::info!("Backend child process terminated.");
+                    let pid = child.id();
+                    log::info!("Sending graceful SIGTERM to backend child process (PID: {})...", pid);
+
+                    #[cfg(unix)]
+                    {
+                        unsafe {
+                            libc::kill(pid as i32, libc::SIGTERM);
+                        }
+
+                        // Wait up to 3 seconds for graceful exit
+                        let start = Instant::now();
+                        let mut exited = false;
+                        while start.elapsed() < Duration::from_secs(3) {
+                            match child.try_wait() {
+                                Ok(Some(status)) => {
+                                    log::info!("Backend child process exited gracefully: {:?}", status);
+                                    exited = true;
+                                    break;
+                                }
+                                Ok(None) => {
+                                    std::thread::sleep(Duration::from_millis(150));
+                                }
+                                Err(e) => {
+                                    log::warn!("Error waiting on child process: {}", e);
+                                    break;
+                                }
+                            }
+                        }
+
+                        if !exited {
+                            log::warn!("Backend did not exit within 3s grace period; issuing SIGKILL...");
+                            let _ = child.kill();
+                            let _ = child.wait();
+                        }
+                    }
+
+                    #[cfg(not(unix))]
+                    {
+                        let _ = child.kill();
+                        let _ = child.wait();
+                    }
+
+                    log::info!("Backend child process shutdown complete.");
                 }
             }
             self.running_by_us.store(false, Ordering::SeqCst);

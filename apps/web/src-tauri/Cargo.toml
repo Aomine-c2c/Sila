@@ -30,4 +30,5 @@ sysinfo = "0.33"
 tauri = { version = "2.12.0", features = ["tray-icon", "image-png"] }
 tauri-plugin-log = "2"
 tauri-plugin-updater = "2"
+libc = "0.2"
 
