@@ -43,6 +43,7 @@ import {
   InstantiateBlueprintResponse,
 } from '@/lib/api/blueprints';
 import { useOrganizationContext } from '@/lib/organizationContext';
+import { useAuthStore } from '@/store/auth';
 
 // Icons & category color mappings
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -125,12 +126,23 @@ export default function BlueprintsPage() {
   });
 
   // Mutations
+  const setActiveCompany = useAuthStore((state) => state.setActiveCompany);
   const instantiateMutation = useMutation({
     mutationFn: ({ idOrKey, req }: { idOrKey: string; req: { company_name?: string } }) =>
       blueprintsApi.instantiateBlueprint(idOrKey, req),
     onSuccess: (data) => {
       setInstantiationSuccess(data);
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      setActiveCompany({
+        id: data.company_id,
+        name: data.company_name,
+        slug: data.slug,
+        status: data.status || 'ACTIVE',
+        owner_id: '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
     },
   });
 
@@ -192,6 +204,16 @@ export default function BlueprintsPage() {
       setInstantiationSuccess(data);
       setShowApprovalModal(false);
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      setActiveCompany({
+        id: data.company_id,
+        name: data.company_name,
+        slug: data.slug,
+        status: data.status || 'ACTIVE',
+        owner_id: '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
     },
   });
 

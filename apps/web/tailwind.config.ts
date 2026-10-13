@@ -25,10 +25,10 @@ module.exports = {
           950: '#082f49',
         },
         NEIMAN: {
-          dark: '#0d0f0d',
-          surface: '#111411',
-          border: '#2b3028',
-          muted: '#858c7d',
+          dark: 'hsl(var(--background))',
+          surface: 'hsl(var(--card))',
+          border: 'hsl(var(--border))',
+          muted: 'hsl(var(--muted-foreground))',
         },
         // CSS variable-based colors for shadcn/ui compatibility
         background: 'hsl(var(--background))',

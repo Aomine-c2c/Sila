@@ -45,20 +45,21 @@ export default function DashboardLayout({
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
 
   useEffect(() => {
-    // If no active company is loaded, check if any companies exist; if none, show setup wizard
-    if (!activeCompany && !developmentBypass) {
+    // If no active company is loaded, check if any companies exist and auto-select first one
+    if (!activeCompany) {
       organizationsApi
         .list()
         .then((companies) => {
           if (companies && companies.length > 0) {
             setActiveCompany(companies[0]);
-          } else {
+          } else if (!developmentBypass) {
             setSetupWizardOpen(true);
           }
         })
         .catch(() => {
-          // If network / API empty, prompt wizard
-          setSetupWizardOpen(true);
+          if (!developmentBypass) {
+            setSetupWizardOpen(true);
+          }
         });
     }
   }, [activeCompany, developmentBypass, setActiveCompany]);
