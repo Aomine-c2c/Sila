@@ -152,6 +152,7 @@ impl BackendSupervisor {
         cmd.current_dir(&api_dir)
             .env("DATABASE_URL", &db_url)
             .env("DISABLE_AUTH", "true")
+            .env("ENVIRONMENT", "production")
             .stdout(Stdio::null())
             .stderr(Stdio::inherit());
 

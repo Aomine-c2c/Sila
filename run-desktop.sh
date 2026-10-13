@@ -58,6 +58,7 @@ mkdir -p "${DATA_DIR}"
 DB_FILE="${DATA_DIR}/production.db"
 export DATABASE_URL="sqlite+aiosqlite:///${DB_FILE}"
 export DISABLE_AUTH="true"
+export ENVIRONMENT="production"
 
 # Quick non-blocking update check in background
 (

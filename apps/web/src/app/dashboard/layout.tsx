@@ -45,24 +45,23 @@ export default function DashboardLayout({
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
 
   useEffect(() => {
-    // If no active company is loaded, check if any companies exist and auto-select first one
+    // If no active company is loaded, check if any companies exist and auto-select first one;
+    // if zero companies exist, trigger first-time initialization wizard
     if (!activeCompany) {
       organizationsApi
         .list()
         .then((companies) => {
           if (companies && companies.length > 0) {
             setActiveCompany(companies[0]);
-          } else if (!developmentBypass) {
+          } else {
             setSetupWizardOpen(true);
           }
         })
         .catch(() => {
-          if (!developmentBypass) {
-            setSetupWizardOpen(true);
-          }
+          setSetupWizardOpen(true);
         });
     }
-  }, [activeCompany, developmentBypass, setActiveCompany]);
+  }, [activeCompany, setActiveCompany]);
 
   // Global keyboard shortcut for Command Palette (Cmd+K / Ctrl+K) and Desktop Native integration
   useEffect(() => {
