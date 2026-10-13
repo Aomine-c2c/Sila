@@ -7,8 +7,6 @@ import { useAuthStore } from '@/store/auth';
 import { organizationsApi } from '@/lib/api/organizations';
 import { controlRoomApi, type ControlRoomState } from '@/lib/api/controlRoom';
 import { ControlRoomDashboard } from '@/components/control-room/ControlRoomDashboard';
-import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
-import { PREVIEW_COMPANY, getControlRoomPreviewState } from '@/lib/api/controlRoomPreview';
 import { useActivityStream } from '@/hooks/useActivityStream';
 
 export default function ControlRoomPage() {
@@ -71,22 +69,7 @@ export default function ControlRoomPage() {
           </p>
         </div>
 
-        {developmentBypass ? (
-          <div className="flex flex-col items-center justify-center gap-5 rounded-2xl border border-dashed border-border bg-card/30 px-5 py-16 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
-              <Building2 className="h-7 w-7" aria-hidden="true" />
-            </div>
-            <div className="max-w-md">
-              <h2 className="text-lg font-semibold text-foreground">Organization context requires a real session</h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                The local preview opens the interface without signing in. Organization data and write actions come from the authenticated API, so they are not loaded in this mode.
-              </p>
-            </div>
-            <Link href="/dashboard/organizations" className="btn btn-outline">
-              Explore organization interface
-            </Link>
-          </div>
-        ) : companies.length === 0 ? (
+        {companies.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-border py-24">
             <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
               <Building2 className="h-10 w-10 text-primary" aria-hidden="true" />
@@ -142,12 +125,12 @@ export default function ControlRoomPage() {
   }
 
   // Control Room — primary operating interface
-  if (state) {
+  if (state && activeCompany) {
     return (
       <ControlRoomDashboard
-        companyName={displayCompany!.name}
-        companyStatus={displayCompany!.status}
-        industry={displayCompany!.industry}
+        companyName={activeCompany.name}
+        companyStatus={activeCompany.status}
+        industry={activeCompany.industry}
         state={{
           ...state,
           // Merge live events into the state's activity array
@@ -159,11 +142,9 @@ export default function ControlRoomPage() {
           freshIds: live.freshIds,
         }}
         isRefetching={isRefetching}
-        previewMode={developmentBypass}
-        onDecideApproval={
-          developmentBypass
-            ? undefined
-            : (approvalId, decision) => approvalMutation.mutate({ approvalId, decision })
+        previewMode={false}
+        onDecideApproval={(approvalId, decision) =>
+          approvalMutation.mutate({ approvalId, decision })
         }
       />
     );
