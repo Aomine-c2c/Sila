@@ -11,12 +11,14 @@
 //! - Degraded/offline network state synchronization
 //! - Update check architecture
 
+pub mod backend;
 pub mod commands;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
+use backend::BackendSupervisor;
 use serde::{Deserialize, Serialize};
 use tauri::{
     image::Image,
@@ -84,6 +86,7 @@ pub struct DesktopState {
     pub credentials_vault: Mutex<HashMap<String, String>>,
     pub config_path: PathBuf,
     pub window_state_path: PathBuf,
+    pub backend_supervisor: Arc<BackendSupervisor>,
 }
 
 // Authenticated AES-256-GCM cipher for zero-trust local credential vault
@@ -143,15 +146,19 @@ pub fn run() {
     let config_path = config_dir.join("config.json");
     let window_state_path = config_dir.join("window_state.json");
 
+    let supervisor = Arc::new(BackendSupervisor::new());
+    let supervisor_clone = Arc::clone(&supervisor);
+
     let desktop_state = DesktopState {
         credentials_vault: Mutex::new(HashMap::new()),
         config_path,
         window_state_path,
+        backend_supervisor: Arc::clone(&supervisor),
     };
 
     tauri::Builder::default()
         .manage(desktop_state)
-        .setup(|app| {
+        .setup(move |app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
@@ -159,6 +166,15 @@ pub fn run() {
                         .build(),
                 )?;
             }
+
+            // Automatically ensure the Python FastAPI backend is active and healthy
+            let default_api_url = "http://127.0.0.1:8000";
+            let supervisor_bg = Arc::clone(&supervisor_clone);
+            std::thread::spawn(move || {
+                if let Err(e) = supervisor_bg.ensure_started(default_api_url, 8000) {
+                    log::warn!("Background supervisor note: {}", e);
+                }
+            });
 
             // Register official Tauri v2 auto-updater plugin
             app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
@@ -252,8 +268,17 @@ pub fn run() {
             commands::export_report_file,
             commands::inspect_local_project,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while building tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run({
+            let supervisor_exit = Arc::clone(&supervisor);
+            move |_app_handle, event| {
+                if let tauri::RunEvent::Exit = event {
+                    log::info!("Tauri exit event received. Cleaning up backend child process...");
+                    supervisor_exit.shutdown();
+                }
+            }
+        });
 }
 
 #[cfg(test)]
