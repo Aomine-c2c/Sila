@@ -138,11 +138,7 @@ export interface ControlRoomState {
 export const controlRoomApi = {
   // Aggregate call to load full control room state
   getOperationalState: async (companyId: string): Promise<ControlRoomState> => {
-    // Fixtures are only available in the explicit local development preview. This path
-    // returns before any network request and cannot be enabled in production.
-    if (isDevelopmentAuthBypassEnabled()) return getControlRoomPreviewState();
-
-    // Fetch each domain independently so a partial API outage does not hide usable data.
+    // Fetch live backend state directly from verified domain APIs
     const [
       agentsRes,
       deptsRes,

@@ -36,12 +36,6 @@ export function useActivityStream(
   useEffect(() => {
     if (!companyId) return;
 
-    if (isDevelopmentAuthBypassEnabled()) {
-      setConnection('CONNECTED');
-      setTransport('Preview');
-      return;
-    }
-
     let subscribed = true;
 
     const prepend = (incoming: ActivityEvent) => {

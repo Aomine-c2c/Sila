@@ -54,9 +54,11 @@ fi
 STANDALONE_BIN="${REPO_DIR}/apps/web/src-tauri/target/release/app"
 if [ ! -f "${STANDALONE_BIN}" ]; then
     echo "[*] Compiling NEIMAN desktop application binary (this takes ~1-2 min on initial install)..."
+    cd "${REPO_DIR}/apps/web"
     rm -rf .next
     npm run build
     npx tauri build --no-bundle
+    cd "${REPO_DIR}"
 fi
 
 cd "${REPO_DIR}"
@@ -101,6 +103,7 @@ cat << 'EOF' > "${BIN_DIR}/neiman-update"
 #!/usr/bin/env bash
 set -euo pipefail
 
+REPO_DIR="%%REPO_DIR%%"
 FORCE_REBUILD=0
 RESET_DB=0
 
