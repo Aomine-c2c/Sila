@@ -51,13 +51,40 @@ class IntelligenceService:
                     website_url=item.get("website_url"),
                     base_url=item.get("base_url"),
                     is_local=item.get("is_local", False),
-                    is_configured=False,
-                    is_healthy=False,
+                    is_configured=bool(item.get("is_local")),
+                    is_healthy=bool(item.get("is_local")),
                 )
                 self.db.add(p)
                 existing_providers[item["name"]] = p
 
         await self.db.flush()
+
+        # Seed initial models if models table is empty
+        m_count = await self.db.scalar(select(func.count(Model.id)))
+        if not m_count or m_count == 0:
+            canonical_models = [
+                ("openai", "gpt-4o", "GPT-4o", ["reasoning", "code_generation", "vision", "agentic", "text"], 128000, 2.50, 10.00, 450.0, "PUBLIC_CLOUD"),
+                ("anthropic", "claude-3-5-sonnet", "Claude 3.5 Sonnet", ["reasoning", "architectural_reasoning", "code_generation", "analysis", "text"], 200000, 3.00, 15.00, 620.0, "PUBLIC_CLOUD"),
+                ("google_gemini", "gemini-1.5-pro", "Gemini 1.5 Pro", ["reasoning", "large_context", "multimodal", "analysis", "text"], 2000000, 1.25, 5.00, 380.0, "PUBLIC_CLOUD"),
+                ("local", "local-deepseek-r1", "DeepSeek-R1 Local", ["reasoning", "code_generation", "privacy", "text"], 64000, 0.0, 0.0, 750.0, "ON_PREMISE_ZERO_RETENTION"),
+            ]
+            for p_name, m_ident, disp, caps, ctx, in_c, out_c, lat, priv in canonical_models:
+                p = existing_providers.get(p_name)
+                if p:
+                    self.db.add(
+                        Model(
+                            provider_id=p.id,
+                            model_identifier=m_ident,
+                            display_name=disp,
+                            capabilities=caps,
+                            context_capacity=ctx,
+                            input_cost_per_million=in_c,
+                            output_cost_per_million=out_c,
+                            avg_latency_ms=lat,
+                            privacy_classification=priv,
+                        )
+                    )
+            await self.db.flush()
 
     # ── Providers & Models CRUD ────────────────────────────────────────────────
 

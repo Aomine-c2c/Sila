@@ -211,6 +211,14 @@ UNIVERSAL_PROVIDER_CATALOG: list[dict[str, Any]] = [
 
     # ── Local, Private & Self-Hosted Runtimes ──
     {
+        "name": "local",
+        "display_name": "Local / Air-Gapped",
+        "description": "On-premise zero-retention self-hosted models (DeepSeek-R1, Llama 3) with zero cloud dependency",
+        "website_url": "http://localhost:11434",
+        "base_url": "http://localhost:11434",
+        "is_local": True,
+    },
+    {
         "name": "ollama",
         "display_name": "Ollama Local Runtime",
         "description": "One-click local execution runtime for Llama 3.3, Qwen 2.5, DeepSeek-R1, and Mistral on local GPU/CPU",
