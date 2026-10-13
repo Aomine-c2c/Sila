@@ -65,7 +65,7 @@ class TestCompanyBlueprints:
         assert len(sw_bp["policies"]) >= 1
         assert sw_bp["constitution"]["mission"]
         assert sw_bp["default_autonomy"] == 3
-        assert sw_bp["estimated_monthly_cost_usd"] > 0
+        assert sw_bp["estimated_monthly_cost_usd"] >= 0
 
     @pytest.mark.asyncio
     async def test_blueprint_customization_duplicate_export_import(

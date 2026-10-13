@@ -1449,22 +1449,25 @@ export default function SimulationLabPage() {
           <div className="space-y-4 text-xs font-mono">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 rounded-xl bg-secondary/20 border border-border space-y-2">
-                <label className="font-semibold text-foreground block">HUMAN APPROVAL THRESHOLD ($)</label>
-                <input
-                  type="number"
+                <label className="font-semibold text-foreground block">CEO APPROVAL GATE (RISK LEVEL)</label>
+                <select
                   disabled={activeSandbox.isBaseline}
-                  value={activeSandbox.config.policies.humanApprovalThresholdUsd}
+                  value={activeSandbox.config.policies.humanApprovalThresholdUsd <= 25 ? 'STAGE_2_AND_5' : activeSandbox.config.policies.humanApprovalThresholdUsd <= 50 ? 'STAGE_5_ONLY' : 'EXCEPTION_ONLY'}
                   onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 50;
+                    const val = e.target.value === 'STAGE_2_AND_5' ? 25 : e.target.value === 'STAGE_5_ONLY' ? 50 : 100;
                     updateActiveConfig((prev) => ({
                       ...prev,
                       policies: { ...prev.policies, humanApprovalThresholdUsd: val },
                     }));
                   }}
                   className="input text-xs text-amber-400 font-bold"
-                />
+                >
+                  <option value="STAGE_2_AND_5">Stage 2 (Architecture) & Stage 5 (Release) [Recommended CEO Gate]</option>
+                  <option value="STAGE_5_ONLY">Stage 5 (Production Release Only)</option>
+                  <option value="EXCEPTION_ONLY">Critical Exception Only (Autonomous Level 4)</option>
+                </select>
                 <span className="text-[10px] text-muted-foreground block">
-                  Actions with projected costs above this trigger a mandatory human operator sign-off.
+                  Determines at which operational pipeline gates the autonomous agent team pauses for 1-click CEO Executive Briefing sign-off.
                 </span>
               </div>
 

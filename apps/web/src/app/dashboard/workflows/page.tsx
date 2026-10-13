@@ -56,17 +56,26 @@ const WorkflowInspector = dynamic(
 import { WorkflowValidationPanel } from '@/components/workflow/WorkflowValidationPanel';
 import type { NodePaletteItem } from '@/components/workflow/WorkflowPalette';
 
-// Canonical Software Requirement Pipeline preset
+// Canonical 5-Stage Autonomous Engineering Pipeline
 const CANONICAL_SOFTWARE_PIPELINE: WorkflowStep[] = [
-  { id: 's-1', name: 'Trigger: New Requirement Ingested', type: 'TRIGGER', config: { trigger_mode: 'EVENT', event_name: 'new_requirement_ingested' }, next_step_id: 's-2', position: { x: 80, y: 140 } },
-  { id: 's-2', name: 'Product Agent: Synthesize Spec', type: 'AGENT', config: { agent_name: 'Product Agent', instruction: 'Ingest requirement, evaluate domain constraints, and synthesize functional spec.' }, next_step_id: 's-3', position: { x: 360, y: 140 } },
-  { id: 's-3', name: 'Architect Agent: Design Review', type: 'AGENT', config: { agent_name: 'Architect Agent', instruction: 'Review architectural tradeoffs, schema migrations, and ADRs.' }, next_step_id: 's-4', position: { x: 640, y: 140 } },
-  { id: 's-4', name: 'Security Sentinel: SAST Audit', type: 'VALIDATION', config: { rubric: 'CONSTITUTIONAL_COMPLIANCE', threshold: 0.95 }, next_step_id: 's-5', position: { x: 920, y: 140 } },
-  { id: 's-5', name: 'CTO Executive Sign-off Gate', type: 'APPROVAL', config: { title: 'CTO Architectural & Deployment Approval', risk_level: 'CRITICAL', required_role: 'EXECUTIVE' }, next_step_id: 's-6', position: { x: 920, y: 340 } },
-  { id: 's-6', name: 'Parallel Engineering Agents', type: 'PARALLEL', config: { branch_count: 3, join_strategy: 'ALL_SUCCESS' }, next_step_id: 's-7', position: { x: 640, y: 340 } },
-  { id: 's-7', name: 'QA Test Agent: Test Suite', type: 'TOOL', config: { tool_name: 'automated_test_runner', arguments: '--coverage --strict' }, next_step_id: 's-8', position: { x: 360, y: 340 } },
-  { id: 's-8', name: 'Cloud Infrastructure Deployer', type: 'TOOL', config: { tool_name: 'cloud_infra_deployer', arguments: '--production' }, next_step_id: 's-9', position: { x: 80, y: 340 } },
-  { id: 's-9', name: 'Deployment Success & Closeout', type: 'SUCCESS', config: { message: 'Software delivered autonomously to production.' }, position: { x: 80, y: 520 } },
+  // Stage 1: Ingestion & Quality Gate
+  { id: 's-1', name: 'Trigger: Requirement Ingestion', type: 'TRIGGER', config: { trigger_mode: 'EVENT', event_name: 'requirement_submitted' }, next_step_id: 's-2', position: { x: 60, y: 120 } },
+  { id: 's-2', name: 'Requirement Quality & Completeness Gate', type: 'VALIDATION', config: { rubric: 'REQUIREMENT_COMPLETENESS', threshold: 0.85, testability_required: true }, next_step_id: 's-3', position: { x: 340, y: 120 } },
+  
+  // Stage 2: Spec, Council Deliberation & ADR
+  { id: 's-3', name: 'Product Agent: Synthesize Spec', type: 'AGENT', config: { agent_name: 'Product Agent', instruction: 'Evaluate requirement, map domain constraints, and produce formal spec.' }, next_step_id: 's-4', position: { x: 620, y: 120 } },
+  { id: 's-4', name: 'Council Deliberation & ADR Ratification', type: 'DECISION', config: { council_name: 'Architecture & Security Council', require_dissent_record: true, produce_adr: true }, next_step_id: 's-5', position: { x: 900, y: 120 } },
+
+  // Stage 3: Project Workspace Binding & Human Governance Gate
+  { id: 's-5', name: 'Project Workspace & Target Branch Link', type: 'TOOL', config: { tool_name: 'workspace_branch_binder', target_folder: './', default_branch: 'main' }, next_step_id: 's-6', position: { x: 900, y: 320 } },
+  { id: 's-6', name: 'Human Executive Approval Gate', type: 'APPROVAL', config: { title: 'CTO Architectural & Deployment Sign-off', risk_level: 'HIGH', required_role: 'EXECUTIVE' }, next_step_id: 's-7', position: { x: 620, y: 320 } },
+
+  // Stage 4: Parallel Git Worktrees with Boundary Matrix
+  { id: 's-7', name: 'Parallel Git Worktrees (API / Web)', type: 'PARALLEL', config: { isolation_mode: 'GIT_WORKTREES', branch_count: 2, domains: ['apps/api', 'apps/web'], conflict_strategy: 'AUTO_REBASE_OR_SYNTHESIZE' }, next_step_id: 's-8', position: { x: 340, y: 320 } },
+
+  // Stage 5: Verification, Testing & Closeout
+  { id: 's-8', name: 'QA & Linter Automated Test Runner', type: 'TOOL', config: { tool_name: 'automated_test_runner', arguments: 'pytest && npm test --strict' }, next_step_id: 's-9', position: { x: 60, y: 320 } },
+  { id: 's-9', name: 'Production Convergence & Closeout', type: 'SUCCESS', config: { message: 'Candidate changes verified, rebased, and audited in production.' }, position: { x: 60, y: 500 } },
 ];
 
 export default function WorkflowsDashboardPage() {
