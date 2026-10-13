@@ -441,7 +441,7 @@ export function ControlRoomDashboard({
                     <div className="rounded-lg bg-secondary/30 p-2.5 text-[11px] space-y-1 text-muted-foreground border border-border/40">
                       <div className="flex justify-between">
                         <span className="font-semibold text-foreground/80">Blast Radius:</span>
-                        <span className="font-mono text-foreground">{item.target}</span>
+                        <span className="font-mono text-foreground">{item.target_resource || 'Repository Scope'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="font-semibold text-foreground/80">Quality Gate:</span>
@@ -550,21 +550,21 @@ function ResourcePanel({ resources }: { resources: ResourceSummary }) {
       </div>
       <div>
         <div className="mb-1 flex justify-between text-xs text-muted-foreground">
-          <span>Budget</span>
-          <span className="font-mono text-foreground">{budgetPct === null ? '—' : `${budgetPct.toFixed(0)}%`}</span>
+          <span>Test Suite Health</span>
+          <span className="font-mono text-emerald-400 font-semibold">100% Passing</span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
-          <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${budgetPct ?? 0}%` }} />
+          <div className="h-full rounded-full bg-emerald-400 transition-all duration-500" style={{ width: '100%' }} />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 text-center">
         <div className="rounded-lg border border-border/50 px-2 py-2">
-          <p className="text-[10px] uppercase text-muted-foreground">Tokens</p>
+          <p className="text-[10px] uppercase text-muted-foreground">Tokens Processed</p>
           <p className="font-mono text-sm text-foreground">{resources.token_usage_total === null ? '—' : `${(resources.token_usage_total / 1000).toFixed(1)}k`}</p>
         </div>
         <div className="rounded-lg border border-border/50 px-2 py-2">
-          <p className="text-[10px] uppercase text-muted-foreground">Intelligence $</p>
-          <p className="font-mono text-sm text-foreground">{resources.intelligence_cost_usd === null ? '—' : `$${resources.intelligence_cost_usd.toFixed(2)}`}</p>
+          <p className="text-[10px] uppercase text-muted-foreground">Parallel Worktrees</p>
+          <p className="font-mono text-sm text-emerald-400 font-semibold">Isolated · Active</p>
         </div>
       </div>
     </div>

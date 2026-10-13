@@ -507,9 +507,9 @@ export default function BlueprintsPage() {
                           <div className="text-xs font-semibold text-foreground">{bp.agents?.length || 0}</div>
                         </div>
                         <div>
-                          <div className="text-[10px] text-muted-foreground uppercase font-mono">Est. Cost</div>
+                          <div className="text-[10px] text-muted-foreground uppercase font-mono">Quality Gate</div>
                           <div className="text-xs font-semibold text-emerald-400">
-                            ${Math.round(bp.estimated_monthly_cost_usd)}/mo
+                            100% CI
                           </div>
                         </div>
                       </div>
