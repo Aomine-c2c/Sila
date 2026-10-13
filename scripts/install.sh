@@ -101,13 +101,25 @@ cat << 'EOF' > "${BIN_DIR}/neiman-update"
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_DIR="%%REPO_DIR%%"
 FORCE_REBUILD=0
+RESET_DB=0
 
 for arg in "$@"; do
     case "$arg" in
         --rebuild|-f|--force)
             FORCE_REBUILD=1
+            ;;
+        --reset-db|--clean|-c)
+            RESET_DB=1
+            ;;
+        -h|--help)
+            echo "Usage: neiman-update [options]"
+            echo ""
+            echo "Options:"
+            echo "  --rebuild, -f      Force rebuild frontend bundle and Rust desktop binary"
+            echo "  --reset-db, -c     Archive current database and start with a fresh clean state"
+            echo "  --help, -h         Show this help message"
+            exit 0
             ;;
     esac
 done
@@ -147,14 +159,39 @@ elif [ "${FORCE_REBUILD}" -eq 1 ]; then
     REBUILD_NEEDED=1
 else
     echo "[+] Repository is up to date at commit: ${CURRENT_COMMIT:0:7}"
-    echo "[*] Tip: Run 'neiman-update --rebuild' to force rebuild Rust and frontend binaries."
+    echo "[*] Tip: Run 'neiman-update --rebuild' to force rebuild binaries."
+    echo "[*] Tip: Run 'neiman-update --reset-db' to wipe and start from clean state."
 fi
 
-echo "[*] Syncing Python dependencies & upgrading database migrations..."
+DATA_DIR="${HOME}/.local/share/neiman"
+mkdir -p "${DATA_DIR}"
+DB_FILE="${DATA_DIR}/production.db"
+
+if [ "${RESET_DB}" -eq 1 ]; then
+    echo "[*] Database reset requested (--reset-db)..."
+    if [ -f "${DB_FILE}" ]; then
+        DATE_STAMP="$(date +%Y%m%d_%H%M%S)"
+        echo "[*] Archiving current database to ${DATA_DIR}/production_${DATE_STAMP}.db.bak..."
+        mv "${DB_FILE}" "${DATA_DIR}/production_${DATE_STAMP}.db.bak"
+        rm -f "${DB_FILE}-wal" "${DB_FILE}-shm"
+    fi
+
+    WEBVIEW_STORAGE="${HOME}/.local/share/org.NEIMAN.desktop/localstorage"
+    if [ -d "${WEBVIEW_STORAGE}" ]; then
+        echo "[*] Resetting cached WebView localStorage..."
+        rm -rf "${WEBVIEW_STORAGE}"
+    fi
+    echo "[+] Fresh database and workspace prepared."
+else
+    echo "[*] Preserving existing database: ${DB_FILE}"
+fi
+
+echo "[*] Syncing Python dependencies & creating fresh database schema..."
 cd "${REPO_DIR}/apps/api"
 if command -v uv >/dev/null 2>&1; then
     uv sync
-    uv run alembic upgrade head
+    DATABASE_URL="sqlite+aiosqlite:///${DB_FILE}" uv run alembic upgrade head
+    echo "[+] Clean operational database initialized successfully."
 fi
 
 if [ "${REBUILD_NEEDED}" -eq 1 ]; then

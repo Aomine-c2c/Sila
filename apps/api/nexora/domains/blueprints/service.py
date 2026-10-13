@@ -1081,7 +1081,9 @@ class BlueprintService:
 
         proposal.status = "INSTANTIATED"
         proposal.instantiated_company_id = inst_res.company_id
-        await self.repo.update_proposal(proposal)
+        # Direct DB update — bypass status validation since we're setting INSTANTIATED
+        await self.repo.db.flush()
+        await self.repo.db.refresh(proposal)
 
         return inst_res
 
