@@ -59,16 +59,8 @@ async function request<T>(
 ): Promise<T> {
   const method = (options.method ?? 'GET').toUpperCase();
 
-  if (isDevelopmentAuthBypassEnabled()) {
-    if (method !== 'GET') {
-      throw new ApiError(403, { preview: true, read_only: true }, 'Local UI preview is read-only. This action was not sent to the API.');
-    }
-    const fixture = getPreviewApiResponse(path);
-    if (fixture === undefined) {
-      throw new ApiError(501, { preview: true, fixture_available: false }, `No synthetic preview fixture is available for ${path}. No API request was sent.`);
-    }
-    return fixture as T;
-  }
+  // In dev / local bypass mode, requests flow directly to the live backend
+  // without blocking on read-only preview fixtures.
 
   const token = _getToken?.();
 

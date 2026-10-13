@@ -181,13 +181,7 @@ export default function DashboardLayout({
               <ThemeToggle />
 
               {/* Organization Switcher */}
-              {!developmentBypass ? (
-                <OrganizationSwitcher />
-              ) : (
-                <div className="inline-flex items-center gap-1.5 rounded border border-[#D71921]/30 bg-[#D71921]/10 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-[#D71921]">
-                  <Eye className="h-3 w-3" aria-hidden="true" /> PREVIEW
-                </div>
-              )}
+              <OrganizationSwitcher />
 
               {/* Notifications & Approvals */}
               <NotificationsCenter />
@@ -262,14 +256,6 @@ export default function DashboardLayout({
 
           {/* Page main content */}
           <main id="main-content" className="dashboard-canvas flex-1 overflow-y-auto p-4 lg:p-6" role="main">
-            {developmentBypass && (
-              <div
-                className="mb-5 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-200/90"
-                role="status"
-              >
-                Synthetic preview data · all dashboard pages show local sample records, not live data. Preview is read-only; writes are blocked and no API requests are sent.
-              </div>
-            )}
             {children}
           </main>
         </div>

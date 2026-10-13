@@ -13,10 +13,8 @@ import { useActivityStream } from '@/hooks/useActivityStream';
 
 export default function ControlRoomPage() {
   const qc = useQueryClient();
-  const { activeCompany, user } = useAuthStore();
-  const developmentBypass = isDevelopmentAuthBypassEnabled();
-  const displayCompany = developmentBypass ? PREVIEW_COMPANY : activeCompany;
-  const companyId = displayCompany?.id;
+  const { activeCompany, user, setActiveCompany } = useAuthStore();
+  const companyId = activeCompany?.id;
 
   // Load companies if none active
   const { data: companies = [] } = useQuery({
@@ -25,6 +23,11 @@ export default function ControlRoomPage() {
     enabled: !companyId,
     staleTime: 30_000,
   });
+
+  // Automatically activate first available organization if none selected
+  if (!companyId && companies.length > 0) {
+    setActiveCompany(companies[0]);
+  }
 
   // Load full operational state
   const {
@@ -35,13 +38,13 @@ export default function ControlRoomPage() {
   } = useQuery<ControlRoomState>({
     queryKey: ['control-room-state', companyId],
     queryFn: () => controlRoomApi.getOperationalState(companyId!),
-    enabled: !!companyId && !developmentBypass,
+    enabled: !!companyId,
     staleTime: 15_000,
     refetchInterval: 30_000,
   });
 
-  const state = developmentBypass ? getControlRoomPreviewState() : (fetchedState ?? null);
-  const isLoading = !developmentBypass && queryLoading && !state;
+  const state = fetchedState ?? null;
+  const isLoading = queryLoading && !state;
 
   // Live activity stream (WebSocket → SSE → polling fallback)
   const live = useActivityStream(companyId, state?.activity ?? []);
