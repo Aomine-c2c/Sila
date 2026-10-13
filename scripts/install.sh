@@ -22,7 +22,56 @@ echo "================================================================="
 echo "   NEIMAN Autonomous Organization OS — System Installation       "
 echo "================================================================="
 
+SKIP_BUILD=0
+RESET_DB=0
+API_PORT="8000"
+WEB_PORT="3000"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --skip-build)
+            SKIP_BUILD=1
+            shift
+            ;;
+        --reset-db|--clean|-c)
+            RESET_DB=1
+            shift
+            ;;
+        --api-port)
+            API_PORT="$2"
+            shift 2
+            ;;
+        --web-port)
+            WEB_PORT="$2"
+            shift 2
+            ;;
+        --update)
+            # Accepted for compatibility with neiman-update
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: $0 [options]"
+            echo ""
+            echo "Options:"
+            echo "  --skip-build       Skip compiling desktop binaries and frontend bundles"
+            echo "  --reset-db, -c     Wipe existing local database and start with clean migrations"
+            echo "  --api-port PORT    Configure API backend port (default: 8000)"
+            echo "  --web-port PORT    Configure Web frontend port (default: 3000)"
+            echo "  -h, --help         Show this help message"
+            exit 0
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
 mkdir -p "${BIN_DIR}" "${APPS_DIR}" "${ICONS_DIR}" "${DATA_DIR}"
+
+if [ "${RESET_DB}" -eq 1 ]; then
+    echo "[*] Database reset requested: cleaning up old database files..."
+    rm -f "${DATA_DIR}/production.db"* "${REPO_DIR}/apps/api/NEIMAN.db"* "${REPO_DIR}/apps/api/nexora.db"* 2>/dev/null || true
+fi
 
 # 0. Ensure environment and dependencies are ready
 echo "[*] Setting up API environment and dependencies..."
@@ -38,21 +87,23 @@ echo "[*] Ensuring local database schema is migrated..."
 if command -v uv >/dev/null 2>&1; then
     uv run alembic upgrade head
 fi
+cd "${REPO_DIR}"
 
 echo "[*] Ensuring Web frontend dependencies are installed..."
 cd "${REPO_DIR}/apps/web"
 if [ ! -f .env.local ]; then
     echo "NEXT_PUBLIC_NEIMAN_DEV_AUTH_BYPASS=true" > .env.local
-    echo "NEXT_PUBLIC_API_URL=http://localhost:8000" >> .env.local
+    echo "NEXT_PUBLIC_API_URL=http://localhost:${API_PORT}" >> .env.local
 fi
 if [ ! -d "node_modules" ]; then
     npm install --prefer-offline --no-fund
     npm audit fix --prefer-offline 2>/dev/null || true
 fi
+cd "${REPO_DIR}"
 
-# Build desktop binary if not already compiled
+# Build desktop binary if not already compiled and not skipped
 STANDALONE_BIN="${REPO_DIR}/apps/web/src-tauri/target/release/app"
-if [ ! -f "${STANDALONE_BIN}" ]; then
+if [ "${SKIP_BUILD}" -eq 0 ] && [ ! -f "${STANDALONE_BIN}" ]; then
     echo "[*] Compiling NEIMAN desktop application binary (this takes ~1-2 min on initial install)..."
     cd "${REPO_DIR}/apps/web"
     rm -rf .next
