@@ -2,7 +2,7 @@
 
 import uuid
 
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.domains.blueprints.catalog import SYSTEM_BLUEPRINTS

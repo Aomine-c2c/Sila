@@ -220,7 +220,7 @@ class BlueprintService:
             approval_rules=data.get("approval_rules", []),
             default_autonomy=data.get("default_autonomy", 3),
             escalation_rules=data.get("escalation_rules", []),
-            estimated_monthly_cost_usd=data.get("estimated_monthly_cost_usd", 200.0),
+            estimated_monthly_cost_usd=data.get("estimated_monthly_cost_usd", 0.0),
             metadata_tags=data.get("metadata_tags", ["imported"]),
         )
 
@@ -356,10 +356,11 @@ class BlueprintService:
                 },
                 status=AgentStatus.AVAILABLE,
                 intelligence_config=a.get(
-                    "intelligence_config", {"model": "gpt-4o", "temperature": 0.2}
+                    "intelligence_config",
+                    {"routing_strategy": "AUTO_DYNAMIC", "tier": "REASONING"},
                 ),
                 resource_limits=a.get(
-                    "resource_limits", {"max_tokens_per_call": 8192, "max_daily_budget_usd": 15.0}
+                    "resource_limits", {"unlimited_context": True}
                 ),
             )
             created_agents.append(agent)
@@ -480,32 +481,37 @@ class BlueprintService:
         bp_agents = [
             {
                 "name": a.name,
-                "role_title": "Staff Member",
+                "role_title": a.role_title or "Staff Member",
                 "department_name": dept_lookup.get(a.department_id, "General Operations"),
                 "system_instructions": a.system_instructions or "",
                 "responsibilities": a.responsibilities or [],
                 "capabilities": a.capabilities or [],
                 "tools": a.tools or [],
-                "autonomy_level": 3,
+                "autonomy_level": getattr(a, "autonomy_level", 3) or 3,
                 "intelligence_config": a.intelligence_config or {},
                 "resource_limits": a.resource_limits or {},
             }
             for a in agents
         ]
 
-        bp_constitution = {}
+        if not departments and not roles and not agents:
+            raise BusinessRuleError(
+                "Cannot save company as template: no departments, roles, or agents found."
+            )
+
+        bp_constitution: dict[str, Any] = {}
         if constitution:
             bp_constitution = {
-                "mission": constitution.mission,
-                "values": constitution.values,
-                "operating_principles": constitution.operating_principles,
-                "prohibited_actions": constitution.prohibited_actions,
-                "approval_requirements": constitution.approval_requirements,
-                "security_rules": constitution.security_rules,
-                "financial_rules": constitution.financial_rules,
-                "data_rules": constitution.data_rules,
-                "autonomy_boundaries": constitution.autonomy_boundaries,
-                "escalation_rules": constitution.escalation_rules,
+                "mission": constitution.mission or "",
+                "values": constitution.values or [],
+                "operating_principles": constitution.operating_principles or [],
+                "prohibited_actions": constitution.prohibited_actions or [],
+                "approval_requirements": constitution.approval_requirements or [],
+                "security_rules": constitution.security_rules or [],
+                "financial_rules": constitution.financial_rules or [],
+                "data_rules": constitution.data_rules or [],
+                "autonomy_boundaries": constitution.autonomy_boundaries or {},
+                "escalation_rules": constitution.escalation_rules or [],
             }
 
         return await self.repo.create_blueprint(
