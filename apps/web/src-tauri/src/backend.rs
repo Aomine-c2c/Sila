@@ -168,7 +168,7 @@ impl BackendSupervisor {
                 // Wait up to 15 seconds for backend to become healthy
                 let start = Instant::now();
                 while start.elapsed() < Duration::from_secs(15) {
-                    if Self::is_backend_healthy(api_url) {
+                    if Self::is_backend_healthy(api_url, port) {
                         log::info!("Backend verified healthy in {:.2}s", start.elapsed().as_secs_f32());
                         return Ok(());
                     }
