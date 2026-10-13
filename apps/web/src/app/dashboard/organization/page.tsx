@@ -6,8 +6,6 @@ import { Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useAuthStore } from '@/store/auth';
 import { controlRoomApi, type ControlRoomState } from '@/lib/api/controlRoom';
-import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
-import { PREVIEW_COMPANY } from '@/lib/api/controlRoomPreview';
 
 const OrganizationalGraph = dynamic(
   () => import('@/components/OrganizationalGraph').then((mod) => mod.OrganizationalGraph),
@@ -24,9 +22,7 @@ const OrganizationalGraph = dynamic(
 
 export default function OrganizationMapPage() {
   const { activeCompany } = useAuthStore();
-  const developmentBypass = isDevelopmentAuthBypassEnabled();
-  const displayCompany = developmentBypass ? PREVIEW_COMPANY : activeCompany;
-  const companyId = displayCompany?.id;
+  const companyId = activeCompany?.id;
 
   const { data: state, isLoading } = useQuery<ControlRoomState>({
     queryKey: ['control-room-state', companyId],
@@ -34,6 +30,14 @@ export default function OrganizationMapPage() {
     enabled: !!companyId,
     staleTime: 15_000,
   });
+
+  if (!activeCompany) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 text-muted-foreground">
+        <p className="text-sm font-mono">No active organization selected. Please select or create an organization first.</p>
+      </div>
+    );
+  }
 
   if (isLoading || !state) {
     return (
@@ -47,8 +51,8 @@ export default function OrganizationMapPage() {
   return (
     <div className="animate-fade-in space-y-4 max-w-7xl mx-auto">
       <OrganizationalGraph
-        companyName={displayCompany!.name}
-        companyStatus={displayCompany!.status}
+        companyName={activeCompany.name}
+        companyStatus={activeCompany.status}
         departments={state.departments}
         agents={state.agents}
         projects={state.projects}
