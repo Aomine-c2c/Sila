@@ -637,7 +637,7 @@ export default function AdminSettingsPage() {
               {activeSection === 'ai-providers' && (
                 <div className="space-y-5 text-xs font-mono">
                   <div className="p-3.5 rounded-xl bg-secondary/20 border border-border text-muted-foreground">
-                    <strong className="text-foreground">Credential Security:</strong> Keys are stored in the local <code className="text-primary">.env</code> file only. They are never sent to external services beyond the provider's own API endpoint. Only masked fingerprints are shown after entry.
+                    <strong className="text-foreground">Credential Security:</strong> Keys are stored in the local <code className="text-primary">.env</code> file only. They are never sent to external services beyond the provider&apos;s own API endpoint. Only masked fingerprints are shown after entry.
                   </div>
 
                   {providerLoading ? (
