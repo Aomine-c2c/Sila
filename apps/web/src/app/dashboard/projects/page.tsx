@@ -287,7 +287,61 @@ export default function ProjectsPage() {
         </button>
       </div>
 
-      {/* 2. PROJECT SELECTOR */}
+      {/* 2. LOADING STATE */}
+      {isProjectsLoading && (
+        <div className="rounded-2xl border border-border bg-card p-12 text-center space-y-4 animate-pulse">
+          <Loader2 className="h-8 w-8 text-primary animate-spin mx-auto" />
+          <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
+            Loading Autonomous Initiatives & Projects...
+          </p>
+        </div>
+      )}
+
+      {/* 3. ERROR STATE */}
+      {!isProjectsLoading && error && (
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+          <div className="space-y-1 text-xs">
+            <h3 className="font-bold text-destructive">Failed to Load Projects</h3>
+            <p className="text-muted-foreground font-mono">
+              {error instanceof Error ? error.message : 'An error occurred while fetching organizational initiatives.'}
+            </p>
+            <button
+              type="button"
+              onClick={() => qc.invalidateQueries({ queryKey: ['projects', companyId] })}
+              className="btn btn-outline text-[11px] font-mono mt-2"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 4. ZERO-STATE (EMPTY) CALL TO ACTION */}
+      {!isProjectsLoading && !error && projects.length === 0 && (
+        <div className="rounded-2xl border border-border bg-card p-12 text-center space-y-6">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary">
+            <FolderKanban className="h-8 w-8" />
+          </div>
+          <div className="space-y-2 max-w-md mx-auto">
+            <h2 className="text-lg font-bold text-foreground">No Autonomous Initiatives Yet</h2>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Create your organization&apos;s first autonomous initiative to allocate agent swarms, track milestones, and orchestrate execution roadmaps.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary gap-2 text-xs"
+            onClick={() => setShowCreate(true)}
+            disabled={!companyId}
+          >
+            <Plus className="h-4 w-4" />
+            <span>Create First Initiative</span>
+          </button>
+        </div>
+      )}
+
+      {/* 5. PROJECT SELECTOR */}
       {projects.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-4 p-3 rounded-2xl border border-border bg-card">
           <div className="flex items-center gap-3">
@@ -313,7 +367,7 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {/* 3. PROJECT OVERVIEW CARD (IF ACTIVE PROJECT EXISTS) */}
+      {/* 6. PROJECT OVERVIEW CARD (IF ACTIVE PROJECT EXISTS) */}
       {activeProject && (
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
           {/* Top Row: Objective, Status, Progress, Owner, Deadline */}

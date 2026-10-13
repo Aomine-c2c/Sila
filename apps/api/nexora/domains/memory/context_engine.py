@@ -116,24 +116,48 @@ class ContextAssemblyEngine:
         cls,
         request: ContextAssemblyRequest,
         candidate_memories: list[MemoryItem],
+        company_id: str | None = None,
     ) -> ContextAssemblyResponse:
         """
         Executes full context assembly:
         1. Filters by authorization
-        2. Scores and ranks by task relevance
+        2. Scores and ranks by task relevance (incorporating LanceDB semantic vector distance when available)
         3. Formulates minimal, clean, non-leaking prompt segment
         """
         required_domains = cls.identify_required_domains(
             request.task_objective, request.target_domains
         )
 
+        # Retrieve LanceDB semantic matches if company_id is provided
+        vector_scores: dict[str, float] = {}
+        if company_id:
+            try:
+                from nexora.domains.memory.vector_store import LanceVectorStore
+                vs = LanceVectorStore.get_instance()
+                matches = vs.search_hybrid(
+                    company_id=str(company_id),
+                    query=request.task_objective,
+                    target_domains=required_domains,
+                    limit=request.max_items * 2,
+                )
+                for m in matches:
+                    m_id = str(m.get("id"))
+                    # Convert distance to bonus score (lower distance = higher score)
+                    dist = float(m.get("_distance", 1.0))
+                    bonus = max(0.0, (1.0 - dist) * 10.0)
+                    vector_scores[m_id] = bonus
+            except Exception:
+                pass
+
         # 1. Filter by domain and authorization
         authorized = []
         for mem in candidate_memories:
             if mem.domain in required_domains:
                 if cls.is_authorized(mem, request.caller_role, request.caller_permissions):
-                    score = cls.calculate_relevance(mem, request.task_objective)
-                    authorized.append((score, mem))
+                    base_score = cls.calculate_relevance(mem, request.task_objective)
+                    semantic_bonus = vector_scores.get(str(mem.id), 0.0)
+                    total_score = round(base_score + semantic_bonus, 2)
+                    authorized.append((total_score, mem))
 
         # 2. Sort by relevance descending
         authorized.sort(key=lambda x: x[0], reverse=True)

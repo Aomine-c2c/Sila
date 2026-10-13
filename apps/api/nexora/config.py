@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./NEIMAN.db"
     TEST_DATABASE_URL: str = "sqlite+aiosqlite:///:memory:"
+    VECTOR_DB_PATH: str = "./.vectors_lancedb"
 
     # Security
     SECRET_KEY: str = "change-me-in-production"
