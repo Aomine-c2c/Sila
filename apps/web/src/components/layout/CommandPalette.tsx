@@ -367,10 +367,10 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
   }, [isOpen]);
 
   // Check RBAC permission for a command
-  const isPermitted = (cmd: PaletteCommand) => {
+  const isPermitted = useCallback((cmd: PaletteCommand) => {
     if (!cmd.requiredRole) return true;
     return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[cmd.requiredRole];
-  };
+  }, [userRole]);
 
   // Filter commands by query and natural language matches
   const filtered = useMemo(() => {
@@ -386,7 +386,7 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
     });
   }, [query]);
 
-  const handleSelect = (item: PaletteCommand) => {
+  const handleSelect = useCallback((item: PaletteCommand) => {
     if (!isPermitted(item)) {
       setActiveFeedback(`Permission Denied: Command requires ${item.requiredRole} role.`);
       setTimeout(() => setActiveFeedback(null), 3000);
@@ -406,7 +406,7 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
     if (item.href) {
       router.push(item.href);
     }
-  };
+  }, [isPermitted, onClose, router]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -432,7 +432,7 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, filtered, selectedIndex, onClose]);
+  }, [isOpen, filtered, selectedIndex, onClose, handleSelect]);
 
   if (!isOpen) return null;
 

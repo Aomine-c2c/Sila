@@ -18,8 +18,11 @@ export function useActivityStream(
   const wsRef = useRef<WebSocket | null>(null);
   const sseRef = useRef<EventSource | null>(null);
 
+  const initialEventsRef = useRef(initialEvents);
+  initialEventsRef.current = initialEvents;
+
   useEffect(() => {
-    setEvents(initialEvents);
+    setEvents(initialEventsRef.current);
   }, [companyId]);
 
   useEffect(() => {

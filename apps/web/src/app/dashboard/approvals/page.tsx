@@ -172,7 +172,7 @@ export default function ApprovalCenterPage() {
 
   // Helper to infer or extract the 8 required fields:
   // WHAT, WHO, WHY, RISK, RESOURCES, EVIDENCE, EXPECTED RESULT, PROPOSED ACTION
-  const enrichApprovalItem = (req: ApprovalRequest) => {
+  const enrichApprovalItem = useCallback((req: ApprovalRequest) => {
     const payload = req.proposed_payload || {};
     const agent = agents.find((a) => a.id === req.agent_id);
 
@@ -229,7 +229,7 @@ export default function ApprovalCenterPage() {
       proposedAction,
       category,
     };
-  };
+  }, [agents]);
 
   // Filtered pending list
   const activePendingList = useMemo(() => {
@@ -244,7 +244,7 @@ export default function ApprovalCenterPage() {
         item.action.toLowerCase().includes(q);
       return matchesFilter && matchesSearch;
     });
-  }, [pendingRequests, activeFilter, searchQuery, agents]);
+  }, [pendingRequests, activeFilter, searchQuery, enrichApprovalItem]);
 
   // Filtered history list
   const activeHistoryList = useMemo(() => {
@@ -261,7 +261,7 @@ export default function ApprovalCenterPage() {
           item.why.toLowerCase().includes(q);
         return matchesFilter && matchesSearch;
       });
-  }, [allHistoricalRequests, activeFilter, searchQuery, agents]);
+  }, [allHistoricalRequests, activeFilter, searchQuery, enrichApprovalItem]);
 
   const handleOpenAction = (request: ApprovalRequest, action: ApprovalActionType) => {
     setActionDialog({ request, action });
