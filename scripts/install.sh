@@ -138,6 +138,7 @@ uv run alembic upgrade head
 echo "[*] Rebuilding production frontend bundle..."
 cd "${REPO_DIR}/apps/web"
 npm install --prefer-offline
+rm -rf .next
 npm run build
 
 echo "[*] Rebuilding desktop binary..."
