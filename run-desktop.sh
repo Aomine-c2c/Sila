@@ -58,6 +58,22 @@ mkdir -p "${DATA_DIR}"
 DB_FILE="${DATA_DIR}/production.db"
 export DATABASE_URL="sqlite+aiosqlite:///${DB_FILE}"
 
+# Quick non-blocking update check in background
+(
+    cd "${ROOT_DIR}"
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        git fetch origin --quiet 2>/dev/null || true
+        LOCAL_HEAD="$(git rev-parse HEAD 2>/dev/null || true)"
+        REMOTE_HEAD="$(git rev-parse origin/main 2>/dev/null || true)"
+        if [ -n "${LOCAL_HEAD}" ] && [ -n "${REMOTE_HEAD}" ] && [ "${LOCAL_HEAD}" != "${REMOTE_HEAD}" ]; then
+            echo ""
+            echo " [i] A new NEIMAN update is available on GitHub."
+            echo "     Run 'neiman-update' to install the latest version."
+            echo ""
+        fi
+    fi
+) &
+
 echo "================================================================="
 echo "   NEIMAN — Autonomous Organization OS (Desktop Host)            "
 echo "================================================================="

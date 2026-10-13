@@ -49,6 +49,15 @@ if [ ! -d "node_modules" ]; then
     npm install --prefer-offline
 fi
 
+# Build desktop binary if not already compiled
+STANDALONE_BIN="${REPO_DIR}/apps/web/src-tauri/target/release/app"
+if [ ! -f "${STANDALONE_BIN}" ]; then
+    echo "[*] Compiling NEIMAN desktop application binary (this takes ~1-2 min on initial install)..."
+    rm -rf .next
+    npm run build
+    npx tauri build --no-bundle
+fi
+
 cd "${REPO_DIR}"
 
 # 1. Install Icons
