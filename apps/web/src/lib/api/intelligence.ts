@@ -10,11 +10,33 @@ export interface ModelProvider {
   display_name: string;
   description?: string | null;
   website_url?: string | null;
+  base_url?: string | null;
+  is_configured: boolean;
+  api_key_masked?: string | null;
   is_local: boolean;
   is_active: boolean;
   is_healthy: boolean;
   consecutive_failures: number;
+  last_health_check_at?: string | null;
   created_at: string;
+}
+
+export interface ProviderConfigureRequest {
+  api_key?: string;
+  base_url?: string;
+  auto_discover?: boolean;
+}
+
+export interface ProviderConfigureResponse {
+  provider_name: string;
+  display_name: string;
+  is_configured: boolean;
+  is_healthy: boolean;
+  base_url?: string | null;
+  api_key_masked?: string | null;
+  discovered_models_count: number;
+  models: string[];
+  message: string;
 }
 
 export interface Model {
@@ -199,6 +221,16 @@ export const intelligenceApi = {
     api.post<ProviderProbeResponse>(
       `/api/v1/companies/${companyId}/intelligence/providers/${providerName}/probe`,
       body || {}
+    ),
+
+  configureProvider: (
+    companyId: string,
+    providerName: string,
+    body: ProviderConfigureRequest
+  ): Promise<ProviderConfigureResponse> =>
+    api.post<ProviderConfigureResponse>(
+      `/api/v1/companies/${companyId}/intelligence/providers/${providerName}/configure`,
+      body
     ),
 
   generate: (companyId: string, body: GenerateRequest): Promise<GenerateResponse> =>

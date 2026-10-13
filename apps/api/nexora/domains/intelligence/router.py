@@ -20,6 +20,8 @@ from nexora.domains.intelligence.schemas import (
     ModelResponsePayload,
     ModelRoutingPolicyResponse,
     ModelRoutingPolicyUpdate,
+    ProviderConfigureRequest,
+    ProviderConfigureResponse,
     ProviderProbeRequest,
     ProviderProbeResponse,
 )
@@ -116,6 +118,26 @@ async def add_provider(
 ):
     """Register a new AI provider (e.g. self-hosted cluster or newly released vendor)."""
     return await IntelligenceService(db).add_provider(body)
+
+
+@router.post(
+    "/providers/{provider_name}/configure",
+    response_model=ProviderConfigureResponse,
+)
+async def configure_provider(
+    company_id: uuid.UUID,
+    provider_name: str,
+    body: ProviderConfigureRequest,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_admin()),
+):
+    """
+    Configure a provider's API key (stored encrypted in the vault) or base URL endpoint.
+    Automatically queries the provider to discover and register available models.
+    """
+    return await IntelligenceService(db).configure_provider(provider_name, body)
+
 
 
 @router.get("/models", response_model=list[ModelResponse])

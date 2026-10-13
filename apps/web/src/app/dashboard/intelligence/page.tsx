@@ -139,6 +139,8 @@ export default function IntelligenceExchangePage() {
       display_name: string;
       description?: string;
       website_url?: string;
+      base_url?: string;
+      api_key?: string;
       is_local?: boolean;
     }) => intelligenceApi.createProvider(companyId, data),
     onSuccess: () => {
@@ -146,6 +148,17 @@ export default function IntelligenceExchangePage() {
       refetch();
     },
   });
+
+  // Mutation: Configure Provider (Vault & Discovery)
+  const configureProviderMutation = useMutation({
+    mutationFn: (args: { providerName: string; req: any }) =>
+      intelligenceApi.configureProvider(companyId, args.providerName, args.req),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['intelligence-dashboard', companyId] });
+      refetch();
+    },
+  });
+
 
   const handleSimulate = (e: React.FormEvent) => {
     e.preventDefault();

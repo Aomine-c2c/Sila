@@ -13,6 +13,8 @@ class ModelProviderCreate(BaseModel):
     display_name: str = Field(min_length=2, max_length=150)
     description: str | None = None
     website_url: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
     is_local: bool = False
 
 
@@ -24,12 +26,34 @@ class ModelProviderResponse(BaseModel):
     display_name: str
     description: str | None
     website_url: str | None
+    base_url: str | None
+    is_configured: bool
+    api_key_masked: str | None = None
     is_active: bool
     is_local: bool
     is_healthy: bool
     consecutive_failures: int
     last_health_check_at: datetime | None
     created_at: datetime
+
+
+class ProviderConfigureRequest(BaseModel):
+    api_key: str | None = Field(default=None, description="API Key for the provider (will be stored encrypted in vault)")
+    base_url: str | None = Field(default=None, description="Custom endpoint URL or proxy link")
+    auto_discover: bool = Field(default=True, description="Query provider endpoint to auto-discover models")
+
+
+class ProviderConfigureResponse(BaseModel):
+    provider_name: str
+    display_name: str
+    is_configured: bool
+    is_healthy: bool
+    base_url: str | None
+    api_key_masked: str | None
+    discovered_models_count: int
+    models: list[str] = Field(default_factory=list)
+    message: str
+
 
 
 class ModelCreate(BaseModel):

@@ -36,122 +36,63 @@ class IntelligenceService:
         self.router = IntelligenceRouter(db)
 
     async def seed_default_providers_if_empty(self) -> None:
-        """Seed initial models for Google Gemini, Anthropic Claude, OpenAI, and Local."""
-        count = await self.db.scalar(select(func.count(ModelProvider.id)))
-        if count and count > 0:
-            return
+        """Seed the full universal AI provider catalog if empty or missing entries."""
+        from nexora.domains.intelligence.catalog import UNIVERSAL_PROVIDER_CATALOG
 
-        # 1. OpenAI
-        p_openai = ModelProvider(
-            name="openai",
-            display_name="OpenAI",
-            description="Frontier LLMs (GPT-4o, o1, o3-mini)",
-            website_url="https://openai.com",
-            is_healthy=True,
-        )
-        self.db.add(p_openai)
-        await self.db.flush()
+        result = await self.db.execute(select(ModelProvider))
+        existing_providers = {p.name: p for p in result.scalars().all()}
 
-        m_gpt4o = Model(
-            provider_id=p_openai.id,
-            model_identifier="gpt-4o",
-            display_name="GPT-4o",
-            capabilities=["reasoning", "code_generation", "vision", "agentic", "text"],
-            context_capacity=128000,
-            input_cost_per_million=2.50,
-            output_cost_per_million=10.00,
-            avg_latency_ms=450.0,
-            privacy_classification="PUBLIC_CLOUD",
-        )
-        self.db.add(m_gpt4o)
+        for item in UNIVERSAL_PROVIDER_CATALOG:
+            if item["name"] not in existing_providers:
+                p = ModelProvider(
+                    name=item["name"],
+                    display_name=item["display_name"],
+                    description=item.get("description"),
+                    website_url=item.get("website_url"),
+                    base_url=item.get("base_url"),
+                    is_local=item.get("is_local", False),
+                    is_configured=False,
+                    is_healthy=False,
+                )
+                self.db.add(p)
+                existing_providers[item["name"]] = p
 
-        # 2. Anthropic
-        p_anthropic = ModelProvider(
-            name="anthropic",
-            display_name="Anthropic",
-            description="Claude family of safety and reasoning models",
-            website_url="https://anthropic.com",
-            is_healthy=True,
-        )
-        self.db.add(p_anthropic)
-        await self.db.flush()
-
-        m_claude = Model(
-            provider_id=p_anthropic.id,
-            model_identifier="claude-3-5-sonnet",
-            display_name="Claude 3.5 Sonnet",
-            capabilities=[
-                "reasoning",
-                "architectural_reasoning",
-                "code_generation",
-                "analysis",
-                "text",
-            ],
-            context_capacity=200000,
-            input_cost_per_million=3.00,
-            output_cost_per_million=15.00,
-            avg_latency_ms=620.0,
-            privacy_classification="PUBLIC_CLOUD",
-        )
-        self.db.add(m_claude)
-
-        # 3. Google Gemini
-        p_gemini = ModelProvider(
-            name="google_gemini",
-            display_name="Google Gemini",
-            description="Multimodal frontier intelligence with massive 2M+ context windows",
-            website_url="https://ai.google.dev",
-            is_healthy=True,
-        )
-        self.db.add(p_gemini)
-        await self.db.flush()
-
-        m_gemini = Model(
-            provider_id=p_gemini.id,
-            model_identifier="gemini-1.5-pro",
-            display_name="Gemini 1.5 Pro",
-            capabilities=["reasoning", "large_context", "multimodal", "analysis", "text"],
-            context_capacity=2000000,
-            input_cost_per_million=1.25,
-            output_cost_per_million=5.00,
-            avg_latency_ms=380.0,
-            privacy_classification="PUBLIC_CLOUD",
-        )
-        self.db.add(m_gemini)
-
-        # 4. Local / Self-hosted
-        p_local = ModelProvider(
-            name="local",
-            display_name="Local / Air-Gapped",
-            description="On-premise zero-retention self-hosted models (DeepSeek-R1, Llama 3)",
-            is_local=True,
-            is_healthy=True,
-        )
-        self.db.add(p_local)
-        await self.db.flush()
-
-        m_deepseek = Model(
-            provider_id=p_local.id,
-            model_identifier="local-deepseek-r1",
-            display_name="DeepSeek-R1 Local",
-            capabilities=["reasoning", "code_generation", "privacy", "text"],
-            context_capacity=64000,
-            input_cost_per_million=0.0,
-            output_cost_per_million=0.0,
-            avg_latency_ms=750.0,
-            privacy_classification="ON_PREMISE_ZERO_RETENTION",
-        )
-        self.db.add(m_deepseek)
         await self.db.flush()
 
     # ── Providers & Models CRUD ────────────────────────────────────────────────
 
-    async def list_providers(self) -> list[ModelProvider]:
+    async def list_providers(self) -> list[ModelProviderResponse]:
         await self.seed_default_providers_if_empty()
+        from nexora.core.crypto import decrypt_secret, mask_secret
+
         result = await self.db.execute(
-            select(ModelProvider).where(ModelProvider.is_active.is_(True))
+            select(ModelProvider).where(ModelProvider.is_active.is_(True)).order_by(ModelProvider.display_name)
         )
-        return list(result.scalars().all())
+        providers = list(result.scalars().all())
+
+        responses = []
+        for p in providers:
+            plain_key = decrypt_secret(p.api_key_encrypted) if p.api_key_encrypted else None
+            masked = mask_secret(plain_key)
+            responses.append(
+                ModelProviderResponse(
+                    id=p.id,
+                    name=p.name,
+                    display_name=p.display_name,
+                    description=p.description,
+                    website_url=p.website_url,
+                    base_url=p.base_url,
+                    is_configured=p.is_configured,
+                    api_key_masked=masked,
+                    is_active=p.is_active,
+                    is_local=p.is_local,
+                    is_healthy=p.is_healthy,
+                    consecutive_failures=p.consecutive_failures,
+                    last_health_check_at=p.last_health_check_at,
+                    created_at=p.created_at,
+                )
+            )
+        return responses
 
     async def list_models(self) -> list[Model]:
         await self.seed_default_providers_if_empty()
@@ -159,11 +100,110 @@ class IntelligenceService:
         return list(result.scalars().all())
 
     async def add_provider(self, data: ModelProviderCreate) -> ModelProvider:
-        p = ModelProvider(**data.model_dump())
+        from nexora.core.crypto import encrypt_secret
+        enc_key = encrypt_secret(data.api_key) if data.api_key else None
+        p = ModelProvider(
+            name=data.name,
+            display_name=data.display_name,
+            description=data.description,
+            website_url=data.website_url,
+            base_url=data.base_url,
+            api_key_encrypted=enc_key,
+            is_configured=bool(data.api_key or (data.base_url and data.is_local)),
+            is_local=data.is_local,
+            is_healthy=bool(data.api_key or data.is_local),
+        )
         self.db.add(p)
         await self.db.flush()
         await self.db.refresh(p)
         return p
+
+    async def configure_provider(
+        self, provider_name: str, config: "ProviderConfigureRequest"
+    ) -> "ProviderConfigureResponse":
+        """
+        Configure a provider's API key and/or base URL in the encrypted vault,
+        and optionally auto-discover available models.
+        """
+        from nexora.core.crypto import encrypt_secret, mask_secret
+        from nexora.domains.intelligence.discovery import fetch_provider_models
+        from nexora.domains.intelligence.schemas import ProviderConfigureResponse
+
+        result = await self.db.execute(
+            select(ModelProvider).where(ModelProvider.name == provider_name)
+        )
+        provider = result.scalars().first()
+        if not provider:
+            raise NotFoundError(f"Provider '{provider_name}' not found.")
+
+        # Update base URL if provided
+        if config.base_url is not None:
+            provider.base_url = config.base_url.strip() or None
+
+        # Update API key if provided
+        plain_key = None
+        if config.api_key is not None:
+            plain_key = config.api_key.strip() or None
+            provider.api_key_encrypted = encrypt_secret(plain_key)
+
+        provider.is_configured = bool(provider.api_key_encrypted or (provider.base_url and provider.is_local))
+        provider.is_healthy = provider.is_configured
+        provider.consecutive_failures = 0
+        await self.db.flush()
+
+        discovered_count = 0
+        discovered_model_ids: list[str] = []
+
+        if config.auto_discover and (plain_key or provider.base_url):
+            discovered = await fetch_provider_models(
+                provider_name=provider.name,
+                base_url=provider.base_url,
+                api_key=plain_key,
+            )
+            # Upsert discovered models
+            for item in discovered:
+                m_ident = item["model_identifier"]
+                discovered_model_ids.append(m_ident)
+                q_existing = await self.db.execute(
+                    select(Model).where(
+                        Model.provider_id == provider.id,
+                        Model.model_identifier == m_ident,
+                    )
+                )
+                m = q_existing.scalars().first()
+                if not m:
+                    m = Model(
+                        provider_id=provider.id,
+                        model_identifier=m_ident,
+                        display_name=item["display_name"],
+                        capabilities=item["capabilities"],
+                        context_capacity=item["context_capacity"],
+                        input_cost_per_million=item["input_cost_per_million"],
+                        output_cost_per_million=item["output_cost_per_million"],
+                        privacy_classification=item["privacy_classification"],
+                    )
+                    self.db.add(m)
+                discovered_count += 1
+
+            await self.db.flush()
+
+        # Update dynamic adapter in registry
+        from nexora.domains.intelligence.adapters.base import GenericOpenAICompatibleAdapter
+        self.router.registry.register(
+            GenericOpenAICompatibleAdapter(provider_name=provider.name, base_url=provider.base_url)
+        )
+
+        return ProviderConfigureResponse(
+            provider_name=provider.name,
+            display_name=provider.display_name,
+            is_configured=provider.is_configured,
+            is_healthy=provider.is_healthy,
+            base_url=provider.base_url,
+            api_key_masked=mask_secret(plain_key),
+            discovered_models_count=discovered_count,
+            models=discovered_model_ids[:20],
+            message=f"Provider '{provider.display_name}' configured successfully. Discovered {discovered_count} models.",
+        )
 
     async def add_model(self, data: ModelCreate) -> Model:
         provider = await self.db.get(ModelProvider, data.provider_id)

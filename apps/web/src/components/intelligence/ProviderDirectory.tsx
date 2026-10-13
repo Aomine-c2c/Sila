@@ -16,8 +16,20 @@ import {
   Radio,
   ExternalLink,
   Sliders,
+  Key,
+  Lock,
+  Search,
+  Sparkles,
+  Link as LinkIcon,
 } from 'lucide-react';
-import { ModelProvider, Model, ProviderProbeRequest, ProviderProbeResponse } from '@/lib/api/intelligence';
+import {
+  ModelProvider,
+  Model,
+  ProviderProbeRequest,
+  ProviderProbeResponse,
+  ProviderConfigureRequest,
+  ProviderConfigureResponse,
+} from '@/lib/api/intelligence';
 
 interface ProviderDirectoryProps {
   providers: ModelProvider[];
@@ -25,11 +37,18 @@ interface ProviderDirectoryProps {
   onResetBreakers?: () => void;
   isResetting?: boolean;
   onProbeProvider?: (providerName: string, req?: ProviderProbeRequest) => Promise<ProviderProbeResponse | void>;
+  onConfigureProvider?: (
+    providerName: string,
+    req: ProviderConfigureRequest
+  ) => Promise<ProviderConfigureResponse | void>;
+  isConfiguring?: boolean;
   onAddProvider?: (data: {
     name: string;
     display_name: string;
     description?: string;
     website_url?: string;
+    base_url?: string;
+    api_key?: string;
     is_local?: boolean;
   }) => Promise<void>;
   isAddingProvider?: boolean;
@@ -41,129 +60,63 @@ export function ProviderDirectory({
   onResetBreakers,
   isResetting,
   onProbeProvider,
+  onConfigureProvider,
+  isConfiguring,
   onAddProvider,
   isAddingProvider,
 }: ProviderDirectoryProps) {
   const [probingProvider, setProbingProvider] = useState<string | null>(null);
   const [probeResults, setProbeResults] = useState<Record<string, ProviderProbeResponse>>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<'ALL' | 'CONFIGURED' | 'UNCONFIGURED' | 'LOCAL'>('ALL');
+
+  // Vault / Configure Modal state
+  const [configTargetProvider, setConfigTargetProvider] = useState<ModelProvider | null>(null);
+  const [configApiKey, setConfigApiKey] = useState('');
+  const [configBaseUrl, setConfigBaseUrl] = useState('');
+  const [autoDiscover, setAutoDiscover] = useState(true);
+  const [configStatusMessage, setConfigStatusMessage] = useState<string | null>(null);
+
+  // Add Custom Provider Modal state
   const [showAddModal, setShowAddModal] = useState(false);
   const [newProviderForm, setNewProviderForm] = useState({
     name: '',
     display_name: '',
     description: '',
     website_url: '',
+    base_url: '',
+    api_key: '',
     is_local: false,
   });
 
-  const PRESETS = [
-    {
-      name: 'kilocode',
-      display_name: 'Kilo Code Gateway',
-      description: 'Universal multi-model AI coding gateway connecting frontier models with native tool use',
-      website_url: 'https://api.kilo.ai/api/gateway',
-      is_local: false,
-    },
-    {
-      name: 'ollama',
-      display_name: 'Ollama Local Host',
-      description: 'Local on-device inference runtime for open-weights models (Llama 3.3, Qwen 2.5, DeepSeek)',
-      website_url: 'http://localhost:11434',
-      is_local: true,
-    },
-    {
-      name: 'deepseek',
-      display_name: 'DeepSeek Cloud',
-      description: 'High-performance reasoning and coding foundation models (DeepSeek-V3, DeepSeek-R1)',
-      website_url: 'https://api.deepseek.com',
-      is_local: false,
-    },
-    {
-      name: 'openrouter',
-      display_name: 'OpenRouter Gateway',
-      description: 'Unified API aggregator with dynamic fallback across 100+ frontier and open-source models',
-      website_url: 'https://openrouter.ai',
-      is_local: false,
-    },
-    {
-      name: 'groq',
-      display_name: 'Groq LPU Accelerator',
-      description: 'Ultra-low latency Language Processing Unit (LPU) architecture for real-time agent loops',
-      website_url: 'https://groq.com',
-      is_local: false,
-    },
-    {
-      name: 'mistral',
-      display_name: 'Mistral AI',
-      description: 'European frontier models specialized in code completion and multilingual reasoning (Codestral)',
-      website_url: 'https://mistral.ai',
-      is_local: false,
-    },
-    {
-      name: 'together_ai',
-      display_name: 'Together AI',
-      description: 'Cloud infrastructure for open-source AI models with ultra-fast inference and fine-tuning',
-      website_url: 'https://api.together.xyz',
-      is_local: false,
-    },
-    {
-      name: 'cohere',
-      display_name: 'Cohere (Free Trial Tier)',
-      description: 'Enterprise search, reranking, and multilingual generation models (Command R+, Aya Vision) with 1,000 free calls/mo',
-      website_url: 'https://api.cohere.com/v2',
-      is_local: false,
-    },
-    {
-      name: 'cloudflare_workers_ai',
-      display_name: 'Cloudflare Workers AI (Free Tier)',
-      description: 'Global serverless GPU inference offering 10,000 neurons/day free (Llama 3.3 70B, Gemma 4, DeepSeek)',
-      website_url: 'https://api.cloudflare.com/client/v4/ai',
-      is_local: false,
-    },
-    {
-      name: 'zhipu_ai',
-      display_name: 'Zhipu AI (GLM Free Tier)',
-      description: 'Permanent free tier reasoning and multimodal models (GLM-4.7-Flash, GLM-4.6V-Flash)',
-      website_url: 'https://open.bigmodel.cn/api/paas/v4',
-      is_local: false,
-    },
-    {
-      name: 'aion_labs',
-      display_name: 'Aion Labs (Free Tier)',
-      description: 'Permanent free tier specialized for roleplay, storytelling, and reasoning (15 RPM, 20K tokens/day)',
-      website_url: 'https://api.aionlabs.ai/v1',
-      is_local: false,
-    },
-    {
-      name: 'custom_openai_compatible',
-      display_name: 'Custom OpenAI-Compatible / Free Proxy',
-      description: 'Any self-hosted or free proxy following the standard /v1/chat/completions schema',
-      website_url: 'http://localhost:8000/v1',
-      is_local: true,
-    },
-  ];
-
-  const handleApplyPreset = (preset: typeof PRESETS[0]) => {
-    setNewProviderForm({
-      name: preset.name,
-      display_name: preset.display_name,
-      description: preset.description,
-      website_url: preset.website_url,
-      is_local: preset.is_local,
-    });
+  const handleOpenConfigure = (p: ModelProvider) => {
+    setConfigTargetProvider(p);
+    setConfigApiKey('');
+    setConfigBaseUrl(p.base_url || '');
+    setAutoDiscover(true);
+    setConfigStatusMessage(null);
   };
 
-  const handleSubmitNewProvider = async (e: React.FormEvent) => {
+  const handleSaveConfiguration = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!onAddProvider || !newProviderForm.name.trim() || !newProviderForm.display_name.trim()) return;
-    await onAddProvider(newProviderForm);
-    setShowAddModal(false);
-    setNewProviderForm({
-      name: '',
-      display_name: '',
-      description: '',
-      website_url: '',
-      is_local: false,
-    });
+    if (!configTargetProvider || !onConfigureProvider) return;
+
+    try {
+      setConfigStatusMessage('Encrypting key and auto-discovering models...');
+      const res = await onConfigureProvider(configTargetProvider.name, {
+        api_key: configApiKey.trim() || undefined,
+        base_url: configBaseUrl.trim() || undefined,
+        auto_discover: autoDiscover,
+      });
+      if (res) {
+        setConfigStatusMessage(res.message);
+        setTimeout(() => {
+          setConfigTargetProvider(null);
+        }, 1200);
+      }
+    } catch (err: any) {
+      setConfigStatusMessage(`Error: ${err?.message || 'Configuration failed'}`);
+    }
   };
 
   const handleProbe = async (providerName: string, req?: ProviderProbeRequest) => {
@@ -172,38 +125,97 @@ export function ProviderDirectory({
     try {
       const res = await onProbeProvider(providerName, req);
       if (res) {
-        setProbeResults((prev) => ({
-          ...prev,
-          [providerName]: res,
-        }));
+        setProbeResults((prev) => ({ ...prev, [providerName]: res }));
       }
     } finally {
       setProbingProvider(null);
     }
   };
 
+  const filteredProviders = providers.filter((p) => {
+    const matchesSearch =
+      p.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    if (!matchesSearch) return false;
+
+    if (filterType === 'CONFIGURED') return p.is_configured;
+    if (filterType === 'UNCONFIGURED') return !p.is_configured;
+    if (filterType === 'LOCAL') return p.is_local;
+    return true;
+  });
+
+  const configuredCount = providers.filter((p) => p.is_configured).length;
+
   return (
-    <div className="space-y-6 select-none">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6">
+      {/* Controls Ribbon */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl border border-border/80 bg-card/70 backdrop-blur-md">
         <div>
-          <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Cloud className="h-4 w-4 text-primary" />
-            Active Provider Health Directory & Adapter Telemetry
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+              <Cloud className="h-4 w-4 text-primary" />
+              Universal AI Provider Directory & Key Vault
+            </h2>
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+              {configuredCount}/{providers.length} Configured
+            </span>
+          </div>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            Operational status, live latency probes, simulated fault injection, and circuit breaker resilience.
+            Configure external keys or custom endpoint links securely. Keys are stored encrypted with machine salt and never sent to clients.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Search box */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search providers..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="text-xs pl-8 pr-3 py-1.5 h-8 rounded-xl border border-border bg-background/80 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 font-mono w-44 md:w-56"
+            />
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex rounded-xl border border-border bg-background/60 p-0.5 text-[10px] font-mono">
+            <button
+              onClick={() => setFilterType('ALL')}
+              className={`px-2 py-1 rounded-lg transition-colors ${filterType === 'ALL' ? 'bg-primary text-primary-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              All ({providers.length})
+            </button>
+            <button
+              onClick={() => setFilterType('CONFIGURED')}
+              className={`px-2 py-1 rounded-lg transition-colors ${filterType === 'CONFIGURED' ? 'bg-emerald-500 text-white font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Configured ({configuredCount})
+            </button>
+            <button
+              onClick={() => setFilterType('UNCONFIGURED')}
+              className={`px-2 py-1 rounded-lg transition-colors ${filterType === 'UNCONFIGURED' ? 'bg-amber-500/20 text-amber-400 font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Available ({providers.length - configuredCount})
+            </button>
+            <button
+              onClick={() => setFilterType('LOCAL')}
+              className={`px-2 py-1 rounded-lg transition-colors ${filterType === 'LOCAL' ? 'bg-secondary text-foreground font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Local
+            </button>
+          </div>
+
           {onAddProvider && (
             <button
               type="button"
               onClick={() => setShowAddModal(true)}
-              className="btn btn-primary text-xs h-8 px-3 gap-1.5 font-mono shadow-sm"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-mono font-medium text-primary hover:bg-primary/20 transition-colors h-8"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>Add Provider</span>
+              <span>Custom Provider</span>
             </button>
           )}
 
@@ -212,7 +224,7 @@ export function ProviderDirectory({
               type="button"
               onClick={onResetBreakers}
               disabled={isResetting}
-              className="btn btn-outline text-xs h-8 px-3 gap-1.5 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 font-mono"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-mono font-medium text-amber-400 hover:bg-amber-500/20 transition-colors h-8 disabled:opacity-50"
             >
               <Shield className="h-3.5 w-3.5" />
               <span>Reset Breakers</span>
@@ -222,10 +234,11 @@ export function ProviderDirectory({
       </div>
 
       {/* Grid of Provider Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {providers.map((p) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {filteredProviders.map((p) => {
           const providerModels = models.filter((m) => m.provider_id === p.id || m.model_identifier.includes(p.name));
           const probeResult = probeResults[p.name];
+          const isConfigured = p.is_configured;
           const isHealthy = probeResult ? probeResult.is_healthy : (p.is_healthy && p.consecutive_failures === 0);
           const breakerState = probeResult ? probeResult.circuit_breaker_status : (isHealthy ? 'CLOSED' : 'OPEN');
           const consecutiveFailures = probeResult ? probeResult.consecutive_failures : p.consecutive_failures;
@@ -234,133 +247,129 @@ export function ProviderDirectory({
           return (
             <div
               key={p.id}
-              className={`rounded-2xl border p-5 bg-card/90 backdrop-blur-md shadow-lg space-y-4 transition-all hover:border-primary/40 ${!isHealthy ? 'border-rose-500/40' : 'border-border'
-                }`}
+              className={`flex flex-col justify-between rounded-2xl border p-5 bg-card/90 backdrop-blur-md shadow-md space-y-4 transition-all hover:border-primary/40 ${
+                isConfigured ? 'border-border' : 'border-dashed border-border/70 opacity-90'
+              }`}
             >
               {/* Header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-secondary text-primary">
-                    {p.is_local ? <Server className="h-4 w-4 text-emerald-400" /> : <Cloud className="h-4 w-4 text-primary" />}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-secondary text-primary">
+                      {p.is_local ? <Server className="h-4 w-4 text-emerald-400" /> : <Cloud className="h-4 w-4 text-primary" />}
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-foreground leading-tight">{p.display_name}</h3>
+                      <span className="text-[10px] font-mono text-muted-foreground">
+                        {p.is_local ? 'Local / Air-Gapped' : 'Cloud API / Gateway'}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-foreground">{p.display_name}</h3>
-                    <span className="text-[10px] font-mono text-muted-foreground">
-                      {p.is_local ? 'Air-Gapped Local' : 'Cloud API Adapter'}
+
+                  {/* Configured Status Badge */}
+                  {isConfigured ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                      <CheckCircle2 className="h-2.5 w-2.5" /> ONLINE
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-secondary/80 text-muted-foreground border border-border">
+                      <Key className="h-2.5 w-2.5" /> UNCONFIGURED
+                    </span>
+                  )}
+                </div>
+
+                {/* Description */}
+                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed h-8">
+                  {p.description || 'Enterprise intelligence adapter supporting NEIMAN capabilities.'}
+                </p>
+              </div>
+
+              {/* Vault / Endpoint details */}
+              <div className="p-2.5 rounded-xl bg-secondary/30 border border-border/40 text-[10px] font-mono space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Lock className="h-3 w-3 text-primary/70" /> Key Vault:
+                  </span>
+                  <span className="font-semibold text-foreground">
+                    {p.api_key_masked || (isConfigured && p.is_local ? 'Air-gapped (Local)' : 'None')}
+                  </span>
+                </div>
+
+                {p.base_url && (
+                  <div className="flex items-center justify-between text-muted-foreground truncate" title={p.base_url}>
+                    <span className="flex items-center gap-1 shrink-0">
+                      <LinkIcon className="h-3 w-3 text-cyan-400" /> Endpoint:
+                    </span>
+                    <span className="truncate max-w-[140px] text-foreground/80">{p.base_url}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-1 border-t border-border/30">
+                  <span className="text-muted-foreground">Models Registered:</span>
+                  <span className="font-bold text-foreground">{providerModels.length}</span>
+                </div>
+              </div>
+
+              {/* Probe / Breaker State if Configured */}
+              {isConfigured && (
+                <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
+                  <div className="bg-secondary/40 p-1.5 rounded-lg border border-border/40 flex items-center justify-between">
+                    <span className="text-muted-foreground">Errors:</span>
+                    <span className={`font-bold ${consecutiveFailures > 0 ? 'text-rose-400' : 'text-foreground'}`}>
+                      {consecutiveFailures}
+                    </span>
+                  </div>
+
+                  <div className="bg-secondary/40 p-1.5 rounded-lg border border-border/40 flex items-center justify-between">
+                    <span className="text-muted-foreground">Breaker:</span>
+                    <span className={`font-bold ${breakerState === 'CLOSED' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {breakerState}
                     </span>
                   </div>
                 </div>
+              )}
 
-                <span
-                  className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full uppercase ${isHealthy
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-rose-500/10 text-rose-400 border border-rose-500/30 animate-pulse'
-                    }`}
-                >
-                  {isHealthy ? (
-                    <>
-                      <CheckCircle2 className="h-2.5 w-2.5" /> Healthy
-                    </>
-                  ) : (
-                    <>
-                      <AlertTriangle className="h-2.5 w-2.5" /> Degraded
-                    </>
-                  )}
-                </span>
-              </div>
-
-              {/* Description */}
-              <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                {p.description || 'Enterprise multi-tenant intelligence adapter conforming to vendor-neutral NEIMAN protocol.'}
-              </p>
-
-              {/* Health & Failure Metrics */}
-              <div className="pt-3 border-t border-border/60 grid grid-cols-2 gap-2 text-[11px] font-mono">
-                <div className="bg-secondary/40 p-2 rounded-lg border border-border/40">
-                  <span className="text-muted-foreground block text-[9px] uppercase">Failures</span>
-                  <span className={`font-bold ${consecutiveFailures > 0 ? 'text-rose-400' : 'text-foreground'}`}>
-                    {consecutiveFailures} errors
-                  </span>
-                </div>
-
-                <div className="bg-secondary/40 p-2 rounded-lg border border-border/40">
-                  <span className="text-muted-foreground block text-[9px] uppercase">Breaker</span>
-                  <span className={`font-bold ${breakerState === 'CLOSED' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {breakerState}
-                  </span>
-                </div>
-              </div>
-
-              {/* Live Probe Telemetry Display */}
+              {/* Probing Telemetry Display */}
               {probeResult && (
-                <div className="p-2.5 rounded-xl bg-background/80 border border-border/60 text-[10px] font-mono space-y-1">
+                <div className="p-2 rounded-xl bg-background/80 border border-border/60 text-[10px] font-mono space-y-1">
                   <div className="flex items-center justify-between text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3 text-amber-400" /> Latency:
                     </span>
-                    <span className="font-bold text-foreground">{probeResult.measured_latency_ms}ms</span>
+                    <span className="font-bold text-foreground">{probeResult.latency_ms}ms</span>
                   </div>
-                  <div className="text-[9px] text-muted-foreground truncate" title={probeResult.detail}>
-                    {probeResult.detail}
+                  <div className="text-[9px] text-muted-foreground truncate" title={probeResult.message}>
+                    {probeResult.message}
                   </div>
                 </div>
               )}
 
-              {/* Live Probing Controls */}
-              {onProbeProvider && (
-                <div className="pt-2 border-t border-border/40 flex flex-wrap items-center gap-1.5">
+              {/* Actions Footer */}
+              <div className="space-y-2 pt-2 border-t border-border/40">
+                <div className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    disabled={isCurrentlyProbing}
-                    onClick={() => handleProbe(p.name)}
-                    className="flex-1 btn btn-secondary text-[10px] h-7 px-2 font-mono flex items-center justify-center gap-1 hover:border-primary/50"
+                    onClick={() => handleOpenConfigure(p)}
+                    className="flex-1 inline-flex items-center justify-center gap-1 text-[11px] font-mono h-7 px-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 border border-primary/30 transition-colors font-medium"
                   >
-                    {isCurrentlyProbing ? (
-                      <RotateCw className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Zap className="h-3 w-3 text-cyan-400" />
-                    )}
-                    <span>Ping Probe</span>
+                    <Key className="h-3 w-3" />
+                    <span>{isConfigured ? 'Update Key / Link' : 'Configure Key / Link'}</span>
                   </button>
 
-                  <button
-                    type="button"
-                    title="Simulate 429 Rate Limit Error"
-                    disabled={isCurrentlyProbing}
-                    onClick={() => handleProbe(p.name, { simulate_error: 'rate_limit' })}
-                    className="text-[10px] h-7 px-2 font-mono rounded-lg border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 flex items-center gap-1"
-                  >
-                    <span>Sim 429</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    title="Simulate 500 Server Error to test circuit breaker trip"
-                    disabled={isCurrentlyProbing}
-                    onClick={() => handleProbe(p.name, { simulate_error: '500' })}
-                    className="text-[10px] h-7 px-2 font-mono rounded-lg border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 flex items-center gap-1"
-                  >
-                    <span>Sim 500</span>
-                  </button>
-                </div>
-              )}
-
-              {/* Associated Models Pill List */}
-              <div className="pt-1">
-                <span className="text-[10px] text-muted-foreground uppercase font-mono block mb-1.5">
-                  Available Models ({providerModels.length})
-                </span>
-                <div className="flex flex-wrap gap-1">
-                  {providerModels.map((m) => (
-                    <span
-                      key={m.id}
-                      className="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary/80 border border-border text-foreground"
+                  {isConfigured && onProbeProvider && (
+                    <button
+                      type="button"
+                      disabled={isCurrentlyProbing}
+                      onClick={() => handleProbe(p.name)}
+                      title="Send lightweight health check probe"
+                      className="inline-flex items-center justify-center gap-1 text-[10px] font-mono h-7 px-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 border border-border transition-colors disabled:opacity-50"
                     >
-                      {m.model_identifier}
-                    </span>
-                  ))}
-                  {providerModels.length === 0 && (
-                    <span className="text-[10px] text-muted-foreground/60 italic">Integrated in routing pool</span>
+                      {isCurrentlyProbing ? (
+                        <RotateCw className="h-3 w-3 animate-spin text-primary" />
+                      ) : (
+                        <Zap className="h-3 w-3 text-amber-400" />
+                      )}
+                    </button>
                   )}
                 </div>
               </div>
@@ -369,133 +378,269 @@ export function ProviderDirectory({
         })}
       </div>
 
-      {/* Add Provider Modal */}
+      {filteredProviders.length === 0 && (
+        <div className="p-12 text-center rounded-2xl border border-dashed border-border text-muted-foreground space-y-2">
+          <Cloud className="h-8 w-8 mx-auto text-muted-foreground/40" />
+          <p className="text-sm">No AI providers match your query.</p>
+          <button
+            onClick={() => { setSearchQuery(''); setFilterType('ALL'); }}
+            className="text-xs text-primary underline"
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
+
+      {/* Configure Provider Modal */}
+      {configTargetProvider && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-primary" />
+                  Configure {configTargetProvider.display_name}
+                </h3>
+                <p className="text-[11px] text-muted-foreground">
+                  Paste your API key or custom endpoint link. Stored encrypted in the server vault.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setConfigTargetProvider(null)}
+                className="text-muted-foreground hover:text-foreground text-xs font-mono p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveConfiguration} className="space-y-4">
+              <div>
+                <label className="block text-xs font-mono font-medium text-foreground mb-1 flex items-center justify-between">
+                  <span>API Key</span>
+                  {configTargetProvider.website_url && (
+                    <a
+                      href={configTargetProvider.website_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[10px] text-primary hover:underline inline-flex items-center gap-0.5"
+                    >
+                      Get Key <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  )}
+                </label>
+                <div className="relative">
+                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    type="password"
+                    placeholder={configTargetProvider.api_key_masked || "Paste API key (e.g. sk-ant-..., sk-or-...)"}
+                    value={configApiKey}
+                    onChange={(e) => setConfigApiKey(e.target.value)}
+                    className="w-full text-xs font-mono pl-9 pr-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:border-primary"
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Leave blank to retain current vault key.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono font-medium text-foreground mb-1">
+                  Custom Base URL / Proxy Link (Optional)
+                </label>
+                <div className="relative">
+                  <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    type="url"
+                    placeholder="https://api.openai.com/v1 or http://localhost:11434"
+                    value={configBaseUrl}
+                    onChange={(e) => setConfigBaseUrl(e.target.value)}
+                    className="w-full text-xs font-mono pl-9 pr-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-secondary/40 border border-border/50">
+                <input
+                  type="checkbox"
+                  id="auto_discover"
+                  checked={autoDiscover}
+                  onChange={(e) => setAutoDiscover(e.target.checked)}
+                  className="rounded border-border text-primary focus:ring-0"
+                />
+                <label htmlFor="auto_discover" className="text-xs text-foreground cursor-pointer select-none">
+                  <span className="font-semibold">Auto-Discover Available Models</span>
+                  <span className="block text-[10px] text-muted-foreground">
+                    Query the provider endpoint to automatically register all accessible models.
+                  </span>
+                </label>
+              </div>
+
+              {configStatusMessage && (
+                <div className="p-2.5 rounded-xl bg-secondary/80 text-[11px] font-mono text-foreground border border-border">
+                  {configStatusMessage}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
+                <button
+                  type="button"
+                  onClick={() => setConfigTargetProvider(null)}
+                  className="px-4 py-2 text-xs font-mono rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isConfiguring}
+                  className="px-4 py-2 text-xs font-mono font-bold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {isConfiguring ? <RotateCw className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
+                  <span>Save to Encrypted Vault</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Custom Provider Modal */}
       {showAddModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-lg glass rounded-2xl p-6 ring-1 ring-border shadow-2xl space-y-4">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-border/60 pb-3">
               <div>
-                <h3 className="text-sm font-bold text-foreground">Connect AI Provider / Gateway</h3>
+                <h3 className="text-sm font-bold text-foreground">Add Custom AI Provider</h3>
                 <p className="text-[11px] text-muted-foreground">
-                  Register universal gateways (Kilo Code, Ollama, DeepSeek, OpenRouter) or private OpenAI-compatible nodes
+                  Connect a private cluster, proxy, or novel vendor node conforming to OpenAI-compatible specs.
                 </p>
               </div>
-              <span className="font-mono text-[10px] uppercase px-2 py-0.5 rounded bg-secondary text-primary border border-border">
-                BYOK / Auto-Routing
-              </span>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="text-muted-foreground hover:text-foreground text-xs font-mono p-1"
+              >
+                ✕
+              </button>
             </div>
 
-            {/* Quick Presets */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-mono uppercase text-muted-foreground block">
-                Quick Integration Presets
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {PRESETS.map((pr) => (
-                  <button
-                    key={pr.name}
-                    type="button"
-                    onClick={() => handleApplyPreset(pr)}
-                    className="px-2 py-1 rounded-lg bg-secondary/60 hover:bg-secondary border border-border/60 text-[10px] font-mono text-foreground hover:border-primary/50 transition-all flex items-center gap-1"
-                  >
-                    <span>{pr.display_name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmitNewProvider} className="space-y-3 pt-2 border-t border-border/40">
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!onAddProvider) return;
+                await onAddProvider({
+                  name: newProviderForm.name.toLowerCase().replace(/\s+/g, '_'),
+                  display_name: newProviderForm.display_name,
+                  description: newProviderForm.description || undefined,
+                  website_url: newProviderForm.website_url || undefined,
+                  base_url: newProviderForm.base_url || undefined,
+                  api_key: newProviderForm.api_key || undefined,
+                  is_local: newProviderForm.is_local,
+                });
+                setShowAddModal(false);
+                setNewProviderForm({
+                  name: '',
+                  display_name: '',
+                  description: '',
+                  website_url: '',
+                  base_url: '',
+                  api_key: '',
+                  is_local: false,
+                });
+              }}
+              className="space-y-3"
+            >
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-mono font-medium text-foreground mb-1">
-                    Provider ID <span className="text-[#D71921]">*</span>
+                    Provider ID *
                   </label>
                   <input
                     type="text"
                     required
-                    className="input w-full text-xs font-mono"
-                    placeholder="e.g. kilocode, ollama, deepseek"
+                    placeholder="my_private_cluster"
                     value={newProviderForm.name}
-                    onChange={(e) =>
-                      setNewProviderForm((f) => ({ ...f, name: e.target.value.toLowerCase().replace(/\s+/g, '_') }))
-                    }
+                    onChange={(e) => setNewProviderForm((f) => ({ ...f, name: e.target.value }))}
+                    className="w-full text-xs font-mono px-3 py-2 rounded-xl border border-border bg-background text-foreground"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-mono font-medium text-foreground mb-1">
-                    Display Name <span className="text-[#D71921]">*</span>
+                    Display Name *
                   </label>
                   <input
                     type="text"
                     required
-                    className="input w-full text-xs"
-                    placeholder="e.g. Kilo Code Gateway"
+                    placeholder="My Private Cluster"
                     value={newProviderForm.display_name}
                     onChange={(e) => setNewProviderForm((f) => ({ ...f, display_name: e.target.value }))}
+                    className="w-full text-xs px-3 py-2 rounded-xl border border-border bg-background text-foreground"
                   />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-mono font-medium text-foreground mb-1">
-                  Gateway / Endpoint URL
+                  Base URL / Endpoint
                 </label>
                 <input
                   type="url"
-                  className="input w-full text-xs font-mono"
-                  placeholder="https://api.kilo.ai/api/gateway or http://localhost:11434"
-                  value={newProviderForm.website_url}
-                  onChange={(e) => setNewProviderForm((f) => ({ ...f, website_url: e.target.value }))}
+                  placeholder="http://localhost:8000/v1"
+                  value={newProviderForm.base_url}
+                  onChange={(e) => setNewProviderForm((f) => ({ ...f, base_url: e.target.value }))}
+                  className="w-full text-xs font-mono px-3 py-2 rounded-xl border border-border bg-background text-foreground"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-mono font-medium text-foreground mb-1">
-                  Description & Capabilities
+                  API Key (Encrypted in Vault)
                 </label>
-                <textarea
-                  rows={2}
-                  className="input w-full text-xs h-auto resize-none"
-                  placeholder="Universal multi-model coding gateway connecting frontier models with native tool use..."
-                  value={newProviderForm.description}
-                  onChange={(e) => setNewProviderForm((f) => ({ ...f, description: e.target.value }))}
+                <input
+                  type="password"
+                  placeholder="Optional API key"
+                  value={newProviderForm.api_key}
+                  onChange={(e) => setNewProviderForm((f) => ({ ...f, api_key: e.target.value }))}
+                  className="w-full text-xs font-mono px-3 py-2 rounded-xl border border-border bg-background text-foreground"
                 />
               </div>
 
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-secondary/30 border border-border/60">
+              <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  id="is_local_toggle"
-                  className="checkbox checkbox-sm checkbox-primary"
+                  id="custom_is_local"
                   checked={newProviderForm.is_local}
                   onChange={(e) => setNewProviderForm((f) => ({ ...f, is_local: e.target.checked }))}
+                  className="rounded border-border text-primary"
                 />
-                <label htmlFor="is_local_toggle" className="text-xs text-foreground cursor-pointer select-none">
-                  <span className="font-semibold">Local / On-Premise Air-Gapped Node</span>
-                  <p className="text-[10px] text-muted-foreground font-mono">
-                    Routes without external network traffic (Zero Data Retention)
-                  </p>
+                <label htmlFor="custom_is_local" className="text-xs text-foreground cursor-pointer select-none">
+                  Air-Gapped / On-Premise Local Node
                 </label>
               </div>
 
-              <div className="flex gap-2.5 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
                 <button
                   type="button"
-                  className="btn btn-outline flex-1 text-xs font-mono"
                   onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 text-xs font-mono rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={isAddingProvider || !newProviderForm.name.trim() || !newProviderForm.display_name.trim()}
-                  className="btn btn-primary flex-1 text-xs font-mono"
+                  disabled={isAddingProvider}
+                  className="px-4 py-2 text-xs font-mono font-bold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5"
                 >
-                  {isAddingProvider ? 'Registering...' : 'Register Provider'}
+                  {isAddingProvider ? <RotateCw className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                  <span>Register Provider</span>
                 </button>
               </div>
             </form>

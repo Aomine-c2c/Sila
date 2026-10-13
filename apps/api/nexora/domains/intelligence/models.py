@@ -36,6 +36,9 @@ class ModelProvider(NexoraBase):
     display_name: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     website_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    base_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    api_key_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_configured: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_local: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
@@ -52,7 +55,7 @@ class ModelProvider(NexoraBase):
     )
 
     def __repr__(self) -> str:
-        return f"<ModelProvider id={self.id} name={self.name} is_healthy={self.is_healthy}>"
+        return f"<ModelProvider id={self.id} name={self.name} is_configured={self.is_configured} is_healthy={self.is_healthy}>"
 
 
 class Model(NexoraBase):

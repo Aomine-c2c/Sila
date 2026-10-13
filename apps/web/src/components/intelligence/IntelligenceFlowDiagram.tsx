@@ -40,52 +40,9 @@ export function IntelligenceFlowDiagram({
   selectedProvider,
   onSelectProvider,
 }: IntelligenceFlowDiagramProps) {
-  // Ensure default canonical providers display if list is empty
-  const displayProviders =
-    providers.length > 0
-      ? providers
-      : [
-        {
-          id: 'anthropic',
-          name: 'anthropic',
-          display_name: 'Anthropic Claude',
-          is_local: false,
-          is_active: true,
-          is_healthy: true,
-          consecutive_failures: 0,
-          created_at: '',
-        },
-        {
-          id: 'google_gemini',
-          name: 'google_gemini',
-          display_name: 'Google Gemini',
-          is_local: false,
-          is_active: true,
-          is_healthy: true,
-          consecutive_failures: 0,
-          created_at: '',
-        },
-        {
-          id: 'openai',
-          name: 'openai',
-          display_name: 'OpenAI',
-          is_local: false,
-          is_active: true,
-          is_healthy: true,
-          consecutive_failures: 0,
-          created_at: '',
-        },
-        {
-          id: 'local',
-          name: 'local',
-          display_name: 'Local / Air-Gapped',
-          is_local: true,
-          is_active: true,
-          is_healthy: true,
-          consecutive_failures: 0,
-          created_at: '',
-        },
-      ];
+  // Use live verified backend providers
+  const displayProviders = providers;
+
 
   return (
     <div className="relative rounded-2xl border border-primary/30 bg-card/85 p-6 backdrop-blur-xl shadow-2xl overflow-hidden select-none">
