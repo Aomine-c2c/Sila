@@ -420,6 +420,11 @@ export default function IntelligenceExchangePage() {
               queryClient.invalidateQueries({ queryKey: ['intelligence-dashboard', companyId] });
               return res;
             }}
+            onConfigureProvider={async (providerName, req) => {
+              const res = await configureProviderMutation.mutateAsync({ providerName, req });
+              return res;
+            }}
+            isConfiguring={configureProviderMutation.isPending}
             onAddProvider={async (data) => {
               await addProviderMutation.mutateAsync(data);
             }}

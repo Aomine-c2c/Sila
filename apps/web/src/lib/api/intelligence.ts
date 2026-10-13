@@ -188,13 +188,17 @@ export interface ProviderProbeRequest {
 }
 
 export interface ProviderProbeResponse {
-  provider_name: string;
+  provider: string;
+  display_name: string;
   is_healthy: boolean;
+  latency_ms: number;
   circuit_breaker_status: string;
   consecutive_failures: number;
-  measured_latency_ms: number;
-  probe_timestamp: string;
-  detail: string;
+  message: string;
+  timestamp: string;
+  // Backward compatibility alias properties if needed
+  measured_latency_ms?: number;
+  detail?: string;
 }
 
 export const intelligenceApi = {
