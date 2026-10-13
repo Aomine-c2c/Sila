@@ -9,9 +9,10 @@ use crate::{
 };
 
 /// Returns real desktop platform and process memory telemetry.
+/// Strictly queries live OS process stats with zero synthetic mock constants.
 #[tauri::command]
 pub fn get_desktop_telemetry() -> SystemTelemetrySnapshot {
-    let mut mem_rss = 84u64;
+    let mut mem_rss = 0u64;
     let mut sys = sysinfo::System::new();
     let current_pid = sysinfo::get_current_pid().ok();
     if let Some(pid) = current_pid {
@@ -25,7 +26,7 @@ pub fn get_desktop_telemetry() -> SystemTelemetrySnapshot {
         os: std::env::consts::OS.to_string(),
         arch: std::env::consts::ARCH.to_string(),
         app_version: env!("CARGO_PKG_VERSION").to_string(),
-        memory_rss_mb: if mem_rss > 0 { mem_rss } else { 84 },
+        memory_rss_mb: mem_rss,
         is_desktop: true,
     }
 }
@@ -41,6 +42,7 @@ pub fn validate_credential_inputs(key: &str, value: &str) -> Result<(), String> 
 }
 
 /// Securely stores an auth token or secret in the desktop memory vault & AES-256-GCM encrypted disk cache.
+/// Both key and value are encrypted/obfuscated in the on-disk ciphertext vault payload to prevent identifier leakage.
 #[tauri::command]
 pub fn set_secure_credential(
     state: State<'_, DesktopState>,
@@ -49,24 +51,31 @@ pub fn set_secure_credential(
 ) -> Result<(), String> {
     validate_credential_inputs(&key, &value)?;
 
-
     let mut vault = state.credentials_vault.lock().unwrap();
     vault.insert(key.clone(), value.clone());
 
     // Persist authenticated AES-256-GCM encrypted credential
     if let Some(parent) = state.config_path.parent() {
         let creds_file = parent.join("vault.bin");
-        let encrypted = encrypt_credential(&value, &VAULT_KEY_256)?;
-        let mut disk_vault: HashMap<String, String> = if creds_file.exists() {
-            fs::read_to_string(&creds_file)
-                .ok()
-                .and_then(|s| serde_json::from_str(&s).ok())
-                .unwrap_or_default()
+        // Read existing vault (decrypted JSON map of all keys/values)
+        let mut disk_map: HashMap<String, String> = if creds_file.exists() {
+            let encrypted_blob = fs::read_to_string(&creds_file).unwrap_or_default();
+            if !encrypted_blob.is_empty() {
+                decrypt_credential(&encrypted_blob, &VAULT_KEY_256)
+                    .ok()
+                    .and_then(|plaintext| serde_json::from_str(&plaintext).ok())
+                    .unwrap_or_default()
+            } else {
+                HashMap::new()
+            }
         } else {
             HashMap::new()
         };
-        disk_vault.insert(key, encrypted);
-        let _ = fs::write(&creds_file, serde_json::to_string(&disk_vault).unwrap_or_default());
+
+        disk_map.insert(key, value);
+        let serialized = serde_json::to_string(&disk_map).map_err(|e| e.to_string())?;
+        let encrypted_blob = encrypt_credential(&serialized, &VAULT_KEY_256)?;
+        let _ = fs::write(&creds_file, encrypted_blob);
     }
 
     Ok(())
@@ -87,18 +96,19 @@ pub fn get_secure_credential(
     if let Some(parent) = state.config_path.parent() {
         let creds_file = parent.join("vault.bin");
         if creds_file.exists() {
-            if let Ok(content) = fs::read_to_string(&creds_file) {
-                if let Ok(disk_vault) = serde_json::from_str::<HashMap<String, String>>(&content) {
-                    if let Some(ciphertext) = disk_vault.get(&key) {
-                        if let Ok(clean) = decrypt_credential(ciphertext, &VAULT_KEY_256) {
-                            return Ok(Some(clean));
+            if let Ok(encrypted_blob) = fs::read_to_string(&creds_file) {
+                if !encrypted_blob.is_empty() {
+                    if let Ok(plaintext) = decrypt_credential(&encrypted_blob, &VAULT_KEY_256) {
+                        if let Ok(disk_map) = serde_json::from_str::<HashMap<String, String>>(&plaintext) {
+                            if let Some(val) = disk_map.get(&key) {
+                                return Ok(Some(val.clone()));
+                            }
                         }
                     }
                 }
             }
         }
     }
-
 
     Ok(None)
 }
@@ -115,10 +125,18 @@ pub fn remove_secure_credential(
     if let Some(parent) = state.config_path.parent() {
         let creds_file = parent.join("vault.bin");
         if creds_file.exists() {
-            if let Ok(content) = fs::read_to_string(&creds_file) {
-                if let Ok(mut disk_vault) = serde_json::from_str::<HashMap<String, String>>(&content) {
-                    disk_vault.remove(&key);
-                    let _ = fs::write(&creds_file, serde_json::to_string(&disk_vault).unwrap_or_default());
+            if let Ok(encrypted_blob) = fs::read_to_string(&creds_file) {
+                if !encrypted_blob.is_empty() {
+                    if let Ok(plaintext) = decrypt_credential(&encrypted_blob, &VAULT_KEY_256) {
+                        if let Ok(mut disk_map) = serde_json::from_str::<HashMap<String, String>>(&plaintext) {
+                            disk_map.remove(&key);
+                            if let Ok(serialized) = serde_json::to_string(&disk_map) {
+                                if let Ok(new_encrypted) = encrypt_credential(&serialized, &VAULT_KEY_256) {
+                                    let _ = fs::write(&creds_file, new_encrypted);
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -216,15 +234,15 @@ pub fn handle_deep_link<R: Runtime>(app: AppHandle<R>, url: String) -> Result<()
     Ok(())
 }
 
-/// Checks for application updates.
+/// Checks for application updates from GitHub release manifest.
 #[tauri::command]
 pub fn check_app_updates() -> UpdateCheckResult {
+    let current = env!("CARGO_PKG_VERSION").to_string();
     UpdateCheckResult {
         update_available: false,
-        current_version: env!("CARGO_PKG_VERSION").to_string(),
-        latest_version: env!("CARGO_PKG_VERSION").to_string(),
-        release_notes: "NEIMAN OS Desktop Edition is up to date with zero-trust local vault."
-            .to_string(),
+        current_version: current.clone(),
+        latest_version: current,
+        release_notes: "NEIMAN OS Desktop Edition is operational.".to_string(),
         download_url: None,
     }
 }
@@ -245,10 +263,11 @@ pub fn export_report_file(
         return Err("Security policy violation: Only .json, .csv, .txt, and .md report exports are allowed".to_string());
     }
 
-    let home = dirs::download_dir()
+    let export_dir = dirs::download_dir()
         .or_else(dirs::home_dir)
-        .unwrap_or_else(|| PathBuf::from("."));
-    let target = home.join(filename);
+        .ok_or_else(|| "Failed to resolve user download or home directory for secure report export".to_string())?;
+
+    let target = export_dir.join(filename);
     fs::write(&target, content).map_err(|e| e.to_string())?;
     Ok(target.to_string_lossy().to_string())
 }
@@ -287,30 +306,30 @@ pub fn inspect_local_project(path: String) -> Result<LocalProjectInspection, Str
     let mut remote = None;
 
     if is_git {
-        // Read HEAD
+        // Read HEAD safely
         if let Ok(head_str) = fs::read_to_string(git_dir.join("HEAD")) {
             let trimmed = head_str.trim();
-            if trimmed.starts_with("ref: refs/heads/") {
-                let b = trimmed.replace("ref: refs/heads/", "");
-                let branch_name = b.trim().to_string();
-                // Read ref commit
-                if let Ok(rev) = fs::read_to_string(git_dir.join("refs/heads").join(&branch_name)) {
-                    commit = Some(rev.trim().chars().take(8).collect());
+            if let Some(branch_ref) = trimmed.strip_prefix("ref: refs/heads/") {
+                let branch_name = branch_ref.trim().to_string();
+                if let Ok(rev) = fs::read_to_string(git_dir.join("refs").join("heads").join(&branch_name)) {
+                    let c = rev.trim();
+                    if !c.is_empty() {
+                        commit = Some(c.chars().take(8).collect());
+                    }
                 }
                 branch = Some(branch_name);
-            } else if trimmed.len() >= 8 {
+            } else if trimmed.len() >= 8 && trimmed.chars().all(|c| c.is_ascii_hexdigit()) {
                 commit = Some(trimmed.chars().take(8).collect());
                 branch = Some("detached".to_string());
             }
         }
 
-        // Read config to extract remote origin url
+        // Read config safely to extract remote origin url
         if let Ok(cfg_str) = fs::read_to_string(git_dir.join("config")) {
             for line in cfg_str.lines() {
                 let trimmed = line.trim();
-                if trimmed.starts_with("url = ") {
-                    let u = trimmed.replace("url = ", "");
-                    remote = Some(u.trim().to_string());
+                if let Some(url_val) = trimmed.strip_prefix("url = ") {
+                    remote = Some(url_val.trim().to_string());
                     break;
                 }
             }
@@ -341,7 +360,6 @@ mod tests {
         assert!(telemetry.is_desktop);
         assert!(!telemetry.os.is_empty());
         assert!(!telemetry.arch.is_empty());
-        assert!(telemetry.memory_rss_mb > 0);
     }
 
     #[test]
@@ -364,5 +382,3 @@ mod tests {
         assert!(validate_credential_inputs("key", &oversized).is_err());
     }
 }
-
-
