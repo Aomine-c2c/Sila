@@ -23,6 +23,7 @@
     "@tauri-apps/api": "^2.12.1",
     "@tauri-apps/plugin-process": "~2.0.0",
     "@tauri-apps/plugin-updater": "~2.13.0",
+    "@types/three": "^0.186.0",
     "clsx": "^2.1.0",
     "date-fns": "^3.6.0",
     "lucide-react": "^0.372.0",
@@ -33,6 +34,7 @@
     "socket.io-client": "^4.7.0",
     "tailwind-merge": "^2.2.0",
     "thinking-orbs": "^0.3.2",
+    "three": "^0.186.1",
     "zod": "^3.22.0",
     "zustand": "^4.5.0"
   },

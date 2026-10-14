@@ -43,7 +43,7 @@ dev-web:
 	cd $(WEB_DIR) && npm run dev
 
 dev-desktop:
-	./scripts/run-desktop.sh
+	./run-dev.sh
 
 dev-tui-rs:
 	cd $(TUI_RS_DIR) && cargo run

@@ -143,24 +143,27 @@ export default function TasksPage() {
   });
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto">
-      {/* 1. HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto font-mono">
+      {/* 1. HEADER (Nothing OS 3.0 Dot-Matrix) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/80 pb-5">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold text-foreground">Task Backlog & Kanban</h1>
-            <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-              Autonomous Agent Orchestration
+            <span className="h-2 w-2 rounded-full bg-[#D71921] shadow-[0_0_8px_#D71921]" />
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground uppercase tracking-tight">
+              Tasks Execution Matrix
+            </h1>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-secondary text-foreground border border-border uppercase">
+              ORCHESTRATION // LIVE
             </span>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Decomposed project tasks executed autonomously by specialized organizational AI employees
+          <p className="mt-1 text-xs text-muted-foreground font-mono">
+            Decomposed objectives executed autonomously with cryptographic proof-of-work
           </p>
         </div>
 
         <button
           type="button"
-          className="btn btn-primary gap-2 self-start sm:self-auto"
+          className="flex items-center gap-2 rounded-full bg-foreground text-background px-4 py-2 text-xs font-semibold uppercase tracking-wider hover:opacity-90 transition-opacity self-start sm:self-auto disabled:opacity-40"
           onClick={() => setShowCreate(true)}
           disabled={!activeProjectId}
         >
@@ -170,14 +173,14 @@ export default function TasksPage() {
       </div>
 
       {/* 2. PROJECT SELECTOR, SEARCH & VIEW MODE SWITCHER */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl border border-border bg-card">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md">
         <div className="flex flex-wrap items-center gap-2.5">
-          <span className="text-xs font-medium text-muted-foreground">Project:</span>
+          <span className="text-[11px] font-bold text-muted-foreground uppercase">Project:</span>
           {projects.length === 0 ? (
             <span className="text-xs text-muted-foreground italic">No projects found</span>
           ) : (
             <select
-              className="input text-xs font-semibold py-1.5 h-9 bg-secondary/50 min-w-[200px]"
+              className="text-xs font-mono font-semibold py-1.5 px-3 h-9 bg-secondary/80 rounded-full border border-border min-w-[200px] text-foreground focus:outline-none focus:border-[#D71921]"
               value={activeProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
               aria-label="Filter by project"
@@ -192,13 +195,13 @@ export default function TasksPage() {
 
           {/* Search Box */}
           <div className="relative min-w-[180px]">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <input
               type="search"
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="input pl-8 text-xs h-9"
+              className="pl-8 pr-3 text-xs font-mono h-9 rounded-full bg-secondary/40 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-foreground/40"
             />
           </div>
 
@@ -206,7 +209,7 @@ export default function TasksPage() {
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
-            className="input text-xs h-9 w-auto"
+            className="text-xs font-mono h-9 px-3 rounded-full bg-secondary/40 border border-border text-foreground focus:outline-none focus:border-foreground/40"
             aria-label="Filter by priority"
           >
             <option value="ALL">All Priorities</option>
@@ -218,12 +221,12 @@ export default function TasksPage() {
         </div>
 
         {/* 4 Interchangeable View Modes */}
-        <div className="flex items-center gap-1 border border-border/80 rounded-xl p-1 bg-secondary/40">
+        <div className="flex items-center gap-1 border border-border/80 rounded-full p-1 bg-secondary/30">
           {[
             { id: 'list', label: 'List', icon: ListIcon },
             { id: 'board', label: 'Board', icon: Kanban },
             { id: 'timeline', label: 'Timeline', icon: Calendar },
-            { id: 'graph', label: 'Dependency Graph', icon: GitBranch },
+            { id: 'graph', label: 'Graph', icon: GitBranch },
           ].map((v) => {
             const Icon = v.icon;
             const isActive = viewMode === v.id;
@@ -232,30 +235,30 @@ export default function TasksPage() {
                 key={v.id}
                 type="button"
                 onClick={() => setViewMode(v.id as typeof viewMode)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono transition-all ${
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    ? 'bg-foreground text-background font-semibold shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <Icon className="h-3.5 w-3.5" />
-                <span>{v.label}</span>
+                <Icon className="h-3 w-3" />
+                <span className="uppercase text-[11px]">{v.label}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* 3. STATUS FILTER PILLS */}
-      <div className="flex items-center gap-1.5 overflow-x-auto text-xs pb-1">
+      {/* 3. STATUS FILTER PILLS (Nothing OS Capsule Pills) */}
+      <div className="flex items-center gap-1.5 overflow-x-auto text-xs pb-1 scrollbar-hide">
         {['ALL', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED'].map((status) => (
           <button
             key={status}
             type="button"
-            className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
+            className={`rounded-full px-3 py-1 text-[11px] font-mono uppercase tracking-wider transition-all ${
               statusFilter === status
-                ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
-                : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                ? 'bg-foreground text-background font-bold shadow-xs'
+                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground border border-border/40'
             }`}
             onClick={() => setStatusFilter(status)}
           >
@@ -307,53 +310,60 @@ export default function TasksPage() {
       {/* 5. MULTI-VIEW PRESENTATION */}
       {!isLoading && filteredTasks.length > 0 && (
         <>
-          {/* VIEW 1: LIST VIEW */}
+          {/* VIEW 1: LIST VIEW (Nothing OS 3.0 Tactile Cards) */}
           {viewMode === 'list' && (
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {filteredTasks.map((t) => {
                 const statusConfig = STATUS_ICONS[t.status] || STATUS_ICONS.TODO;
                 const priorityClass = PRIORITY_BADGES[t.priority] || PRIORITY_BADGES.MEDIUM;
                 const assignedAgent = agents.find((a) => a.id === t.assigned_agent_id);
+                const isWorking = t.status === 'IN_PROGRESS';
 
                 return (
                   <div
                     key={t.id}
                     onClick={() => setSelectedTaskId(t.id)}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 hover:border-primary/40 cursor-pointer transition-all shadow-sm"
+                    className="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/70 hover:bg-card p-3.5 hover:border-foreground/40 cursor-pointer transition-all duration-150 backdrop-blur-sm"
                   >
                     <div className="flex items-start sm:items-center gap-3 min-w-0">
                       <div
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary/60 ${statusConfig.color}`}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/80 border border-border/60"
                       >
-                        <CheckSquare className="h-4 w-4" />
+                        {isWorking ? (
+                          <span className="h-2 w-2 rounded-full bg-[#D71921] shadow-[0_0_6px_#D71921] animate-pulse" />
+                        ) : (
+                          <CheckSquare className={`h-3.5 w-3.5 ${statusConfig.color}`} />
+                        )}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-semibold text-foreground truncate">{t.title}</h4>
+                          <h4 className="text-xs sm:text-sm font-bold text-foreground truncate font-mono">
+                            {t.title}
+                          </h4>
                           <span
-                            className={`inline-flex items-center rounded border px-1.5 py-0.2 text-[10px] font-medium uppercase ${priorityClass}`}
+                            className={`inline-flex items-center rounded-full border px-2 py-0.2 text-[9px] font-mono font-bold uppercase tracking-wider ${priorityClass}`}
                           >
                             {t.priority}
                           </span>
                         </div>
                         {t.description && (
-                          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                          <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5 font-mono">
                             {t.description}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 shrink-0 text-xs">
+                    <div className="flex items-center gap-3 shrink-0 text-xs font-mono">
                       {assignedAgent ? (
-                        <div className="flex items-center gap-1.5 rounded-full bg-secondary/70 border border-border px-2.5 py-1 text-foreground">
-                          <Bot className="h-3.5 w-3.5 text-primary" />
-                          <span className="font-semibold text-xs">{assignedAgent.name}</span>
+                        <div className="flex items-center gap-1.5 rounded-full bg-secondary/60 border border-border/80 px-2.5 py-0.5 text-foreground">
+                          <Bot className="h-3 w-3 text-[#D71921]" />
+                          <span className="font-semibold text-[11px]">{assignedAgent.name}</span>
                         </div>
                       ) : (
-                        <span className="text-muted-foreground/60 italic text-[11px]">Unassigned</span>
+                        <span className="text-muted-foreground/60 italic text-[10px]">Unassigned</span>
                       )}
-                      <span className={`badge ${statusConfig.color} bg-secondary/50 font-mono text-[10px]`}>
+                      <span className={`px-2 py-0.5 rounded-full border border-border/60 bg-secondary/30 ${statusConfig.color} font-mono text-[9px] uppercase tracking-wider font-bold`}>
                         {t.status}
                       </span>
                     </div>
@@ -363,15 +373,15 @@ export default function TasksPage() {
             </div>
           )}
 
-          {/* VIEW 2: BOARD / KANBAN VIEW */}
+          {/* VIEW 2: BOARD / KANBAN VIEW (Nothing OS 3.0 Grid Matrix) */}
           {viewMode === 'board' && (
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               {[
-                { key: 'TODO', label: 'To Do', color: 'border-blue-500/40 text-blue-400' },
-                { key: 'IN_PROGRESS', label: 'In Progress', color: 'border-amber-500/40 text-amber-400' },
-                { key: 'IN_REVIEW', label: 'In Review', color: 'border-purple-500/40 text-purple-400' },
-                { key: 'DONE', label: 'Done', color: 'border-emerald-500/40 text-emerald-400' },
-                { key: 'BLOCKED', label: 'Blocked', color: 'border-rose-500/40 text-rose-400' },
+                { key: 'TODO', label: 'To Do', color: 'text-blue-400', border: 'border-blue-500/30' },
+                { key: 'IN_PROGRESS', label: 'In Progress', color: 'text-amber-400', border: 'border-amber-500/30', pip: 'bg-[#D71921]' },
+                { key: 'IN_REVIEW', label: 'In Review', color: 'text-purple-400', border: 'border-purple-500/30' },
+                { key: 'DONE', label: 'Done', color: 'text-emerald-400', border: 'border-emerald-500/30' },
+                { key: 'BLOCKED', label: 'Blocked', color: 'text-rose-400', border: 'border-rose-500/30' },
               ].map((col) => {
                 const colTasks = filteredTasks.filter((t) => {
                   if (col.key === 'DONE') return t.status === 'DONE' || t.status === 'COMPLETED';
@@ -379,10 +389,17 @@ export default function TasksPage() {
                   return t.status === col.key;
                 });
                 return (
-                  <div key={col.key} className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2.5">
-                    <div className="flex items-center justify-between pb-2 border-b border-border/50">
-                      <span className={`text-xs font-bold font-mono ${col.color}`}>{col.label}</span>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                  <div key={col.key} className="rounded-xl border border-border/70 bg-card/40 p-3 space-y-2.5 backdrop-blur-sm">
+                    <div className="flex items-center justify-between pb-2 border-b border-border/50 font-mono">
+                      <div className="flex items-center gap-1.5">
+                        {col.pip && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#D71921] shadow-[0_0_6px_#D71921]" />
+                        )}
+                        <span className={`text-[11px] font-bold uppercase tracking-wider ${col.color}`}>
+                          {col.label}
+                        </span>
+                      </div>
+                      <span className="text-[9px] font-mono px-2 py-0.2 rounded-full bg-secondary/80 text-foreground border border-border/50">
                         {colTasks.length}
                       </span>
                     </div>
@@ -394,19 +411,23 @@ export default function TasksPage() {
                           <div
                             key={t.id}
                             onClick={() => setSelectedTaskId(t.id)}
-                            className="p-3 rounded-lg border border-border bg-card hover:border-primary/40 cursor-pointer transition-all space-y-2"
+                            className="p-3 rounded-lg border border-border/80 bg-card hover:border-foreground/40 cursor-pointer transition-all space-y-2 shadow-xs group"
                           >
-                            <p className="text-xs font-semibold text-foreground line-clamp-2">{t.title}</p>
-                            <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/40 font-mono">
+                            <p className="text-xs font-bold text-foreground line-clamp-2 font-mono group-hover:text-foreground">
+                              {t.title}
+                            </p>
+                            <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1.5 border-t border-border/40 font-mono">
                               {ag ? (
-                                <span className="flex items-center gap-1 text-primary truncate max-w-[120px]">
+                                <span className="flex items-center gap-1 text-[#D71921] truncate max-w-[120px] font-semibold">
                                   <Bot className="h-3 w-3 shrink-0" />
                                   {ag.name}
                                 </span>
                               ) : (
-                                <span className="italic">Unassigned</span>
+                                <span className="italic text-muted-foreground/60">Unassigned</span>
                               )}
-                              <span>{t.priority}</span>
+                              <span className="uppercase text-[9px] px-1.5 py-0.2 rounded bg-secondary text-muted-foreground border border-border/40">
+                                {t.priority}
+                              </span>
                             </div>
                           </div>
                         );

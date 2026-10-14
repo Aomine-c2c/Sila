@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Building2, Loader2, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { organizationsApi } from '@/lib/api/organizations';
 import { controlRoomApi, type ControlRoomState } from '@/lib/api/controlRoom';
@@ -10,9 +11,17 @@ import { ControlRoomDashboard } from '@/components/control-room/ControlRoomDashb
 import { useActivityStream } from '@/hooks/useActivityStream';
 
 export default function ControlRoomPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const qc = useQueryClient();
   const { activeCompany, user, setActiveCompany } = useAuthStore();
   const companyId = activeCompany?.id;
+
+  const handleOpenDrawer = (drawerId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('drawer', drawerId);
+    router.push(`/dashboard?${params.toString()}`, { scroll: false });
+  };
 
   // Load companies if none active
   const { data: companies = [] } = useQuery({
@@ -146,6 +155,7 @@ export default function ControlRoomPage() {
         onDecideApproval={(approvalId, decision) =>
           approvalMutation.mutate({ approvalId, decision })
         }
+        onOpenDrawer={handleOpenDrawer}
       />
     );
   }

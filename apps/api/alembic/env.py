@@ -17,6 +17,12 @@ import nexora.domains.workflows.models  # noqa: F401
 import nexora.domains.policies.models  # noqa: F401
 import nexora.domains.decisions.models  # noqa: F401
 import nexora.domains.councils.models  # noqa: F401
+import nexora.domains.governance.models  # noqa: F401
+import nexora.domains.intelligence.models  # noqa: F401
+import nexora.domains.intelligence.evolution_models  # noqa: F401
+import nexora.domains.resources.models  # noqa: F401
+import nexora.domains.blueprints.models  # noqa: F401
+import nexora.domains.memory.models  # noqa: F401
 
 # Alembic Config object
 config = context.config

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   Building2,
   ChevronDown,
@@ -20,12 +20,17 @@ import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 import { CommandPalette } from '@/components/layout/CommandPalette';
 import { OrganizationSwitcher } from '@/components/layout/OrganizationSwitcher';
 import { NotificationsCenter } from '@/components/layout/NotificationsCenter';
-import { Sidebar } from '@/components/layout/Sidebar';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { isTauriDesktop, desktopEvents, desktopWindowState } from '@/lib/desktop/tauriBridge';
 import { SystemSetupWizard } from '@/components/layout/SystemSetupWizard';
 import { UpdateReadyModal } from '@/components/layout/UpdateReadyModal';
 import { AgentOrb } from '@/components/ui/AgentOrb';
+import { SystemResourcePill } from '@/components/layout/SystemResourcePill';
+import { CockpitDrawer } from '@/components/layout/CockpitDrawer';
+import { ResourceCockpitView } from '@/components/layout/ResourceCockpitView';
+import { CockpitFooterDock } from '@/components/layout/CockpitFooterDock';
+import { HeaderOperationalBar } from '@/components/layout/HeaderOperationalBar';
+import { UnifiedCockpitDrawerHub } from '@/components/layout/UnifiedCockpitDrawerHub';
 
 export default function DashboardLayout({
   children,
@@ -35,8 +40,27 @@ export default function DashboardLayout({
   const { user, activeCompany, setActiveCompany, logout } = useAuthStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [resourceDrawerOpen, setResourceDrawerOpen] = useState(false);
   const developmentBypass = isDevelopmentAuthBypassEnabled();
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Active drawer synchronized with URL ?drawer=
+  const activeDrawerId = searchParams.get('drawer');
+
+  const handleOpenDrawer = (drawerId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('drawer', drawerId);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const handleCloseDrawer = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('drawer');
+    const newQuery = params.toString();
+    router.push(newQuery ? `${pathname}?${newQuery}` : pathname, { scroll: false });
+  };
 
   // Compute breadcrumbs path
   const segments = pathname.split('/').filter(Boolean);
@@ -45,30 +69,77 @@ export default function DashboardLayout({
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
 
   useEffect(() => {
-    // If no active company is loaded, check if any companies exist and auto-select first one;
-    // if zero companies exist, trigger first-time initialization wizard
-    if (!activeCompany) {
-      organizationsApi
-        .list()
-        .then((companies) => {
-          if (companies && companies.length > 0) {
+    // Validate activeCompany against available backend organizations
+    organizationsApi
+      .list()
+      .then((companies) => {
+        if (companies && companies.length > 0) {
+          const exists = activeCompany && companies.some((c) => c.id === activeCompany.id);
+          if (!exists) {
             setActiveCompany(companies[0]);
-          } else {
-            setSetupWizardOpen(true);
           }
-        })
-        .catch(() => {
+        } else {
           setSetupWizardOpen(true);
-        });
-    }
+        }
+      })
+      .catch(() => {
+        if (!activeCompany) {
+          setSetupWizardOpen(true);
+        }
+      });
   }, [activeCompany, setActiveCompany]);
 
-  // Global keyboard shortcut for Command Palette (Cmd+K / Ctrl+K) and Desktop Native integration
+  // Global keyboard shortcuts for Command Palette (Cmd/Ctrl+K) and Quick Domain Navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is currently typing in an input, textarea, or contentEditable element
+      const target = e.target as HTMLElement | null;
+      const isInput =
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable ||
+          target.tagName === 'SELECT');
+
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setCommandPaletteOpen((prev) => !prev);
+        return;
+      }
+
+      // Alt+1..6: Topbar Operational items
+      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        const topbarMap: Record<string, string> = {
+          '1': '/dashboard/agents',
+          '2': '/dashboard/councils',
+          '3': '/dashboard/workflows',
+          '4': '/dashboard/projects',
+          '5': '/dashboard/tasks',
+          '6': '/dashboard/approvals',
+        };
+        if (topbarMap[e.key]) {
+          e.preventDefault();
+          window.location.href = topbarMap[e.key];
+          return;
+        }
+      }
+
+      // Quick numbers 1-6 when NOT typing in an input
+      if (!isInput && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        const singleKeyMap: Record<string, string> = {
+          '1': '/dashboard/agents',
+          '2': '/dashboard/councils',
+          '3': '/dashboard/workflows',
+          '4': '/dashboard/projects',
+          '5': '/dashboard/tasks',
+          '6': '/dashboard/approvals',
+          '0': '/dashboard',
+        };
+        if (singleKeyMap[e.key]) {
+          e.preventDefault();
+          window.location.href = singleKeyMap[e.key];
+          return;
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -126,15 +197,12 @@ export default function DashboardLayout({
   return (
     <AuthGuard>
       <div className="dashboard-atmosphere flex h-screen w-full overflow-hidden bg-background text-foreground">
-        {/* Left Minimalist Sidebar */}
-        <Sidebar />
-
-        {/* Right Main Application Workspace */}
+        {/* Main Application Workspace (Full-Width, Zero Sidebar) */}
         <div className="flex flex-1 flex-col min-w-0 h-screen overflow-hidden">
           {/* Top bar with Breadcrumbs, Global Search, ThemeToggle, & User Menu */}
-          <header className="NEIMAN-topbar sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/80 px-4 backdrop-blur-xl lg:px-6 gap-4">
+          <header className="NEIMAN-topbar sticky top-0 z-30 flex min-h-16 shrink-0 items-center justify-between border-b border-border/80 px-4 backdrop-blur-xl lg:px-6 gap-3 flex-wrap py-2">
             {/* Left: Domain Breadcrumbs & Live AI Thinking Beacon */}
-            <div className="flex min-w-0 items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
               <div className="flex items-center gap-2 text-xs font-mono shrink-0">
                 <Link
                   href="/dashboard"
@@ -151,14 +219,23 @@ export default function DashboardLayout({
               </div>
 
               {/* Cognitive Status Orb Indicator */}
-              <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-border/40 font-mono text-[10px] text-muted-foreground">
+              <div className="hidden 2xl:flex items-center gap-2 pl-3 border-l border-border/40 font-mono text-[10px] text-muted-foreground">
                 <AgentOrb status="ACTIVE" size={20} />
-                <span className="uppercase tracking-widest text-[#EDEDED] hidden lg:inline">COGNITION: ACTIVE</span>
+                <span className="uppercase tracking-widest text-[#EDEDED]">COGNITION: ACTIVE</span>
               </div>
+
+              {/* High-Frequency Operational Action Bar */}
+              <HeaderOperationalBar
+                onOpenDrawer={handleOpenDrawer}
+                activeDrawerId={activeDrawerId}
+              />
             </div>
 
-            {/* Right: Global Search, Theme Toggle, Organization Switcher, Notifications, User Menu */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Right: Telemetry Pill, Global Search, Theme Toggle, Organization Switcher, Notifications, User Menu */}
+            <div className="flex items-center gap-2 shrink-0 ml-auto">
+              {/* Persistent Live System Resource Telemetry Pill */}
+              <SystemResourcePill onOpenDrawer={() => setResourceDrawerOpen(true)} />
+
               {/* Global Search trigger button */}
               <div className="hidden md:flex items-center w-44 lg:w-56">
                 <button
@@ -255,9 +332,15 @@ export default function DashboardLayout({
           </header>
 
           {/* Page main content */}
-          <main id="main-content" className="dashboard-canvas flex-1 overflow-y-auto p-4 lg:p-6" role="main">
+          <main id="main-content" className="dashboard-canvas flex-1 overflow-y-auto p-4 lg:p-6 pb-20" role="main">
             {children}
           </main>
+
+          {/* Persistent Bottom Cockpit Dock Navigation */}
+          <CockpitFooterDock
+            onOpenDrawer={handleOpenDrawer}
+            activeDrawerId={activeDrawerId}
+          />
         </div>
 
         {/* Global Command Palette */}
@@ -275,6 +358,22 @@ export default function DashboardLayout({
 
         {/* Native Auto-Update Prompt (Silent background download -> restart prompt) */}
         <UpdateReadyModal />
+
+        {/* Global Cockpit Slide-Over Drawer for Live Resources */}
+        <CockpitDrawer
+          isOpen={resourceDrawerOpen}
+          onClose={() => setResourceDrawerOpen(false)}
+          title="Operational Resource Control"
+          subtitle="Compute, CGroup Isolation, Token Quotas & Budgets"
+        >
+          <ResourceCockpitView />
+        </CockpitDrawer>
+
+        {/* Unified Cockpit Slide-Over Drawer Hub (Workforce, Workflows, Simulation, Memory, etc.) */}
+        <UnifiedCockpitDrawerHub
+          activeDrawerId={activeDrawerId}
+          onClose={handleCloseDrawer}
+        />
       </div>
     </AuthGuard>
   );

@@ -22,6 +22,8 @@ from nexora.core.enums import (
     ExecutionStatus,
     ExecutionStep,
 )
+import nexora.domains.organizations.models  # noqa: F401
+import nexora.domains.projects.models  # noqa: F401
 
 
 class Agent(NexoraBase):

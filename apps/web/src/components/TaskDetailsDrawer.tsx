@@ -143,28 +143,29 @@ export function TaskDetailsDrawer({
   return (
     <div className="fixed inset-y-0 right-0 z-50 w-full max-w-3xl bg-card border-l border-border shadow-2xl flex flex-col animate-fade-in backdrop-blur-2xl">
       {/* 1. TASK TITLE & STATUS BANNER */}
-      <div className="p-6 border-b border-border bg-secondary/30 flex items-start justify-between">
+      <div className="p-6 border-b border-border/80 bg-secondary/20 flex items-start justify-between font-mono">
         <div className="space-y-1.5 flex-1 pr-4">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-              Task #{task.id.slice(0, 8)}
+            <span className="h-1.5 w-1.5 rounded-full bg-[#D71921] shadow-[0_0_6px_#D71921]" />
+            <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary text-foreground border border-border/50">
+              TASK // #{task.id.slice(0, 8)}
             </span>
             <span
-              className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded border ${
+              className={`text-[10px] font-mono uppercase tracking-wider px-2.5 py-0.5 rounded-full border border-border/60 ${
                 task.priority === 'CRITICAL'
-                  ? 'border-rose-500/30 text-rose-400 bg-rose-500/10'
+                  ? 'border-rose-500/40 text-rose-400 bg-rose-500/10'
                   : task.priority === 'HIGH'
-                  ? 'border-amber-500/30 text-amber-400 bg-amber-500/10'
-                  : 'border-blue-500/30 text-blue-400 bg-blue-500/10'
+                  ? 'border-amber-500/40 text-amber-400 bg-amber-500/10'
+                  : 'border-blue-500/40 text-blue-400 bg-blue-500/10'
               }`}
             >
               Priority: {task.priority}
             </span>
           </div>
 
-          <h2 className="text-xl font-bold text-foreground leading-snug">{task.title}</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-foreground leading-snug font-mono uppercase tracking-tight">{task.title}</h2>
           {task.description && (
-            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed font-mono">
               {task.description}
             </p>
           )}
@@ -176,7 +177,7 @@ export function TaskDetailsDrawer({
             value={task.status}
             onChange={(e) => updateStatusMutation.mutate(e.target.value as TaskStatus)}
             aria-label="Task Status"
-            className="input text-xs font-mono py-1.5 h-8 bg-background border-border/80"
+            className="text-xs font-mono font-bold py-1 px-3 h-8 rounded-full bg-secondary border border-border text-foreground focus:outline-none focus:border-[#D71921]"
           >
             <option value="BACKLOG">BACKLOG</option>
             <option value="TODO">TODO</option>
@@ -189,10 +190,10 @@ export function TaskDetailsDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-colors"
+            className="rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
             aria-label="Close task details"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
       </div>
