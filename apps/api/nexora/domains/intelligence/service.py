@@ -40,7 +40,7 @@ class IntelligenceService:
         from nexora.domains.intelligence.catalog import UNIVERSAL_PROVIDER_CATALOG
 
         result = await self.db.execute(select(ModelProvider))
-        existing_providers = {p.name: p for p in result.scalars().all()}
+        existing_providers = {p.name: p for p in result.scalars().all() if p is not None and getattr(p, 'name', None)}
 
         for item in UNIVERSAL_PROVIDER_CATALOG:
             if item["name"] not in existing_providers:

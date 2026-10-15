@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -32,7 +32,7 @@ import { CockpitFooterDock } from '@/components/layout/CockpitFooterDock';
 import { HeaderOperationalBar } from '@/components/layout/HeaderOperationalBar';
 import { UnifiedCockpitDrawerHub } from '@/components/layout/UnifiedCockpitDrawerHub';
 
-export default function DashboardLayout({
+function DashboardLayoutContent({
   children,
 }: {
   children: React.ReactNode;
@@ -378,3 +378,22 @@ export default function DashboardLayout({
     </AuthGuard>
   );
 }
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-screen items-center justify-center bg-background text-muted-foreground font-mono text-xs">
+          Loading NEIMAN OS Cockpit...
+        </div>
+      }
+    >
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </Suspense>
+  );
+}
+
