@@ -328,24 +328,35 @@ class MemoryService:
             created_count += 1
         return created_count
 
-    async def get_knowledge_graph(self, company_id: uuid.UUID, limit: int = 100):
-        """Returns nodes and edges for Knowledge Graph explorer."""
-        # Ensure seed entities exist if empty
-        entities, relations = await self.repo.get_knowledge_graph(company_id, limit=limit)
-        if not entities:
-            # Seed foundational system nodes
-            e_sys = await self.repo.get_or_create_entity(company_id, "NEIMAN OS", "SYSTEM", "Autonomous Organization Core Kernel")
-            e_gov = await self.repo.get_or_create_entity(company_id, "Governance Council", "GOVERNANCE", "Autonomy Boundary Gatekeeper")
-            e_sec = await self.repo.get_or_create_entity(company_id, "Security Sandbox", "SECURITY", "Tool execution and filesystem chroot")
-            e_intel = await self.repo.get_or_create_entity(company_id, "Intelligence Exchange", "ENGINE", "Multi-provider model router")
-            e_db = await self.repo.get_or_create_entity(company_id, "PostgreSQL/SQLite", "DATABASE", "Organizational ledger and memory triplestore")
+    async def get_knowledge_graph(
+        self,
+        company_id: uuid.UUID,
+        limit: int = 100,
+        q: str | None = None,
+        entity_type: str | None = None,
+    ):
+        """Returns nodes and edges for Knowledge Graph explorer with optional search and type filtering."""
+        # Ensure seed entities exist if empty (only check baseline when not filtering)
+        if not q and not entity_type:
+            baseline_entities, _ = await self.repo.get_knowledge_graph(company_id, limit=1)
+            if not baseline_entities:
+                # Seed foundational system nodes
+                e_sys = await self.repo.get_or_create_entity(company_id, "NEIMAN OS", "SYSTEM", "Autonomous Organization Core Kernel")
+                e_gov = await self.repo.get_or_create_entity(company_id, "Governance Council", "GOVERNANCE", "Autonomy Boundary Gatekeeper")
+                e_sec = await self.repo.get_or_create_entity(company_id, "Security Sandbox", "SECURITY", "Tool execution and filesystem chroot")
+                e_intel = await self.repo.get_or_create_entity(company_id, "Intelligence Exchange", "ENGINE", "Multi-provider model router")
+                e_db = await self.repo.get_or_create_entity(company_id, "PostgreSQL/SQLite", "DATABASE", "Organizational ledger and memory triplestore")
 
-            await self.repo.create_relation(company_id, e_sys.id, e_gov.id, "ENFORCES")
-            await self.repo.create_relation(company_id, e_gov.id, e_sec.id, "MANAGES")
-            await self.repo.create_relation(company_id, e_sys.id, e_intel.id, "UTILIZES")
-            await self.repo.create_relation(company_id, e_sys.id, e_db.id, "DEPENDS_ON")
+                await self.repo.create_relation(company_id, e_sys.id, e_gov.id, "ENFORCES")
+                await self.repo.create_relation(company_id, e_gov.id, e_sec.id, "MANAGES")
+                await self.repo.create_relation(company_id, e_sys.id, e_intel.id, "UTILIZES")
+                await self.repo.create_relation(company_id, e_sys.id, e_db.id, "DEPENDS_ON")
 
-            entities, relations = await self.repo.get_knowledge_graph(company_id, limit=limit)
-
+        entities, relations = await self.repo.get_knowledge_graph(
+            company_id,
+            limit=limit,
+            q=q,
+            entity_type=entity_type,
+        )
         return entities, relations
 

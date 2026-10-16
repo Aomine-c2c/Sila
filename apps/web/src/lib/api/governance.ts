@@ -177,7 +177,39 @@ export interface GovernanceAuditLog {
   created_at: string;
 }
 
+export interface SandboxExecutionSpec {
+  command?: string;
+  code?: string;
+  language?: 'bash' | 'python';
+  timeout_seconds?: number;
+  allowed_directories?: string[];
+  allowed_domains?: string[];
+  environment_variables?: Record<string, string>;
+  workspace_dir?: string;
+}
+
+export interface SandboxExecutionResult {
+  execution_id: string;
+  status: 'SUCCESS' | 'FAILED' | 'TIMED_OUT' | 'FORBIDDEN';
+  exit_code: number;
+  stdout: string;
+  stderr: string;
+  duration_ms: number;
+  files_created: string[];
+  security_checks_passed: boolean;
+  violation_reason?: string | null;
+}
+
 export const governanceApi = {
+  executeInSandbox: (
+    companyId: string,
+    spec: SandboxExecutionSpec
+  ): Promise<SandboxExecutionResult> =>
+    api.post<SandboxExecutionResult>(
+      `/api/v1/companies/${companyId}/governance/sandbox/run`,
+      spec
+    ),
+
   getConstitution: (companyId: string): Promise<CompanyConstitution> =>
     api.get<CompanyConstitution>(`/api/v1/companies/${companyId}/governance/constitution`),
 
@@ -254,3 +286,4 @@ export const governanceApi = {
     return api.get<GovernanceAuditLog[]>(`/api/v1/companies/${companyId}/governance/audits${queryStr}`);
   },
 };
+

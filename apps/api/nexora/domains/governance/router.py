@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexora.core.permissions import require_admin, require_member, require_viewer
+from nexora.core.sandbox import SandboxExecutionResult, SandboxExecutionSpec
 from nexora.database import get_db
 from nexora.domains.auth.models import User
 from nexora.domains.auth.router import get_current_user
@@ -288,4 +289,27 @@ async def verify_audit_integrity(
         "signature": log.integrity_signature,
         "previous_signature": log.previous_signature,
     }
+
+
+# ==========================================
+# TOOL & CODE EXECUTION SANDBOX
+# ==========================================
+
+
+@router.post("/sandbox/run", response_model=SandboxExecutionResult)
+async def run_in_sandbox(
+    company_id: uuid.UUID,
+    spec: SandboxExecutionSpec,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_member()),
+):
+    """
+    Executes a shell command or Python script in a zero-trust, ephemeral isolated sandbox.
+    Enforces AST inspection, filesystem boundaries, timeout limits, and secret scrubbing.
+    """
+    from nexora.core.sandbox import ExecutionSandbox
+
+    sandbox = ExecutionSandbox(company_id=company_id)
+    return sandbox.execute(spec)
 

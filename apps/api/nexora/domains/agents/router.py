@@ -259,3 +259,32 @@ async def escalate_problem(
         task_id=task_id,
         problem=problem,
     )
+
+
+# ── Documentation Specialist Agent ──────────────────────────────────────────
+
+from nexora.domains.agents.docs_agent import (
+    DocGenerationReport,
+    DocumentationAgentEngine,
+)
+
+
+@router.post("/docs/generate", response_model=DocGenerationReport)
+async def trigger_documentation_generation(
+    company_id: uuid.UUID,
+    commit_to_disk: bool = Query(True, description="Write generated markdown directly to .agents/ and docs/"),
+    current_user: CurrentUser = None,
+    db: DB = None,
+    _: None = Depends(require_member()),
+):
+    """
+    Triggers the Documentation Specialist Agent (DocuForge-Arch) to inspect the AST code graph,
+    synthesize zero-filler technical references specifically for coding agents, and auto-update
+    .agents/AGENTS_REFERENCE.md and organizational memory.
+    """
+    engine = DocumentationAgentEngine(db=db)
+    return await engine.generate_and_update_agent_documentation(
+        company_id=company_id,
+        commit_to_disk=commit_to_disk,
+    )
+

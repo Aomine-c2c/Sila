@@ -58,7 +58,7 @@ export function CockpitDrawer({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-background/80 backdrop-blur-md transition-opacity duration-300 select-none"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/30 backdrop-blur-xs transition-opacity duration-200 select-none p-4 sm:p-6"
       aria-modal="true"
       role="dialog"
       aria-label={title}
@@ -68,12 +68,12 @@ export function CockpitDrawer({
     >
       <div
         ref={drawerRef}
-        className={`relative flex h-full w-full ${
-          isMaximized ? 'max-w-full' : widthClass
-        } flex-col border-l border-border/80 bg-card/95 shadow-2xl backdrop-blur-2xl transition-all duration-300 ease-out animate-in slide-in-from-right`}
+        className={`relative flex w-full ${
+          isMaximized ? 'h-[96vh] max-w-[98vw]' : `${widthClass} h-[86vh] max-h-[850px]`
+        } flex-col rounded-2xl border border-border/50 bg-background/90 dark:bg-card/90 shadow-2xl backdrop-blur-2xl transition-all duration-200 ease-out animate-in fade-in zoom-in-95`}
       >
-        {/* Drawer Header with Nothing OS Dot Matrix */}
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-border/80 px-6 font-mono">
+        {/* Floating Glass Modal Header */}
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-border/40 px-6 font-mono">
           <div className="flex items-center gap-3">
             <span className="h-2 w-2 rounded-full bg-[#D71921] shadow-[0_0_8px_#D71921]" />
             <div>
@@ -95,16 +95,17 @@ export function CockpitDrawer({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Floating Action Pills */}
+          <div className="flex items-center gap-1.5 bg-secondary/40 backdrop-blur-md p-1 rounded-full border border-border/40">
             {/* Direct Full-Page Standalone Link */}
             {fullPageHref && (
               <Link
                 href={fullPageHref}
-                className="rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                className="rounded-full p-1.5 text-muted-foreground hover:bg-background hover:text-foreground transition-all"
                 title="Open as Standalone Page"
                 onClick={onClose}
               >
-                <ExternalLink className="h-4 w-4" />
+                <ExternalLink className="h-3.5 w-3.5" />
               </Link>
             )}
 
@@ -112,14 +113,14 @@ export function CockpitDrawer({
             <button
               type="button"
               onClick={() => setIsMaximized((prev) => !prev)}
-              className="rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-              title={isMaximized ? 'Restore Width' : 'Maximize Width'}
-              aria-label="Toggle drawer expansion"
+              className="rounded-full p-1.5 text-muted-foreground hover:bg-background hover:text-foreground transition-all"
+              title={isMaximized ? 'Restore Size' : 'Maximize Console'}
+              aria-label="Toggle modal expansion"
             >
               {isMaximized ? (
-                <Minimize2 className="h-4 w-4" />
+                <Minimize2 className="h-3.5 w-3.5" />
               ) : (
-                <Maximize2 className="h-4 w-4" />
+                <Maximize2 className="h-3.5 w-3.5" />
               )}
             </button>
 
@@ -127,16 +128,16 @@ export function CockpitDrawer({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-              aria-label="Close drawer (Escape)"
+              className="rounded-full p-1.5 text-muted-foreground hover:bg-[#D71921] hover:text-white transition-all"
+              aria-label="Close modal (Escape)"
               title="Close (Esc)"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Drawer Content Area */}
+        {/* Modal Content Canvas */}
         <div className="flex-1 overflow-y-auto p-6 select-text font-mono">
           {children}
         </div>
@@ -144,3 +145,4 @@ export function CockpitDrawer({
     </div>
   );
 }
+

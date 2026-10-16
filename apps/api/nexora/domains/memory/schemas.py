@@ -118,6 +118,8 @@ class ContextAssemblyRequest(BaseModel):
     caller_role: str = "MEMBER"  # OWNER, ADMIN, MANAGER, MEMBER, VIEWER
     max_context_tokens: int = Field(default=4000, ge=100, le=32000)
     max_items: int = Field(default=5, ge=1, le=20)
+    compress_context: bool = Field(default=True, description="Enable algorithmic token compression")
+    compression_strategy: str = Field(default="AGGRESSIVE", description="CONSERVATIVE | BALANCED | AGGRESSIVE | TRIPLETS")
 
 
 class AssembledMemorySnippet(BaseModel):
@@ -143,6 +145,11 @@ class ContextAssemblyResponse(BaseModel):
     domains_consulted: list[str]
     assembled_context_prompt: str
     snippets: list[AssembledMemorySnippet]
+    # Token Compression Telemetry
+    compression_applied: bool = False
+    uncompressed_context_tokens: int = 0
+    tokens_saved: int = 0
+    compression_ratio_pct: float = 0.0
 
 
 # ==========================================

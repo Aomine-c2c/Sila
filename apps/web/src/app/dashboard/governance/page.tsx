@@ -23,6 +23,7 @@ import {
   Send,
   HelpCircle,
   Eye,
+  Terminal,
 } from 'lucide-react';
 import {
   governanceApi,
@@ -34,6 +35,7 @@ import {
   GovernanceActionEvaluationRequest,
   AutonomyConfigCreate,
   GovernanceRiskLevel,
+  SandboxExecutionResult,
 } from '@/lib/api/governance';
 import { useOrganizationContext } from '@/lib/organizationContext';
 
@@ -58,7 +60,13 @@ export default function GovernancePage() {
   const companyId = activeCompany?.id || '';
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'constitution' | 'matrix' | 'evaluator' | 'approvals' | 'escalations' | 'audits'>('constitution');
+  const [activeTab, setActiveTab] = useState<'constitution' | 'matrix' | 'evaluator' | 'approvals' | 'escalations' | 'audits' | 'sandbox'>('constitution');
+
+  // Execution Sandbox State
+  const [sandboxLang, setSandboxLang] = useState<'bash' | 'python'>('python');
+  const [sandboxCode, setSandboxCode] = useState('import os\nprint(f"Executing in isolated sandbox company={os.environ.get(\'NEIMAN_COMPANY_ID\')}")\n');
+  const [sandboxTimeout, setSandboxTimeout] = useState(15.0);
+  const [sandboxResult, setSandboxResult] = useState<SandboxExecutionResult | null>(null);
 
   // Audit filter state
   const [auditQuery, setAuditQuery] = useState('');
@@ -136,6 +144,24 @@ export default function GovernancePage() {
       queryClient.invalidateQueries({ queryKey: ['governance-audits', companyId] });
     },
   });
+
+  const runSandboxMutation = useMutation({
+    mutationFn: () =>
+      governanceApi.executeInSandbox(companyId, {
+        code: sandboxCode,
+        language: sandboxLang,
+        timeout_seconds: sandboxTimeout,
+      }),
+    onSuccess: (data) => {
+      setSandboxResult(data);
+    },
+  });
+
+  const handleRunSandbox = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!companyId || !sandboxCode.trim()) return;
+    runSandboxMutation.mutate();
+  };
 
   const createConfigMutation = useMutation({
     mutationFn: (data: AutonomyConfigCreate) => governanceApi.createAutonomyConfig(companyId, data),
@@ -321,6 +347,17 @@ export default function GovernancePage() {
         >
           <Eye className="h-4 w-4" />
           Consequential Action Audit Viewer ({audits.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('sandbox')}
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'sandbox'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+        >
+          <Terminal className="h-4 w-4" />
+          Execution Sandbox
         </button>
       </div>
 
@@ -832,6 +869,188 @@ export default function GovernancePage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 7: EXECUTION SANDBOX */}
+      {activeTab === 'sandbox' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                  <Terminal className="h-5 w-5 text-primary" />
+                  Zero-Trust Tool & Script Execution Sandbox
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Ephemeral isolated execution container with AST safety verification, secret stripping, and process timeout boundaries.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-primary/10 text-primary border border-primary/20">
+                  Container: neiman_sandbox_{companyId.slice(0, 8)}
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleRunSandbox} className="space-y-4 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-foreground block mb-1">Runtime Environment</label>
+                  <select
+                    value={sandboxLang}
+                    onChange={(e) => setSandboxLang(e.target.value as 'bash' | 'python')}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary font-mono"
+                  >
+                    <option value="python">Python 3 (AST Inspected)</option>
+                    <option value="bash">Bash Subprocess (Restricted)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-foreground block mb-1">Execution Timeout (Seconds)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    step="0.5"
+                    value={sandboxTimeout}
+                    onChange={(e) => setSandboxTimeout(parseFloat(e.target.value) || 15.0)}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary font-mono"
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    type="submit"
+                    disabled={runSandboxMutation.isPending || !sandboxCode.trim()}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    {runSandboxMutation.isPending ? (
+                      <>
+                        <RotateCw className="h-3.5 w-3.5 animate-spin" />
+                        Executing in Sandbox...
+                      </>
+                    ) : (
+                      <>
+                        <Terminal className="h-3.5 w-3.5" />
+                        Execute Isolated Payload
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium text-foreground">Code / Script Payload</label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSandboxCode(
+                          sandboxLang === 'python'
+                            ? 'import os\nprint(f"Company ID: {os.environ.get(\'NEIMAN_COMPANY_ID\')}")\nwith open("summary.txt", "w") as f:\n    f.write("Sandbox job successful")\nprint("Generated summary.txt")\n'
+                            : 'echo "Active sandbox directory: $(pwd)"\necho "test output" > test.txt\nls -la\n'
+                        )
+                      }
+                      className="text-[11px] text-primary hover:underline"
+                    >
+                      Load Safe Sample
+                    </button>
+                    <span className="text-muted-foreground">•</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSandboxCode(
+                          sandboxLang === 'python'
+                            ? 'import ctypes\nctypes.CDLL(None)\n'
+                            : 'rm -rf /\n'
+                        )
+                      }
+                      className="text-[11px] text-rose-400 hover:underline"
+                    >
+                      Load Blocked Sample
+                    </button>
+                  </div>
+                </div>
+                <textarea
+                  rows={8}
+                  value={sandboxCode}
+                  onChange={(e) => setSandboxCode(e.target.value)}
+                  placeholder="Enter code or command to execute in sandbox..."
+                  className="w-full rounded-lg border border-border bg-zinc-950 p-3 font-mono text-xs text-zinc-100 focus:outline-none focus:border-primary leading-relaxed"
+                />
+              </div>
+            </form>
+
+            {/* Sandbox Execution Output Console */}
+            {sandboxResult && (
+              <div className="mt-4 rounded-xl border border-border bg-zinc-950 p-4 space-y-3 font-mono text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-400">STATUS:</span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        sandboxResult.status === 'SUCCESS'
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : sandboxResult.status === 'FORBIDDEN'
+                          ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                          : sandboxResult.status === 'TIMED_OUT'
+                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          : 'bg-zinc-800 text-zinc-300'
+                      }`}
+                    >
+                      {sandboxResult.status}
+                    </span>
+                    <span className="text-zinc-500">•</span>
+                    <span className="text-zinc-400">EXIT: {sandboxResult.exit_code}</span>
+                    <span className="text-zinc-500">•</span>
+                    <span className="text-zinc-400">LATENCY: {sandboxResult.duration_ms}ms</span>
+                  </div>
+                  <div className="text-[11px] text-zinc-500">
+                    ID: {sandboxResult.execution_id}
+                  </div>
+                </div>
+
+                {sandboxResult.violation_reason && (
+                  <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-rose-300 text-xs">
+                    <span className="font-semibold block mb-0.5">SECURITY GATE REJECTION:</span>
+                    {sandboxResult.violation_reason}
+                  </div>
+                )}
+
+                {sandboxResult.files_created.length > 0 && (
+                  <div>
+                    <span className="text-zinc-400 block mb-1">FILES CREATED IN ISOLATED WORKSPACE:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {sandboxResult.files_created.map((f, i) => (
+                        <span key={i} className="rounded bg-zinc-800 px-2 py-0.5 text-zinc-300 text-[11px]">
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <span className="text-zinc-400 block mb-1">STANDARD OUTPUT:</span>
+                  <pre className="rounded bg-black/60 p-3 text-emerald-400 overflow-x-auto whitespace-pre-wrap max-h-48 text-[11px]">
+                    {sandboxResult.stdout || '<empty>'}
+                  </pre>
+                </div>
+
+                {sandboxResult.stderr && (
+                  <div>
+                    <span className="text-zinc-400 block mb-1">STANDARD ERROR / DIAGNOSTICS:</span>
+                    <pre className="rounded bg-black/60 p-3 text-rose-400 overflow-x-auto whitespace-pre-wrap max-h-48 text-[11px]">
+                      {sandboxResult.stderr}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

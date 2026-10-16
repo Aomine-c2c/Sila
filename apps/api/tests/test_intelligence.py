@@ -270,3 +270,84 @@ class TestIntelligenceExchange:
         assert resp.status_code == 200
         assert resp.json()["status"] == "ok"
 
+    # ── Local AI Proxy & Token Compression Tests ──────────────────────────────
+    async def test_proxy_chat_completions_with_compression(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
+        """Test OpenAI-compatible /proxy/chat/completions endpoint with token compression."""
+        company_id = company_via_api["id"]
+
+        payload = {
+            "model": "gpt-4o",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "Certainly! I would be very happy to assist you with this task today as your assistant.",
+                },
+                {
+                    "role": "user",
+                    "content": "In order to optimize our distributed cluster, please note that we need to inspect latency.",
+                },
+            ],
+            "enable_token_compression": True,
+            "compression_strategy": "AGGRESSIVE",
+            "allow_fallback": True,
+        }
+
+        resp = await client.post(
+            f"/api/v1/companies/{company_id}/intelligence/proxy/chat/completions",
+            json=payload,
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+
+        # Validate OpenAI response shape
+        assert "chatcmpl-proxy-" in data["id"]
+        assert data["object"] == "chat.completion"
+        assert len(data["choices"]) > 0
+        assert data["choices"][0]["message"]["role"] == "assistant"
+        assert len(data["choices"][0]["message"]["content"]) > 0
+
+        # Validate proxy observability and compression telemetry
+        assert data["usage"]["compressed_tokens_saved"] > 0
+        assert data["usage"]["compression_ratio_pct"] > 0
+        assert data["routed_provider"] == "openai"
+        assert data["routed_tier"] == "PRIMARY"
+        assert data["routed_via_fallback"] is False
+        assert data["latency_ms"] >= 0
+
+    async def test_proxy_tiered_fallback(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
+        """Test proxy automatic cascading fallback when primary provider fails."""
+        company_id = company_via_api["id"]
+
+        # Request preferred model claude-3-5-sonnet with simulation error flag
+        payload = {
+            "model": "claude-3-5-sonnet",
+            "messages": [
+                {"role": "user", "content": "Compute high-resiliency routing plan"}
+            ],
+            "allow_fallback": True,
+        }
+
+        # First simulate error on anthropic
+        probe_resp = await client.post(
+            f"/api/v1/companies/{company_id}/intelligence/providers/anthropic/probe",
+            json={"simulate_behavior": "rate_limit_error"},
+            headers=auth_headers,
+        )
+        assert probe_resp.status_code == 200
+
+        # Now send chat completion through proxy - router should fallback
+        resp = await client.post(
+            f"/api/v1/companies/{company_id}/intelligence/proxy/chat/completions",
+            json=payload,
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["choices"]) > 0
+        assert data["choices"][0]["message"]["role"] == "assistant"
+

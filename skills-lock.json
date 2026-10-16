@@ -6,6 +6,30 @@
       "sourceType": "github",
       "skillPath": "skills/brag/SKILL.md",
       "computedHash": "0283ba10ca4ad7f370ae0634e27b0acaaf4acd41f8cd534b61043bdc8d3e2840"
+    },
+    "zero-filler": {
+      "source": "local/zero-filler",
+      "sourceType": "local",
+      "skillPath": "skills/zero-filler/SKILL.md",
+      "computedHash": "0a99657eb02e48567397f4f7137b24fbab35dfce5c4a2822d9e5ea87b14997b4"
+    },
+    "grill-me": {
+      "source": "local/grill-me",
+      "sourceType": "local",
+      "skillPath": "skills/grill-me/SKILL.md",
+      "computedHash": "106e311e1d024b8b3fb5440d6441fb66d4805bd7248c32ff0b99268e12ba1d5a"
+    },
+    "enforce-tdd": {
+      "source": "local/enforce-tdd",
+      "sourceType": "local",
+      "skillPath": "skills/enforce-tdd/SKILL.md",
+      "computedHash": "54e2485872793f98097aee7cd97d236e2035e3e9c7b610201d7361bf1118ea59"
+    },
+    "catch-arch-rot": {
+      "source": "local/catch-arch-rot",
+      "sourceType": "local",
+      "skillPath": "skills/catch-arch-rot/SKILL.md",
+      "computedHash": "aa8120a7f8d0aa5240e46dc27ec7f61497b4ff50fe918a619acf31ab9adbdc96"
     }
   }
 }

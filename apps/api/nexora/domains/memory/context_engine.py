@@ -204,12 +204,42 @@ class ContextAssemblyEngine:
                 f"{excerpt}\n"
             )
 
+        # 5. Inject Pre-Indexed Codebase Knowledge Graph Context (Zero-grep traversal)
+        try:
+            from nexora.domains.memory.code_graph import CodebaseKnowledgeGraphEngine
+            code_engine = CodebaseKnowledgeGraphEngine()
+            code_ctx = code_engine.assemble_code_context(request.task_objective, max_symbols=8)
+            if code_ctx:
+                prompt_parts.append(code_ctx)
+                total_estimated_tokens += len(code_ctx.split())
+        except Exception:
+            pass
+
         prompt_parts.append("---")
         raw_assembled_prompt = "\n".join(prompt_parts)
 
         # Apply least-privilege context transmission: scrub all embedded secrets and PII
         from nexora.core.security import PromptSanitizer
-        assembled_prompt = PromptSanitizer.sanitize_for_external_llm(raw_assembled_prompt)
+        sanitized_prompt = PromptSanitizer.sanitize_for_external_llm(raw_assembled_prompt)
+
+        # Apply Built-in Token Compression
+        compression_applied = False
+        uncompressed_tokens = total_estimated_tokens
+        tokens_saved = 0
+        compression_ratio = 0.0
+
+        if getattr(request, "compress_context", True):
+            from nexora.core.compression import TokenCompressor
+            strat = getattr(request, "compression_strategy", "AGGRESSIVE")
+            comp_res = TokenCompressor.compress(sanitized_prompt, strategy=strat)
+            assembled_prompt = comp_res.compressed_text
+            compression_applied = True
+            uncompressed_tokens = comp_res.original_tokens
+            total_estimated_tokens = comp_res.compressed_tokens
+            tokens_saved = comp_res.tokens_saved
+            compression_ratio = comp_res.compression_ratio_pct
+        else:
+            assembled_prompt = sanitized_prompt
 
         return ContextAssemblyResponse(
             task_objective=request.task_objective,
@@ -219,6 +249,10 @@ class ContextAssemblyEngine:
             domains_consulted=required_domains,
             assembled_context_prompt=assembled_prompt,
             snippets=snippets,
+            compression_applied=compression_applied,
+            uncompressed_context_tokens=uncompressed_tokens,
+            tokens_saved=tokens_saved,
+            compression_ratio_pct=round(compression_ratio, 2),
         )
 
 

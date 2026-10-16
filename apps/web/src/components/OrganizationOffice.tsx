@@ -7,6 +7,7 @@ import { Activity, ArrowUpRight, BookOpen, Bot, Cpu, FolderKanban, Landmark, Sca
 import type { Agent } from '@/lib/api/agents';
 import type { Department } from '@/lib/api/organizations';
 import type { ApprovalRequest, Project, ResourceSummary, Task } from '@/lib/api/controlRoom';
+import { AgentAvatar } from '@/components/ui/AgentAvatar';
 
 type OfficeRoom = 'product' | 'intelligence' | 'operations' | 'review';
 type Selection = { type: 'room'; room: OfficeRoom } | { type: 'agent'; id: string };
@@ -244,7 +245,16 @@ export function OrganizationOffice({
             ) : roomAgents.length ? (
               <div className="office-person-list">
                 {roomAgents.map((agent) => <button type="button" key={agent.id} aria-label={`Inspect ${agent.name}`} onClick={() => setSelection({ type: 'agent', id: agent.id })} className={`office-person ${selection.type === 'agent' && selection.id === agent.id ? 'is-selected' : ''}`}>
-                  <span className="office-person-avatar">{agent.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('')}</span>
+                  <AgentAvatar
+                    name={agent.name}
+                    roleTitle={agentTitle(agent)}
+                    departmentName={agent.department_id ? departments.find((d) => d.id === agent.department_id)?.name : undefined}
+                    avatarUrl={agent.identity?.avatar_url as string | undefined}
+                    status={agent.status}
+                    size={28}
+                    showStatus={false}
+                    className="shrink-0"
+                  />
                   <span className="office-person-copy"><strong>{agent.name}</strong><small>{agentTitle(agent)}</small></span>
                   <i className={`office-person-state status-${String(agent.status).toLowerCase()}`} title={agent.status} />
                 </button>)}

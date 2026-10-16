@@ -361,6 +361,7 @@ export function ProviderDirectory({
                       type="button"
                       disabled={isCurrentlyProbing}
                       onClick={() => handleProbe(p.name)}
+                      aria-label="Ping Probe"
                       title="Send lightweight health check probe"
                       className="inline-flex items-center justify-center gap-1 text-[10px] font-mono h-7 px-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 border border-border transition-colors disabled:opacity-50"
                     >
@@ -369,6 +370,7 @@ export function ProviderDirectory({
                       ) : (
                         <Zap className="h-3 w-3 text-amber-400" />
                       )}
+                      <span className="sr-only">Ping Probe</span>
                     </button>
                   )}
                 </div>

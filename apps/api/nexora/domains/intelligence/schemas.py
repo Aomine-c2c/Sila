@@ -169,6 +169,8 @@ class ModelRequest(BaseModel):
     max_tokens: int = 4096
     structured_output_schema: dict | None = None
     simulation_flags: dict[str, str] | None = None  # e.g. {"openai": "rate_limit", "anthropic": "timeout"}
+    enable_token_compression: bool = True
+    compression_strategy: str = "AGGRESSIVE"  # CONSERVATIVE | BALANCED | AGGRESSIVE | TRIPLETS
 
 
 class ModelResponsePayload(BaseModel):
@@ -189,6 +191,13 @@ class ModelResponsePayload(BaseModel):
     routing_trace: list[dict] = Field(default_factory=list)
     structured_output_validated: bool = False
     circuit_breaker_status: str = "CLOSED"  # CLOSED | HALF_OPEN | OPEN
+    # Built-in Token Compression Telemetry
+    compression_applied: bool = False
+    original_prompt_tokens: int = 0
+    compressed_prompt_tokens: int = 0
+    tokens_saved: int = 0
+    compression_ratio_pct: float = 0.0
+    cost_saved_usd: float = 0.0
 
 
 
@@ -227,7 +236,29 @@ class ProviderProbeResponse(BaseModel):
     is_healthy: bool
     latency_ms: float
     circuit_breaker_status: str  # CLOSED | OPEN | HALF_OPEN
-    consecutive_failures: int
     message: str
+
+
+# ── Built-in Token Compression On-Demand Schemas ───────────────────────────
+
+
+class TokenCompressionRequest(BaseModel):
+    text: str = Field(min_length=1, description="Raw verbose text, prompt, or instructions to compress")
+    strategy: str = Field(
+        default="AGGRESSIVE",
+        description="Compression strategy: CONSERVATIVE | BALANCED | AGGRESSIVE | TRIPLETS",
+    )
+
+
+class TokenCompressionResponse(BaseModel):
+    original_text: str
+    compressed_text: str
+    original_tokens: int
+    compressed_tokens: int
+    tokens_saved: int
+    compression_ratio_pct: float
+    strategy_used: str
+    estimated_cost_saved_usd: float = 0.0
+
     timestamp: datetime
 

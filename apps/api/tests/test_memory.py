@@ -214,3 +214,95 @@ class TestOrganizationalMemory:
         updated = outcome_res.json()
         assert "Zero downtime achieved" in updated["actual_outcome"]
         assert len(updated["lessons_learned"]) == 2
+
+    @pytest.mark.asyncio
+    async def test_codebase_graph_pre_indexing_and_symbol_search(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
+        """
+        Verify that Codebase AST Pre-Indexing:
+        1. Indexes files into AST entities & dependency edges without brute-force grep
+        2. Returns fast symbol queries with callers and callees
+        3. Supports sync into persistent KnowledgeEntities
+        """
+        company_id = company_via_api["id"]
+
+        # 1. Fetch index summary
+        index_res = await client.get(
+            f"/api/v1/companies/{company_id}/memory/code-graph/index?sync_db=true",
+            headers=auth_headers,
+        )
+        assert index_res.status_code == 200
+        summary = index_res.json()
+        assert summary["indexed_files"] > 0
+        assert summary["total_symbols"] > 0
+        assert summary["total_dependencies"] > 0
+        assert "python" in summary["files_by_language"]
+
+        # 2. Fast Symbol Query (replaces repetitive grep)
+        sym_res = await client.get(
+            f"/api/v1/companies/{company_id}/memory/code-graph/symbols?q=ContextAssemblyEngine",
+            headers=auth_headers,
+        )
+        assert sym_res.status_code == 200
+        sym_data = sym_res.json()
+        assert sym_data["total_matches"] >= 1
+        assert any("ContextAssemblyEngine" in s["name"] for s in sym_data["symbols"])
+        assert len(sym_data["related_files"]) >= 1
+
+    @pytest.mark.asyncio
+    async def test_knowledge_graph_search_and_filtering(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
+        """
+        Verify that the organizational knowledge graph is searchable:
+        1. Full graph retrieval seeds default system entities
+        2. Query search filters entities by name or description
+        3. Type filtering restricts returned nodes
+        4. Matching entities preserve connected neighborhood relations
+        """
+        company_id = company_via_api["id"]
+
+        # 1. Base graph retrieval (seeds default system nodes)
+        base_res = await client.get(
+            f"/api/v1/companies/{company_id}/memory/graph",
+            headers=auth_headers,
+        )
+        assert base_res.status_code == 200
+        base_data = base_res.json()
+        assert base_data["total_entities"] >= 4
+        assert base_data["total_relations"] >= 4
+
+        # 2. Extract extra custom facts to enrich the knowledge graph
+        extract_res = await client.post(
+            f"/api/v1/companies/{company_id}/memory/graph/extract",
+            json={"text": "Agent Oracle uses QuantumCache and validates Policy Theta."},
+            headers=auth_headers,
+        )
+        assert extract_res.status_code == 200
+        assert extract_res.json()["facts_extracted"] >= 1
+
+        # 3. Search graph by query 'Oracle'
+        search_res = await client.get(
+            f"/api/v1/companies/{company_id}/memory/graph?q=Oracle",
+            headers=auth_headers,
+        )
+        assert search_res.status_code == 200
+        search_data = search_res.json()
+        assert search_data["query"] == "Oracle"
+        assert search_data["total_entities"] >= 1
+        assert any("oracle" in e["name"].lower() for e in search_data["entities"])
+        # Should include connected edges touching Oracle
+        assert search_data["total_relations"] >= 1
+
+        # 4. Search graph by entity_type 'SYSTEM'
+        type_res = await client.get(
+            f"/api/v1/companies/{company_id}/memory/graph?entity_type=SYSTEM",
+            headers=auth_headers,
+        )
+        assert type_res.status_code == 200
+        type_data = type_res.json()
+        assert type_data["entity_type"] == "SYSTEM"
+        assert all(e["entity_type"] == "SYSTEM" for e in type_data["entities"])
+        assert any("NEIMAN OS" in e["name"] for e in type_data["entities"])
+

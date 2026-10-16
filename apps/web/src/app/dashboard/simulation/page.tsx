@@ -40,6 +40,9 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { evolutionApi, SimulationScenario, SimulationRun } from '@/lib/api/evolution';
+import { agentsApi } from '@/lib/api/agents';
+import { organizationsApi } from '@/lib/api/organizations';
+import { workflowsApi } from '@/lib/api/workflows';
 import { useOrganizationContext } from '@/lib/organizationContext';
 import { isDevelopmentAuthBypassEnabled } from '@/lib/authPreview';
 import { AgentOrb } from '@/components/ui/AgentOrb';
@@ -429,6 +432,65 @@ export default function SimulationLabPage() {
     staleTime: 60_000,
   });
 
+  // Query live company workforce, departments, and workflows to reflect verified company state
+  const { data: liveAgents } = useQuery({
+    queryKey: ['agents', companyId],
+    queryFn: () => agentsApi.list(companyId),
+    enabled: !!companyId,
+    staleTime: 60_000,
+  });
+
+  const { data: liveDepartments } = useQuery({
+    queryKey: ['departments', companyId],
+    queryFn: () => organizationsApi.listDepartments(companyId),
+    enabled: !!companyId,
+    staleTime: 60_000,
+  });
+
+  const { data: liveWorkflows } = useQuery({
+    queryKey: ['workflows', companyId],
+    queryFn: () => workflowsApi.list(companyId),
+    enabled: !!companyId,
+    staleTime: 60_000,
+  });
+
+  // Dynamically update CURRENT ORGANIZATION baseline with verified active company state
+  useEffect(() => {
+    if (liveAgents || liveDepartments || liveWorkflows) {
+      setSandboxes((prev) =>
+        prev.map((s) => {
+          if (!s.isBaseline) return s;
+          const agentRoles = Array.from(
+            new Set((liveAgents || []).map((a) => (a.responsibilities?.[0] as string) || a.name))
+          ).slice(0, 6);
+          const deptNames = (liveDepartments || []).map((d) => d.name);
+
+          return {
+            ...s,
+            name: activeCompany?.name ? `${activeCompany.name.toUpperCase()} (LIVE)` : s.name,
+            config: {
+              ...s.config,
+              agents: {
+                count: liveAgents?.length ? liveAgents.length : s.config.agents.count,
+                roles: agentRoles.length > 0 ? agentRoles : s.config.agents.roles,
+                concurrency: Math.max(3, Math.min(12, Math.round((liveAgents?.length || 20) / 4))),
+              },
+              departments: {
+                count: deptNames.length || s.config.departments.count,
+                list: deptNames.length > 0 ? deptNames : s.config.departments.list,
+              },
+              workflows: {
+                strategy: 'Standard Production Hierarchical Review',
+                activeWorkflows: liveWorkflows?.length || s.config.workflows.activeWorkflows,
+                retryBudget: 3,
+              },
+            },
+          };
+        })
+      );
+    }
+  }, [liveAgents, liveDepartments, liveWorkflows, activeCompany?.name]);
+
   // Sync server scenarios with local sandbox state
   useEffect(() => {
     if (serverScenarios && serverScenarios.length > 0) {
@@ -501,22 +563,59 @@ export default function SimulationLabPage() {
     };
   }, [executionTimer]);
 
-  // Clone active company into a new sandbox branch
-  const handleCloneOrganization = () => {
-    const letters = ['D', 'E', 'F', 'G', 'H'];
+  // Clone active company or sandbox into a new isolated sandbox branch
+  const handleCloneOrganization = async () => {
+    const letters = ['D', 'E', 'F', 'G', 'H', 'I', 'J'];
     const nextLetter = letters[sandboxes.length - 4] || `X${sandboxes.length}`;
+    const newSandboxName = `SIMULATION ${nextLetter}`;
+    const clonedConfig = JSON.parse(JSON.stringify(activeSandbox.config));
+
+    // Optimistic / local branch item
+    const tempId = `sim-branch-${Date.now()}`;
     const newSandbox: SandboxScenario = {
-      id: `sim-branch-${Date.now()}`,
+      id: tempId,
       key: `SIM_${nextLetter}`,
-      name: `SIMULATION ${nextLetter}`,
+      name: newSandboxName,
       badge: 'CLONED SANDBOX',
       description: `Cloned snapshot from ${activeSandbox.name}. Fully isolated sandbox trial.`,
       status: 'IDLE',
-      config: JSON.parse(JSON.stringify(activeSandbox.config)),
+      config: clonedConfig,
       results: undefined,
     };
-    setSandboxes([...sandboxes, newSandbox]);
-    setActiveBranchId(newSandbox.id);
+
+    setSandboxes((prev) => [...prev, newSandbox]);
+    setActiveBranchId(tempId);
+
+    // If connected to backend company, persist sandbox scenario to backend
+    if (companyId) {
+      try {
+        const created = await evolutionApi.createSimulationScenario(companyId, {
+          name: newSandboxName,
+          description: `Isolated sandbox branch cloned from ${activeSandbox.name}.`,
+          simulated_config: {
+            agent_count: clonedConfig.agents.count,
+            intelligence_budget_monthly_usd: clonedConfig.resources.monthlyBudgetUsd,
+            routing_strategy: clonedConfig.routing.mode,
+            parallel_execution_slots: clonedConfig.resources.parallelSlots,
+            policy_rules: clonedConfig.policies.rules,
+          },
+          workload_profile: {
+            tasks_count: workloadTaskCount,
+            concurrency: clonedConfig.resources.parallelSlots,
+            type: 'SANDBOX_ISOLATED',
+          },
+        });
+
+        // Update with server ID
+        setSandboxes((prev) =>
+          prev.map((s) => (s.id === tempId ? { ...s, id: created.id } : s))
+        );
+        setActiveBranchId(created.id);
+        qc.invalidateQueries({ queryKey: ['simulationScenarios', companyId] });
+      } catch (err) {
+        console.warn('Backend sandbox scenario creation error, using client isolation:', err);
+      }
+    }
   };
 
   // Modify active branch configuration parameters

@@ -24,6 +24,13 @@ from nexora.domains.intelligence.schemas import (
     ProviderConfigureResponse,
     ProviderProbeRequest,
     ProviderProbeResponse,
+    TokenCompressionRequest,
+    TokenCompressionResponse,
+)
+from nexora.domains.intelligence.proxy import (
+    ChatCompletionRequest,
+    ChatCompletionResponse,
+    LocalAIProxy,
 )
 from nexora.domains.intelligence.service import IntelligenceService
 
@@ -89,6 +96,63 @@ async def generate_response(
     cost/latency/privacy constraints, and fallback chains.
     """
     return await IntelligenceService(db).execute_request(company_id, body)
+
+
+@router.post("/compress", response_model=TokenCompressionResponse)
+async def compress_text(
+    company_id: uuid.UUID,
+    body: TokenCompressionRequest,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_viewer()),
+):
+    """
+    On-demand algorithmic token compression for prompts, instructions, and context snippets.
+    Calculates exact token reduction, compression ratio, and estimated USD savings.
+    """
+    from datetime import datetime, timezone
+    from nexora.core.compression import TokenCompressor
+    res = TokenCompressor.compress(body.text, strategy=body.strategy)
+    # Average inference input cost benchmark ($2.50 per 1M tokens)
+    estimated_cost_saved = round(res.tokens_saved * (2.50 / 1_000_000.0), 6)
+    return TokenCompressionResponse(
+        original_text=res.original_text,
+        compressed_text=res.compressed_text,
+        original_tokens=res.original_tokens,
+        compressed_tokens=res.compressed_tokens,
+        tokens_saved=res.tokens_saved,
+        compression_ratio_pct=round(res.compression_ratio_pct, 2),
+        strategy_used=res.strategy_used.value,
+        estimated_cost_saved_usd=estimated_cost_saved,
+        timestamp=datetime.now(timezone.utc),
+    )
+
+
+# ── OpenAI-Compatible Intelligent AI Proxy ──────────────────────────────────
+
+
+@router.post("/proxy/chat/completions", response_model=ChatCompletionResponse)
+async def proxy_chat_completions(
+    company_id: uuid.UUID,
+    body: ChatCompletionRequest,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_member()),
+):
+    """
+    Local AI Proxy endpoint.
+    Accepts OpenAI-compatible /v1/chat/completions payloads, applies algorithmic
+    token compression to the message history, and routes across providers
+    with tiered automatic fallback (PRIMARY -> FALLBACK -> SECONDARY FALLBACK -> LOCAL DEGRADED).
+    """
+    service = IntelligenceService(db)
+    await service.seed_default_providers_if_empty()
+    return await LocalAIProxy.process_completion(
+        router=service.router,
+        company_id=company_id,
+        request=body,
+    )
+
 
 
 # ── Model & Provider Catalog ────────────────────────────────────────────────

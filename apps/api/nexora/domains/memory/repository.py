@@ -295,13 +295,48 @@ class MemoryRepository:
         await self.db.refresh(rel)
         return rel
 
-    async def get_knowledge_graph(self, company_id: uuid.UUID, limit: int = 100):
+    async def get_knowledge_graph(
+        self,
+        company_id: uuid.UUID,
+        limit: int = 100,
+        q: str | None = None,
+        entity_type: str | None = None,
+    ):
+        from sqlalchemy import or_
         from nexora.domains.memory.models import KnowledgeEntity, KnowledgeRelation
-        stmt_e = select(KnowledgeEntity).where(KnowledgeEntity.company_id == company_id).limit(limit)
+
+        stmt_e = select(KnowledgeEntity).where(KnowledgeEntity.company_id == company_id)
+
+        if entity_type and entity_type.upper() != "ALL":
+            stmt_e = stmt_e.where(KnowledgeEntity.entity_type == entity_type.upper())
+
+        if q and q.strip():
+            search_term = f"%{q.strip().lower()}%"
+            stmt_e = stmt_e.where(
+                or_(
+                    KnowledgeEntity.name.ilike(search_term),
+                    KnowledgeEntity.description.ilike(search_term),
+                )
+            )
+
+        stmt_e = stmt_e.limit(limit)
         res_e = await self.db.execute(stmt_e)
         entities = list(res_e.scalars().all())
 
-        stmt_r = select(KnowledgeRelation).where(KnowledgeRelation.company_id == company_id).limit(limit)
+        if not entities:
+            return [], []
+
+        entity_ids = [e.id for e in entities]
+
+        # Retrieve direct relations connecting or touching matched entities
+        stmt_r = select(KnowledgeRelation).where(
+            KnowledgeRelation.company_id == company_id,
+            or_(
+                KnowledgeRelation.source_id.in_(entity_ids),
+                KnowledgeRelation.target_id.in_(entity_ids),
+            ),
+        ).limit(limit * 2)
+
         res_r = await self.db.execute(stmt_r)
         relations = list(res_r.scalars().all())
 

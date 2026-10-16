@@ -30,6 +30,7 @@ from nexora.config import get_settings
 from nexora.database import AsyncSessionLocal
 from nexora.domains.activity.router import router as activity_router
 from nexora.domains.agents.router import router as agent_router
+from nexora.domains.agents.external_agents_router import router as external_agents_router
 
 # Domain routers
 from nexora.domains.auth.router import router as auth_router
@@ -46,6 +47,8 @@ from nexora.domains.projects.router import router as project_router
 from nexora.domains.resources.router import router as resource_router
 from nexora.domains.workflows.router import router as workflow_router
 from nexora.domains.system.router import router as system_router
+from nexora.domains.system.mcp_router import router as mcp_router
+from nexora.domains.system.harvester_router import router as harvester_router
 from nexora.exceptions import register_exception_handlers
 from nexora.middleware import RateLimitMiddleware, RequestIDMiddleware, SecurityHeadersMiddleware
 
@@ -96,6 +99,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix=API_PREFIX)
     app.include_router(org_router, prefix=API_PREFIX)
     app.include_router(agent_router, prefix=API_PREFIX)
+    app.include_router(external_agents_router, prefix=API_PREFIX)
     app.include_router(project_router, prefix=API_PREFIX)
     app.include_router(workflow_router, prefix=API_PREFIX)
     app.include_router(policy_router, prefix=API_PREFIX)
@@ -109,6 +113,8 @@ def create_app() -> FastAPI:
     app.include_router(evolution_router, prefix=API_PREFIX)
     app.include_router(activity_router, prefix=API_PREFIX)
     app.include_router(system_router, prefix=API_PREFIX)
+    app.include_router(mcp_router, prefix=API_PREFIX)
+    app.include_router(harvester_router, prefix=API_PREFIX)
 
     # ── UI Route ───────────────────────────────────────────────────────────
     from pathlib import Path

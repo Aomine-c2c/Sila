@@ -236,3 +236,106 @@ class TestSecurityHardening:
         assert "- the worker nodes are online." in compressed
         assert "5ms" in compressed
 
+    # ── 11. Zero-Trust Execution Sandbox Tests ────────────────────────────────
+    async def test_execution_sandbox_bash_and_secrets(self):
+        """Test isolated bash command execution and secret scrubbing."""
+        from nexora.core.sandbox import ExecutionSandbox, SandboxExecutionSpec
+
+        company_id = uuid.uuid4()
+        sandbox = ExecutionSandbox(company_id=company_id)
+
+        # 1. Benign execution creates file and runs in isolated workspace
+        spec = SandboxExecutionSpec(
+            command="echo 'sandbox output' && echo 'file content' > test.txt",
+            timeout_seconds=5.0,
+        )
+        res = sandbox.execute(spec)
+        assert res.status == "SUCCESS"
+        assert res.exit_code == 0
+        assert "sandbox output" in res.stdout
+        assert "test.txt" in res.files_created
+        assert res.security_checks_passed is True
+
+        # 2. Block prohibited destructive command
+        bad_spec = SandboxExecutionSpec(
+            command="rm -rf /",
+            timeout_seconds=5.0,
+        )
+        bad_res = sandbox.execute(bad_spec)
+        assert bad_res.status == "FORBIDDEN"
+        assert bad_res.security_checks_passed is False
+        assert "prohibited shell pattern" in bad_res.stderr
+
+    async def test_execution_sandbox_python_ast_safety(self):
+        """Test AST-based static safety inspection for Python code."""
+        from nexora.core.sandbox import CodeSafetyInspector, ExecutionSandbox, SandboxExecutionSpec
+
+        # AST inspector directly
+        safe_code = "import json\ndata = json.loads('{\"key\": 123}')\nprint(data)"
+        is_safe, err = CodeSafetyInspector.inspect_python_code(safe_code)
+        assert is_safe is True
+        assert err is None
+
+        # Forbidden eval
+        eval_code = "eval('__import__(\"os\").system(\"id\")')"
+        is_safe, err = CodeSafetyInspector.inspect_python_code(eval_code)
+        assert is_safe is False
+        assert "eval" in (err or "")
+
+        # Forbidden ctypes
+        ctypes_code = "import ctypes\nctypes.CDLL(None)"
+        is_safe, err = CodeSafetyInspector.inspect_python_code(ctypes_code)
+        assert is_safe is False
+        assert "ctypes" in (err or "")
+
+        # Test within ExecutionSandbox
+        sandbox = ExecutionSandbox(company_id=uuid.uuid4())
+        res = sandbox.execute(
+            SandboxExecutionSpec(
+                code=ctypes_code,
+                language="python",
+                timeout_seconds=5.0,
+            )
+        )
+        assert res.status == "FORBIDDEN"
+        assert "Security Violation" in res.stderr
+        assert res.security_checks_passed is False
+
+    async def test_execution_sandbox_timeout(self):
+        """Test process timeout enforcement."""
+        from nexora.core.sandbox import ExecutionSandbox, SandboxExecutionSpec
+
+        sandbox = ExecutionSandbox(company_id=uuid.uuid4())
+        res = sandbox.execute(
+            SandboxExecutionSpec(
+                command="sleep 10",
+                timeout_seconds=0.5,
+            )
+        )
+        assert res.status == "TIMED_OUT"
+        assert res.exit_code == 124
+        assert "timed out" in res.stderr
+
+    async def test_sandbox_api_endpoint(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
+        """Test API endpoint POST /companies/{company_id}/governance/sandbox/run."""
+        company_id = company_via_api["id"]
+
+        # Run safe python code
+        payload = {
+            "code": "print(2 + 2)",
+            "language": "python",
+            "timeout_seconds": 5.0,
+        }
+        resp = await client.post(
+            f"/api/v1/companies/{company_id}/governance/sandbox/run",
+            json=payload,
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "SUCCESS"
+        assert data["stdout"].strip() == "4"
+        assert data["security_checks_passed"] is True
+

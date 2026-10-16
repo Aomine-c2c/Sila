@@ -35,6 +35,7 @@ const mockProviders = [
     is_local: false,
     is_active: true,
     is_healthy: true,
+    is_configured: true,
     consecutive_failures: 0,
     created_at: '2026-09-01T00:00:00Z',
   },
@@ -46,6 +47,7 @@ const mockProviders = [
     is_local: false,
     is_active: true,
     is_healthy: true,
+    is_configured: true,
     consecutive_failures: 0,
     created_at: '2026-09-01T00:00:00Z',
   },
@@ -57,6 +59,7 @@ const mockProviders = [
     is_local: false,
     is_active: true,
     is_healthy: true,
+    is_configured: true,
     consecutive_failures: 0,
     created_at: '2026-09-01T00:00:00Z',
   },
@@ -68,6 +71,7 @@ const mockProviders = [
     is_local: true,
     is_active: true,
     is_healthy: true,
+    is_configured: true,
     consecutive_failures: 0,
     created_at: '2026-09-01T00:00:00Z',
   },
@@ -207,9 +211,9 @@ describe('NEIMAN Intelligence Exchange UI', () => {
     expect(screen.getByText('NEIMAN ROUTING ENGINE')).toBeInTheDocument();
 
     // Verify Upstream Providers row in SVG Diagram
-    expect(screen.getByText('Anthropic Claude')).toBeInTheDocument();
-    expect(screen.getByText('Google Gemini')).toBeInTheDocument();
-    expect(screen.getByText('Local / Air-Gapped')).toBeInTheDocument();
+    expect(await screen.findByText('Anthropic Claude')).toBeInTheDocument();
+    expect(await screen.findByText('Google Gemini')).toBeInTheDocument();
+    expect(await screen.findByText('Local / Air-Gapped')).toBeInTheDocument();
   });
 
   it('renders measurable model comparison matrix with verified latencies, costs, and privacy', async () => {
@@ -254,10 +258,10 @@ describe('NEIMAN Intelligence Exchange UI', () => {
     const providersTab = await screen.findByRole('button', { name: /Provider Health & Adapters/i });
     fireEvent.click(providersTab);
 
-    expect(await screen.findByText('Active Provider Health Directory & Adapter Telemetry')).toBeInTheDocument();
+    expect(await screen.findByText('Universal AI Provider Directory & Key Vault')).toBeInTheDocument();
 
-    const resetBtn = screen.getByRole('button', { name: /Reset All Breakers/i });
-    fireEvent.click(resetBtn);
+    const resetBtns = screen.getAllByRole('button', { name: /Reset Breakers/i });
+    fireEvent.click(resetBtns[0]);
 
     await waitFor(() => {
       expect(intelligenceApi.resetCircuitBreakers).toHaveBeenCalled();
@@ -287,13 +291,16 @@ describe('NEIMAN Intelligence Exchange UI', () => {
 
   it('allows live ping probing and fault injection simulation on providers', async () => {
     (intelligenceApi.probeProvider as jest.Mock).mockResolvedValue({
-      provider_name: 'anthropic',
+      provider: 'anthropic',
+      display_name: 'Anthropic Claude',
       is_healthy: true,
       circuit_breaker_status: 'CLOSED',
       consecutive_failures: 0,
+      latency_ms: 142,
       measured_latency_ms: 142,
-      probe_timestamp: '2026-10-02T10:00:00Z',
+      message: 'Provider responded successfully (142ms)',
       detail: 'Provider responded successfully (142ms)',
+      timestamp: '2026-10-02T10:00:00Z',
     });
 
     renderPage();
@@ -301,7 +308,7 @@ describe('NEIMAN Intelligence Exchange UI', () => {
     const providersTab = await screen.findByRole('button', { name: /Provider Health & Adapters/i });
     fireEvent.click(providersTab);
 
-    expect(await screen.findByText('Active Provider Health Directory & Adapter Telemetry')).toBeInTheDocument();
+    expect(await screen.findByText('Universal AI Provider Directory & Key Vault')).toBeInTheDocument();
 
     const probeButtons = screen.getAllByRole('button', { name: /Ping Probe/i });
     expect(probeButtons.length).toBeGreaterThan(0);

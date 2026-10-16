@@ -393,3 +393,35 @@ class TestAgentExecutionLifecycleAndAudits:
         )
         assert list_resp.status_code == 200
         assert len(list_resp.json()) == 1
+
+    async def test_documentation_specialist_agent(
+        self, client: AsyncClient, auth_headers: dict, company_via_api: dict
+    ):
+        """
+        Verify the Documentation Specialist Agent:
+        1. Automatically instantiates the DocuForge-Arch agent & role in Engineering
+        2. Generates machine-optimized markdown references for coding agents
+        3. Updates files on disk and syncs knowledge base memory
+        """
+        company_id = company_via_api["id"]
+
+        gen_resp = await client.post(
+            f"/api/v1/companies/{company_id}/agents/docs/generate?commit_to_disk=true",
+            headers=auth_headers,
+        )
+        assert gen_resp.status_code == 200
+        report = gen_resp.json()
+        assert report["status"] == "SUCCESS"
+        assert report["agent_name"] == "DocuForge-Arch"
+        assert len(report["sections"]) >= 3
+        assert report["total_tokens_generated"] > 0
+        assert any("AGENTS_REFERENCE.md" in f for f in report["files_updated"])
+
+        # Check agent was created in the company
+        agents_resp = await client.get(
+            f"/api/v1/companies/{company_id}/agents", headers=auth_headers
+        )
+        assert agents_resp.status_code == 200
+        agent_names = [a["name"] for a in agents_resp.json()]
+        assert "DocuForge-Arch" in agent_names
+

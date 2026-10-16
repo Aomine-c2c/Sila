@@ -92,6 +92,8 @@ export interface ContextAssemblyRequest {
   caller_role?: string;
   max_context_tokens?: number;
   max_items?: number;
+  compress_context?: boolean;
+  compression_strategy?: 'CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE' | 'TRIPLETS';
 }
 
 export interface ContextAssemblyResponse {
@@ -102,6 +104,11 @@ export interface ContextAssemblyResponse {
   domains_consulted: string[];
   assembled_context_prompt: string;
   snippets: AssembledMemorySnippet[];
+  // Token Compression Telemetry
+  compression_applied?: boolean;
+  uncompressed_context_tokens?: number;
+  tokens_saved?: number;
+  compression_ratio_pct?: number;
 }
 
 export interface OptionConsidered {
@@ -219,7 +226,7 @@ export const memoryApi = {
 
   getKnowledgeGraph: (
     companyId: string,
-    limit: number = 100
+    params?: { limit?: number; q?: string; entityType?: string }
   ): Promise<{
     entities: Array<{
       id: string;
@@ -238,12 +245,170 @@ export const memoryApi = {
     }>;
     total_entities: number;
     total_relations: number;
-  }> => api.get(`/api/v1/companies/${companyId}/memory/graph?limit=${limit}`),
+    query?: string | null;
+    entity_type?: string | null;
+  }> => {
+    const qParams = new URLSearchParams();
+    if (params?.limit) qParams.append('limit', String(params.limit));
+    if (params?.q?.trim()) qParams.append('q', params.q.trim());
+    if (params?.entityType && params.entityType !== 'ALL') qParams.append('entity_type', params.entityType);
+    const queryStr = qParams.toString() ? `?${qParams.toString()}` : '';
+    return api.get(`/api/v1/companies/${companyId}/memory/graph${queryStr}`);
+  },
 
   extractKnowledgeFacts: (
     companyId: string,
     payload: { text: string; provenance?: string }
   ): Promise<{ status: string; facts_extracted: number }> =>
     api.post(`/api/v1/companies/${companyId}/memory/graph/extract`, payload),
+
+  // ==========================================
+  // MEMGPT HIERARCHICAL VIRTUAL MEMORY
+  // ==========================================
+
+  getMemGPTContext: (
+    companyId: string,
+    agentId: string
+  ): Promise<MemGPTPromptContext> =>
+    api.get<MemGPTPromptContext>(`/api/v1/companies/${companyId}/memory/agents/${agentId}/memgpt`),
+
+  listCoreMemoryBlocks: (
+    companyId: string,
+    agentId: string
+  ): Promise<CoreMemoryBlock[]> =>
+    api.get<CoreMemoryBlock[]>(`/api/v1/companies/${companyId}/memory/agents/${agentId}/memgpt/blocks`),
+
+  updateCoreMemoryBlock: (
+    companyId: string,
+    agentId: string,
+    payload: { block_name: string; content: string; mode?: 'replace' | 'append' }
+  ): Promise<CoreMemoryBlock> =>
+    api.post<CoreMemoryBlock>(`/api/v1/companies/${companyId}/memory/agents/${agentId}/memgpt/blocks`, payload),
+
+  appendRecallMessage: (
+    companyId: string,
+    agentId: string,
+    payload: { role: string; message: string }
+  ): Promise<{ status: string; log_id: string; is_evicted: boolean; estimated_tokens: number }> =>
+    api.post(`/api/v1/companies/${companyId}/memory/agents/${agentId}/memgpt/recall`, payload),
+
+  // ==========================================
+  // GRAPHIFY & OBSIDIAN BIDIRECTIONAL GRAPH
+  // ==========================================
+
+  getGraphifyNetwork: (
+    companyId: string
+  ): Promise<GraphifyNetworkResponse> =>
+    api.get<GraphifyNetworkResponse>(`/api/v1/companies/${companyId}/memory/graphify`),
+
+  // ==========================================
+  // CODEBASE AST KNOWLEDGE GRAPH (ZERO-GREP)
+  // ==========================================
+
+  getCodebaseGraphIndex: (
+    companyId: string,
+    params?: { force_refresh?: boolean; sync_db?: boolean }
+  ): Promise<CodebaseGraphIndexSummary> => {
+    const q = new URLSearchParams();
+    if (params?.force_refresh) q.append('force_refresh', 'true');
+    if (params?.sync_db) q.append('sync_db', 'true');
+    const queryStr = q.toString() ? `?${q.toString()}` : '';
+    return api.get<CodebaseGraphIndexSummary>(`/api/v1/companies/${companyId}/memory/code-graph/index${queryStr}`);
+  },
+
+  searchCodebaseSymbols: (
+    companyId: string,
+    query: string,
+    limit: number = 25
+  ): Promise<SymbolSearchResponse> =>
+    api.get<SymbolSearchResponse>(
+      `/api/v1/companies/${companyId}/memory/code-graph/symbols?q=${encodeURIComponent(query)}&limit=${limit}`
+    ),
 };
+
+export interface CoreMemoryBlock {
+  id: string;
+  agent_id: string;
+  block_name: string;
+  label: string;
+  content: string;
+  char_limit: number;
+  is_read_only: boolean;
+  updated_at: string;
+}
+
+export interface MemGPTPromptContext {
+  agent_id: string;
+  persona_block: string;
+  human_block: string;
+  scratchpad_block?: string | null;
+  fifo_messages: Array<{
+    role: string;
+    content: string;
+    tokens: number;
+  }>;
+  total_active_tokens: number;
+  archived_memories_count: number;
+}
+
+export interface GraphifyNode {
+  id: string;
+  name: string;
+  type: string;
+  description?: string | null;
+  degree: number;
+  in_links: string[];
+  out_links: string[];
+}
+
+export interface GraphifyEdge {
+  source: string;
+  target: string;
+  relation: string;
+  weight: number;
+  provenance?: string | null;
+}
+
+export interface GraphifyNetworkResponse {
+  nodes: GraphifyNode[];
+  edges: GraphifyEdge[];
+  total_nodes: number;
+  total_edges: number;
+  central_concepts: string[];
+  vault_markdown_export: string;
+}
+
+export interface CodeSymbolNode {
+  id: string;
+  name: string;
+  kind: 'MODULE' | 'CLASS' | 'FUNCTION' | 'METHOD' | 'INTERFACE' | 'ENDPOINT' | string;
+  file_path: string;
+  line_number?: number | null;
+  docstring?: string | null;
+  signature?: string | null;
+  incoming_refs: string[];
+  outgoing_refs: string[];
+}
+
+export interface CodebaseGraphIndexSummary {
+  indexed_files: number;
+  total_symbols: number;
+  total_dependencies: number;
+  files_by_language: Record<string, number>;
+  symbols_by_kind: Record<string, number>;
+  duration_ms: number;
+  indexed_at: string;
+  central_modules: string[];
+}
+
+export interface SymbolSearchResponse {
+  query: string;
+  total_matches: number;
+  symbols: CodeSymbolNode[];
+  callers: string[];
+  callees: string[];
+  related_files: string[];
+}
+
+
 

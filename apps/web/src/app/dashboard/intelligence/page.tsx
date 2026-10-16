@@ -21,6 +21,8 @@ import {
   Check,
   RotateCw,
   Eye,
+  Network,
+  Terminal,
 } from 'lucide-react';
 import {
   intelligenceApi,
@@ -28,6 +30,8 @@ import {
   ModelProvider,
   GenerateRequest,
   ModelRoutingPolicyUpdate,
+  ProxyChatCompletionResponse,
+  ProxyChatMessage,
 } from '@/lib/api/intelligence';
 import { useOrganizationContext } from '@/lib/organizationContext';
 import dynamic from 'next/dynamic';
@@ -68,7 +72,16 @@ export default function IntelligenceExchangePage() {
   const queryClient = useQueryClient();
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<'architecture' | 'matrix' | 'providers' | 'simulator' | 'policy' | 'decisions'>('architecture');
+  const [activeTab, setActiveTab] = useState<'architecture' | 'matrix' | 'providers' | 'simulator' | 'policy' | 'decisions' | 'proxy'>('architecture');
+
+  // Local AI Proxy State
+  const [proxyModel, setProxyModel] = useState('gpt-4o');
+  const [proxyStrategy, setProxyStrategy] = useState<'CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE' | 'TRIPLETS'>('AGGRESSIVE');
+  const [proxyCompressionEnabled, setProxyCompressionEnabled] = useState(true);
+  const [proxyAllowFallback, setProxyAllowFallback] = useState(true);
+  const [proxySystemPrompt, setProxySystemPrompt] = useState('You are an expert distributed systems reliability engineer. Provide concise technical diagnoses.');
+  const [proxyUserPrompt, setProxyUserPrompt] = useState('Certainly! I would be very happy to assist. In order to optimize our distributed cluster, please note that we need to inspect latency under heavy load.');
+  const [proxyResult, setProxyResult] = useState<ProxyChatCompletionResponse | null>(null);
 
   // Selected Model for modal view
   const [selectedModel, setSelectedModel] = useState<Model | null>(null);
@@ -82,6 +95,8 @@ export default function IntelligenceExchangePage() {
   const [allowFallback, setAllowFallback] = useState(true);
   const [simulationBehavior, setSimulationBehavior] = useState<string>('none');
   const [requireStructuredJson, setRequireStructuredJson] = useState(false);
+  const [enableCompression, setEnableCompression] = useState(true);
+  const [compressionStrategy, setCompressionStrategy] = useState<'CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE' | 'TRIPLETS'>('AGGRESSIVE');
 
   // Policy Form State
   const [policyStrategy, setPolicyStrategy] = useState<
@@ -159,6 +174,33 @@ export default function IntelligenceExchangePage() {
     },
   });
 
+  const proxyMutation = useMutation({
+    mutationFn: () => {
+      const messages: ProxyChatMessage[] = [];
+      if (proxySystemPrompt.trim()) {
+        messages.push({ role: 'system', content: proxySystemPrompt.trim() });
+      }
+      messages.push({ role: 'user', content: proxyUserPrompt.trim() });
+
+      return intelligenceApi.proxyChatCompletion(companyId, {
+        model: proxyModel,
+        messages,
+        enable_token_compression: proxyCompressionEnabled,
+        compression_strategy: proxyStrategy,
+        allow_fallback: proxyAllowFallback,
+      });
+    },
+    onSuccess: (data) => {
+      setProxyResult(data);
+      queryClient.invalidateQueries({ queryKey: ['intelligence-dashboard', companyId] });
+    },
+  });
+
+  const handleProxySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!companyId || !proxyUserPrompt.trim()) return;
+    proxyMutation.mutate();
+  };
 
   const handleSimulate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,6 +222,8 @@ export default function IntelligenceExchangePage() {
       preferred_model: preferredModel || undefined,
       required_privacy: requiredPrivacy || undefined,
       allow_fallback: allowFallback,
+      enable_token_compression: enableCompression,
+      compression_strategy: compressionStrategy,
       simulation_flags: Object.keys(simFlags).length > 0 ? simFlags : undefined,
       structured_output_schema: requireStructuredJson
         ? {
@@ -379,6 +423,18 @@ export default function IntelligenceExchangePage() {
           <ArrowRightLeft className="h-4 w-4" />
           Decision Audit Ledger ({decisions.length})
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('proxy')}
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${activeTab === 'proxy'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+        >
+          <Network className="h-4 w-4" />
+          Local AI Proxy
+        </button>
       </div>
 
       {/* TAB 1: ARCHITECTURE FLOW TOPOLOGY */}
@@ -566,6 +622,49 @@ export default function IntelligenceExchangePage() {
                 </div>
               </div>
 
+              <div className="p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={enableCompression}
+                      onChange={(e) => setEnableCompression(e.target.checked)}
+                      className="rounded border-border text-primary focus:ring-primary"
+                    />
+                    Built-in Token Compression (Rule 6: Zero-Filler)
+                  </label>
+                  <span className="text-[10px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                    Saves 25–65% Tokens
+                  </span>
+                </div>
+                {enableCompression && (
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <label className="text-[11px] font-medium text-muted-foreground block mb-1">
+                        Compression Strategy
+                      </label>
+                      <select
+                        value={compressionStrategy}
+                        onChange={(e) =>
+                          setCompressionStrategy(
+                            e.target.value as 'CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE' | 'TRIPLETS'
+                          )
+                        }
+                        className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground font-mono focus:outline-none focus:border-primary"
+                      >
+                        <option value="AGGRESSIVE">AGGRESSIVE (Bullet Fragments, Max Savings)</option>
+                        <option value="BALANCED">BALANCED (Preamble & Hedging Scrub)</option>
+                        <option value="CONSERVATIVE">CONSERVATIVE (Pleasantry Strip Only)</option>
+                        <option value="TRIPLETS">TRIPLETS (Knowledge Graph Compaction)</option>
+                      </select>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground flex items-center pt-4">
+                      Algorithmic pre-inference compaction protects code, diffs, and JSON.
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center gap-2 pt-1">
                 <input
                   type="checkbox"
@@ -697,6 +796,31 @@ export default function IntelligenceExchangePage() {
                   )}
 
 
+                  {/* Token Compression Savings Ribbon */}
+                  {testGenerateMutation.data.compression_applied && (
+                    <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
+                          <Sparkles className="h-3.5 w-3.5" /> Built-in Token Compression Active
+                        </span>
+                        <span className="text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                          {testGenerateMutation.data.compression_ratio_pct}% Reduction
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-[11px] font-mono text-muted-foreground pt-1">
+                        <div>
+                          Original: <span className="text-foreground">{testGenerateMutation.data.original_prompt_tokens} tokens</span>
+                        </div>
+                        <div>
+                          Compressed: <span className="text-emerald-300">{testGenerateMutation.data.compressed_prompt_tokens} tokens</span>
+                        </div>
+                        <div>
+                          Saved: <span className="text-emerald-400 font-bold">+{testGenerateMutation.data.tokens_saved} tokens (${testGenerateMutation.data.cost_saved_usd})</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Generated Output */}
                   <div>
                     <label className="text-xs font-medium text-muted-foreground block mb-1">Model Synthesis</label>
@@ -823,6 +947,193 @@ export default function IntelligenceExchangePage() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 7: LOCAL AI PROXY */}
+      {activeTab === 'proxy' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                  <Network className="h-5 w-5 text-primary" />
+                  Local AI Proxy & OpenAI Compatible Gateway
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Routes OpenAI chat completion payloads across providers with automated tiered failover and algorithmic token compression.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-primary/10 text-primary border border-primary/20">
+                  POST /api/v1/companies/{companyId.slice(0, 8)}.../intelligence/proxy/chat/completions
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleProxySubmit} className="space-y-4 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-foreground block mb-1">Target Model Header</label>
+                  <select
+                    value={proxyModel}
+                    onChange={(e) => setProxyModel(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary font-mono"
+                  >
+                    <option value="gpt-4o">gpt-4o (OpenAI)</option>
+                    <option value="claude-3-5-sonnet">claude-3-5-sonnet (Anthropic)</option>
+                    <option value="gemini-1.5-pro">gemini-1.5-pro (Google)</option>
+                    <option value="local-deepseek-r1">local-deepseek-r1 (Local On-Prem)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-foreground block mb-1">Compression Strategy</label>
+                  <select
+                    value={proxyStrategy}
+                    onChange={(e) => setProxyStrategy(e.target.value as any)}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary font-mono"
+                  >
+                    <option value="AGGRESSIVE">AGGRESSIVE (Dense Fragments)</option>
+                    <option value="BALANCED">BALANCED (Preamble & Hedging Scrub)</option>
+                    <option value="CONSERVATIVE">CONSERVATIVE (Pleasantries Strip)</option>
+                    <option value="TRIPLETS">TRIPLETS (Knowledge Graph Triples)</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col justify-end gap-1.5">
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={proxyCompressionEnabled}
+                      onChange={(e) => setProxyCompressionEnabled(e.target.checked)}
+                      className="rounded border-border text-primary"
+                    />
+                    <span>Token Compression</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={proxyAllowFallback}
+                      onChange={(e) => setProxyAllowFallback(e.target.checked)}
+                      className="rounded border-border text-primary"
+                    />
+                    <span>Auto Tiered Fallback</span>
+                  </label>
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    type="submit"
+                    disabled={proxyMutation.isPending || !proxyUserPrompt.trim()}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    {proxyMutation.isPending ? (
+                      <>
+                        <RotateCw className="h-3.5 w-3.5 animate-spin" />
+                        Routing via Proxy...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-3.5 w-3.5" />
+                        Dispatch Proxy Query
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-foreground block mb-1">System Message</label>
+                  <textarea
+                    rows={3}
+                    value={proxySystemPrompt}
+                    onChange={(e) => setProxySystemPrompt(e.target.value)}
+                    placeholder="System prompt context..."
+                    className="w-full rounded-lg border border-border bg-background p-2.5 font-mono text-xs text-foreground focus:outline-none focus:border-primary leading-relaxed"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-foreground block mb-1">User Message Payload</label>
+                  <textarea
+                    rows={3}
+                    value={proxyUserPrompt}
+                    onChange={(e) => setProxyUserPrompt(e.target.value)}
+                    placeholder="User query with conversational filler..."
+                    className="w-full rounded-lg border border-border bg-background p-2.5 font-mono text-xs text-foreground focus:outline-none focus:border-primary leading-relaxed"
+                  />
+                </div>
+              </div>
+            </form>
+
+            {/* Proxy Execution Result */}
+            {proxyResult && (
+              <div className="mt-4 rounded-xl border border-border bg-zinc-950 p-4 space-y-3 font-mono text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-400">PROVIDER:</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/20 text-primary border border-primary/30 uppercase">
+                      {proxyResult.routed_provider}
+                    </span>
+                    <span className="text-zinc-500">•</span>
+                    <span className="text-zinc-400">TIER:</span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                        proxyResult.routed_via_fallback
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      }`}
+                    >
+                      {proxyResult.routed_tier}
+                    </span>
+                    <span className="text-zinc-500">•</span>
+                    <span className="text-zinc-400">MODEL:</span>
+                    <span className="text-zinc-200">{proxyResult.model}</span>
+                    <span className="text-zinc-500">•</span>
+                    <span className="text-zinc-400">LATENCY:</span>
+                    <span className="text-zinc-200">{proxyResult.latency_ms}ms</span>
+                  </div>
+
+                  <div className="text-[11px] text-zinc-400 font-mono">
+                    ID: {proxyResult.id}
+                  </div>
+                </div>
+
+                {/* Token Compression Ribbon */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 rounded-lg bg-zinc-900/80 p-3 border border-zinc-800 text-[11px]">
+                  <div>
+                    <span className="text-zinc-500 block">Prompt Tokens:</span>
+                    <span className="text-zinc-200 font-bold">{proxyResult.usage.prompt_tokens}</span>
+                  </div>
+                  <div>
+                    <span className="text-zinc-500 block">Completion Tokens:</span>
+                    <span className="text-zinc-200 font-bold">{proxyResult.usage.completion_tokens}</span>
+                  </div>
+                  <div>
+                    <span className="text-zinc-500 block">Tokens Saved (Compression):</span>
+                    <span className="text-emerald-400 font-bold">
+                      +{proxyResult.usage.compressed_tokens_saved} ({proxyResult.usage.compression_ratio_pct}%)
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-zinc-500 block">Estimated Cost:</span>
+                    <span className="text-emerald-400 font-bold">
+                      ${proxyResult.estimated_cost_usd.toFixed(6)}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-zinc-400 block mb-1">CHAT COMPLETION ASSISTANT OUTPUT:</span>
+                  <pre className="rounded bg-black/60 p-3 text-emerald-300 overflow-x-auto whitespace-pre-wrap max-h-48 text-[11px]">
+                    {proxyResult.choices[0]?.message.content}
+                  </pre>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

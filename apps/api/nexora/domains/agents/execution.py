@@ -315,6 +315,22 @@ class AgentExecutionEngine:
                 if "url" in t_args:
                     ToolSandbox.validate_external_url(t_args["url"])
 
+                # Dispatch MCP Tool if matching registered MCP servers
+                mcp_output = None
+                from nexora.core.mcp import MCPToolCallRequest, mcp_manager
+                for srv in mcp_manager.list_servers():
+                    if any(t.name == t_name for t in srv.tools):
+                        mcp_res = await mcp_manager.call_tool(
+                            MCPToolCallRequest(
+                                server_id=srv.id,
+                                tool_name=t_name,
+                                arguments=t_args,
+                                company_id=company_id,
+                            )
+                        )
+                        mcp_output = mcp_res.raw_output
+                        break
+
                 executed_tools.append(t_name)
                 await self.audit_repo.record_audit(
                     agent_id=agent.id,
@@ -324,7 +340,7 @@ class AgentExecutionEngine:
                     action=AuditAction.TOOL_EXECUTED,
                     step=ExecutionStep.TOOL_EXECUTION,
                     status=ExecutionStatus.SUCCESS,
-                    details={"tool": t_name, "authorized": True},
+                    details={"tool": t_name, "authorized": True, "mcp_output": mcp_output},
                 )
 
             step_records.append(

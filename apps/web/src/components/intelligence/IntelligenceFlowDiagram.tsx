@@ -91,19 +91,21 @@ export function IntelligenceFlowDiagram({
           <span className="tracking-widest opacity-80">MULTI-PROVIDER ARBITRATION</span>
         </div>
         <pre className="text-foreground/90 font-bold leading-relaxed text-[11px] select-text">
-{`              INTELLIGENCE EXCHANGE
+{`                        AUTOMATIC TIERED FALLBACK CASCADE
 
-   ┌────────┐     ┌────────┐     ┌────────┐
-   │ Claude │     │ Gemini │     │ OpenAI │
-   └───┬────┘     └───┬────┘     └───┬────┘
-       │              │              │
-       └──────────────┼──────────────┘
-                      │
-               ROUTING ENGINE
-                      │
-         ┌────────────┼────────────┐
-         ▼            ▼            ▼
-      Agent A       Agent B      Agent C`}
+   [TIER 1: PRIMARY]            [TIER 2: FALLBACK]           [TIER 3: SECONDARY]          [TIER 4: LOCAL DEGRADED]
+ ┌──────────────────────┐    ┌──────────────────────┐    ┌──────────────────────┐    ┌──────────────────────┐
+ │ Claude 3.5 Sonnet    │───►│ Gemini 1.5 Pro       │───►│ OpenAI GPT-4o        │───►│ DeepSeek-R1 (Local)  │
+ │ (Reasoning/Arch)     │ 429│ (Large Context / Fast)│ TO │ (General Dispatch)   │ ERR│ (Zero-Retention Net) │
+ └──────────────────────┘    └──────────────────────┘    └──────────────────────┘    └──────────────────────┘
+            │                           │                           │                           │
+            └───────────────────────────┴─────────────┬─────────────┴───────────────────────────┘
+                                                      ▼
+                                       NEIMAN ROUTING CIRCUIT BREAKER
+                                                      │
+                                        ┌─────────────┴─────────────┐
+                                        ▼                           ▼
+                             Dispatched Task Output        Permanent Audit Trace`}
         </pre>
       </div>
 

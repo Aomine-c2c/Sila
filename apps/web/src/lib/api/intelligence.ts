@@ -154,6 +154,8 @@ export interface GenerateRequest {
   max_tokens?: number;
   structured_output_schema?: Record<string, unknown>;
   simulation_flags?: Record<string, string>;
+  enable_token_compression?: boolean;
+  compression_strategy?: 'CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE' | 'TRIPLETS';
 }
 
 export interface GenerateResponse {
@@ -180,6 +182,30 @@ export interface GenerateResponse {
   }>;
   structured_output_validated: boolean;
   circuit_breaker_status: string;
+  // Built-in Token Compression Telemetry
+  compression_applied?: boolean;
+  original_prompt_tokens?: number;
+  compressed_prompt_tokens?: number;
+  tokens_saved?: number;
+  compression_ratio_pct?: number;
+  cost_saved_usd?: number;
+}
+
+export interface TokenCompressionRequest {
+  text: string;
+  strategy?: 'CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE' | 'TRIPLETS';
+}
+
+export interface TokenCompressionResponse {
+  original_text: string;
+  compressed_text: string;
+  original_tokens: number;
+  compressed_tokens: number;
+  tokens_saved: number;
+  compression_ratio_pct: number;
+  strategy_used: string;
+  estimated_cost_saved_usd: number;
+  timestamp: string;
 }
 
 export interface ProviderProbeRequest {
@@ -240,6 +266,12 @@ export const intelligenceApi = {
   generate: (companyId: string, body: GenerateRequest): Promise<GenerateResponse> =>
     api.post<GenerateResponse>(`/api/v1/companies/${companyId}/intelligence/generate`, body),
 
+  compressText: (
+    companyId: string,
+    body: TokenCompressionRequest
+  ): Promise<TokenCompressionResponse> =>
+    api.post<TokenCompressionResponse>(`/api/v1/companies/${companyId}/intelligence/compress`, body),
+
   resetCircuitBreakers: (companyId: string): Promise<{ status: string; message: string }> =>
     api.post<{ status: string; message: string }>(`/api/v1/companies/${companyId}/intelligence/circuit-breakers/reset`, {}),
 
@@ -270,5 +302,58 @@ export const intelligenceApi = {
     privacy_classification?: string;
   }): Promise<Model> =>
     api.post<Model>(`/api/v1/companies/${companyId}/intelligence/models`, body),
+
+  proxyChatCompletion: (
+    companyId: string,
+    body: ProxyChatCompletionRequest
+  ): Promise<ProxyChatCompletionResponse> =>
+    api.post<ProxyChatCompletionResponse>(
+      `/api/v1/companies/${companyId}/intelligence/proxy/chat/completions`,
+      body
+    ),
 };
+
+export interface ProxyChatMessage {
+  role: 'system' | 'user' | 'assistant' | 'function' | 'tool';
+  content: string;
+  name?: string;
+}
+
+export interface ProxyChatCompletionRequest {
+  messages: ProxyChatMessage[];
+  model?: string;
+  temperature?: number;
+  max_tokens?: number;
+  stream?: boolean;
+  enable_token_compression?: boolean;
+  compression_strategy?: 'CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE' | 'TRIPLETS';
+  allow_fallback?: boolean;
+  required_capabilities?: string[];
+}
+
+export interface ProxyChatCompletionResponse {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: Array<{
+    index: number;
+    message: ProxyChatMessage;
+    finish_reason: string;
+  }>;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+    compressed_tokens_saved: number;
+    compression_ratio_pct: number;
+  };
+  routed_provider: string;
+  routed_tier: string;
+  routed_via_fallback: boolean;
+  fallback_attempts: number;
+  latency_ms: number;
+  estimated_cost_usd: number;
+}
+
 

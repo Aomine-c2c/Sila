@@ -241,5 +241,28 @@ export const agentsApi = {
       `/api/v1/companies/${companyId}/agents/${agentId}/memories`,
       body
     ),
+
+  // Documentation Specialist Agent
+  triggerDocGeneration: (companyId: string, commitToDisk: boolean = true) =>
+    api.post<DocGenerationReport>(
+      `/api/v1/companies/${companyId}/agents/docs/generate?commit_to_disk=${commitToDisk}`
+    ),
 };
+
+export interface DocGenerationReport {
+  status: string;
+  agent_id: string;
+  agent_name: string;
+  generated_at: string;
+  sections: Array<{
+    title: string;
+    target_file: string;
+    content: string;
+    token_count: number;
+    hash_digest: string;
+  }>;
+  total_tokens_generated: number;
+  files_updated: string[];
+}
+
 

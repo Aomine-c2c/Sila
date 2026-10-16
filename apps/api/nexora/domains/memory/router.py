@@ -183,13 +183,21 @@ async def get_knowledge_graph(
     current_user: CurrentUser,
     db: DB,
     limit: int = Query(100, ge=1, le=500),
+    q: str | None = Query(None, description="Search term matching entity name or description"),
+    entity_type: str | None = Query(None, description="Filter by entity type (SYSTEM, GOVERNANCE, SECURITY, ENGINE, DATABASE, CONCEPT, etc.)"),
     _: None = Depends(require_member()),
 ):
     """
-    Returns full or sub-graph nodes and edges for the company knowledge graph.
+    Returns full or sub-graph nodes and edges for the company knowledge graph,
+    supporting interactive full-text search and entity type filtering.
     """
     service = MemoryService(db)
-    entities, relations = await service.get_knowledge_graph(company_id, limit=limit)
+    entities, relations = await service.get_knowledge_graph(
+        company_id,
+        limit=limit,
+        q=q,
+        entity_type=entity_type,
+    )
     return {
         "entities": [
             {
@@ -214,6 +222,8 @@ async def get_knowledge_graph(
         ],
         "total_entities": len(entities),
         "total_relations": len(relations),
+        "query": q,
+        "entity_type": entity_type,
     }
 
 
@@ -233,4 +243,162 @@ async def extract_knowledge_facts(
     provenance = data.get("provenance", "manual_extraction")
     count = await service.extract_and_store_graph_facts(company_id, text, provenance=provenance)
     return {"status": "ok", "facts_extracted": count}
+
+
+# ==========================================
+# MEMGPT VIRTUAL HIERARCHICAL CONTEXT
+# ==========================================
+
+from nexora.domains.memory.memgpt import (
+    CoreMemoryBlockSchema,
+    CoreMemoryUpdateSchema,
+    MemGPTEngine,
+    MemGPTPromptContext,
+)
+
+
+@router.get("/agents/{agent_id}/memgpt", response_model=MemGPTPromptContext)
+async def get_agent_memgpt_context(
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_member()),
+):
+    """
+    Retrieves full MemGPT virtual context: Core Memory (Persona & Human blocks)
+    plus active FIFO Recall queue and eviction counters.
+    """
+    engine = MemGPTEngine(db)
+    # Ensure initialized
+    await engine.initialize_agent_core_memory(agent_id, company_id, persona_text="Autonomous NEIMAN Agent Specialist.")
+    return await engine.assemble_memgpt_prompt_context(agent_id, company_id)
+
+
+@router.get("/agents/{agent_id}/memgpt/blocks", response_model=list[CoreMemoryBlockSchema])
+async def list_agent_core_memory_blocks(
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_member()),
+):
+    """
+    Lists the agent's Core Memory blocks (RAM) e.g. persona, human, scratchpad.
+    """
+    engine = MemGPTEngine(db)
+    await engine.initialize_agent_core_memory(agent_id, company_id, persona_text="Autonomous NEIMAN Agent Specialist.")
+    return await engine.get_core_memory_blocks(agent_id)
+
+
+@router.post("/agents/{agent_id}/memgpt/blocks", response_model=CoreMemoryBlockSchema)
+async def update_agent_core_memory_block(
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
+    payload: CoreMemoryUpdateSchema,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_member()),
+):
+    """
+    Direct self-editing tool for agent or user: updates core_memory block (replace or append).
+    """
+    engine = MemGPTEngine(db)
+    return await engine.update_core_memory(agent_id, company_id, payload)
+
+
+@router.post("/agents/{agent_id}/memgpt/recall", response_model=dict)
+async def append_agent_recall_message(
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
+    payload: dict,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_member()),
+):
+    """
+    Appends a message to the agent's FIFO recall queue and triggers automatic eviction when full.
+    """
+    engine = MemGPTEngine(db)
+    role = payload.get("role", "user")
+    message = payload.get("message", "")
+    log = await engine.append_recall_message(agent_id, company_id, role=role, message=message)
+    return {
+        "status": "ok",
+        "log_id": str(log.id),
+        "is_evicted": log.is_evicted,
+        "estimated_tokens": log.estimated_tokens,
+    }
+
+
+# ==========================================
+# GRAPHIFY & OBSIDIAN BIDIRECTIONAL GRAPH
+# ==========================================
+
+from nexora.domains.memory.graphify import GraphifyEngine, GraphifyNetworkResponse
+
+
+@router.get("/graphify", response_model=GraphifyNetworkResponse)
+async def get_graphify_network(
+    company_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_member()),
+):
+    """
+    Computes and returns the Graphify bidirectional network topology with
+    Obsidian markdown vault export and central clustering metrics.
+    """
+    engine = GraphifyEngine(db)
+    return await engine.build_network(company_id)
+
+
+# ==========================================
+# CODEBASE KNOWLEDGE GRAPH & PRE-INDEXING
+# ==========================================
+
+from nexora.domains.memory.code_graph import (
+    CodebaseGraphIndexSummary,
+    CodebaseKnowledgeGraphEngine,
+    SymbolSearchResponse,
+)
+
+
+@router.get("/code-graph/index", response_model=CodebaseGraphIndexSummary)
+async def get_codebase_graph_index(
+    company_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+    force_refresh: bool = Query(False, description="Force re-scan and rebuild codebase AST index"),
+    sync_db: bool = Query(False, description="Persist top AST nodes to KnowledgeEntity and KnowledgeRelation"),
+    _: None = Depends(require_member()),
+):
+    """
+    Retrieves or triggers the pre-indexed Codebase AST Knowledge Graph.
+    Replaces brute-force grep filesystem searches with fast pre-compiled topological graphs.
+    """
+    engine = CodebaseKnowledgeGraphEngine(db=db)
+    _, summary = engine.get_or_build_index(force_refresh=force_refresh)
+    if sync_db:
+        await engine.sync_to_database(company_id=company_id)
+    return summary
+
+
+@router.get("/code-graph/symbols", response_model=SymbolSearchResponse)
+async def search_codebase_symbols(
+    company_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+    q: str = Query(..., min_length=1, description="Symbol name, function, class, or module to lookup"),
+    limit: int = Query(25, ge=1, le=100),
+    _: None = Depends(require_member()),
+):
+    """
+    Instant symbol graph query: returns symbol definitions, callers, callees, and dependencies
+    in sub-milliseconds from pre-indexed memory rather than grepping files.
+    """
+    engine = CodebaseKnowledgeGraphEngine(db=db)
+    return engine.search_symbols(query=q, limit=limit)
+
+
 

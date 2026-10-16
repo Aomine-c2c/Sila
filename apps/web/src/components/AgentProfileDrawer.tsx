@@ -35,6 +35,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { agentsApi, type AgentProfile, type TaskExecutionResult, type CreateAgentRequest } from '@/lib/api/agents';
+import { AgentAvatar } from '@/components/ui/AgentAvatar';
 
 interface AgentProfileDrawerProps {
   companyId: string;
@@ -307,9 +308,15 @@ export function AgentProfileDrawer({
       {/* 1. AGENT IDENTITY & STATUS HEADER */}
       <div className="p-6 border-b border-border bg-secondary/30 flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary">
-            <Bot className="h-7 w-7" />
-          </div>
+          <AgentAvatar
+            name={profile.name}
+            roleTitle={profile.role_title}
+            departmentName={profile.department_name}
+            avatarUrl={profile.identity?.avatar_url as string | undefined}
+            status={profile.status}
+            size="lg"
+            showStatus={false}
+          />
           <div>
             <div className="flex items-center gap-2.5">
               <h2 className="text-xl font-bold text-foreground">{profile.name}</h2>

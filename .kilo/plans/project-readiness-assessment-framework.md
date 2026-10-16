@@ -195,7 +195,7 @@ A structured evaluation framework to determine whether a project has all necessa
 | **Go/No-Go Gates** | Are phase gates defined with objective criteria? | Gate criteria checklist | |
 | **External Dependencies** | Are vendor/delivery dates confirmed in writing? | Vendor commitment letters | |
 
-### 6.3 Change Management
+### 7.3 Change Management
 | Criterion | Diagnostic Questions | Evidence Required | Score (1-5) |
 |-----------|---------------------|-------------------|-------------|
 | **Change Control Process** | Is there a defined process for scope/schedule changes? | Change request template | |
@@ -338,7 +338,7 @@ The project may ONLY proceed to execution when ALL of the following are ✅:
 
 ---
 
-## 13. Self-Critique: Gaps, Errors & Improvements
+## 14. Self-Critique: Gaps, Errors & Improvements
 
 ### 13.1 Structural Gaps
 
@@ -434,7 +434,7 @@ The project may ONLY proceed to execution when ALL of the following are ✅:
 
 ---
 
-## 14. Revised Action Plan
+## 15. Revised Action Plan
 
 | Phase | Focus | Deliverables |
 |-------|-------|--------------|

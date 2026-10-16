@@ -331,15 +331,16 @@ function DashboardLayoutContent({
             </div>
           </header>
 
-          {/* Page main content */}
-          <main id="main-content" className="dashboard-canvas flex-1 overflow-y-auto p-4 lg:p-6 pb-20" role="main">
+          {/* Page main content - fixed single-screen viewport with zero scrollbars */}
+          <main id="main-content" className="dashboard-canvas flex-1 overflow-hidden p-3 lg:p-4 flex flex-col min-h-0" role="main">
             {children}
           </main>
 
-          {/* Persistent Bottom Cockpit Dock Navigation */}
+          {/* Persistent Bottom Cockpit Live Activity Radar Ticker */}
           <CockpitFooterDock
             onOpenDrawer={handleOpenDrawer}
             activeDrawerId={activeDrawerId}
+            onOpenCommandPalette={() => setCommandPaletteOpen(true)}
           />
         </div>
 

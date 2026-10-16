@@ -24,13 +24,20 @@ import {
   Cpu,
   Layers,
   Sparkles,
+  BookOpen,
+  FileCode2,
+  Network,
+  Play,
+  Terminal,
 } from 'lucide-react';
 import { agentsApi, CreateAgentRequest, Agent } from '@/lib/api/agents';
+import { externalAgentsApi, ExternalAgentConfig, ExternalAgentExecutionTelemetry } from '@/lib/api/externalAgents';
 import { organizationsApi } from '@/lib/api/organizations';
 import { useOrganizationContext } from '@/lib/organizationContext';
 import { ApiError } from '@/lib/api/client';
 import { AgentProfileDrawer } from '@/components/AgentProfileDrawer';
 import { AgentOrb } from '@/components/ui/AgentOrb';
+import { AgentAvatar } from '@/components/ui/AgentAvatar';
 
 const AUTONOMY_LABELS: Record<string, string> = {
   SUPERVISED: 'Supervised',
@@ -97,15 +104,25 @@ function AgentCard({
           : 'border-border hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5'
       }`}
     >
-      {/* Header with Thinking Orb & Autonomy Badge */}
+      {/* Header with Role Avatar, Thinking Orb & Autonomy Badge */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded border border-border bg-black/60">
-            <AgentOrb status={agent.status} size={32} />
-          </div>
+          <AgentAvatar
+            name={agent.name}
+            roleTitle={roleTitle}
+            departmentName={departmentName}
+            avatarUrl={agent.identity?.avatar_url as string | undefined}
+            status={agent.status}
+            size="md"
+          />
           <div className="flex flex-col">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">AGENT</span>
-            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${statusColor}`}>{agent.status}</span>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+              {roleTitle || 'AGENT'}
+            </span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${statusColor}`}>{agent.status}</span>
+              <AgentOrb status={agent.status} size={20} />
+            </div>
           </div>
         </div>
         <span className={`badge ${autonomyClass}`}>
@@ -206,6 +223,13 @@ export default function AgentsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [createMode, setCreateMode] = useState<'simple' | 'advanced'>('simple');
   const [viewLayout, setViewLayout] = useState<'grid' | 'list'>('grid');
+  const [activeDirectoryTab, setActiveDirectoryTab] = useState<'internal' | 'external'>('internal');
+
+  // External Agent Dispatch State
+  const [selectedExternalAgentId, setSelectedExternalAgentId] = useState('hermes_agent');
+  const [extTaskTitle, setExtTaskTitle] = useState('Verify distributed database synchronization');
+  const [extTaskInstructions, setExtTaskInstructions] = useState('Analyze transaction consistency models and verify zero replication lag.');
+  const [extResult, setExtResult] = useState<ExternalAgentExecutionTelemetry | null>(null);
 
   // Filter state
   const [search, setSearch] = useState('');
@@ -256,6 +280,7 @@ export default function AgentsPage() {
 
   const [capInput, setCapInput] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [docGenerationMessage, setDocGenerationMessage] = useState<string | null>(null);
 
   // Queries
   const { data: agents = [], isLoading, error } = useQuery({
@@ -308,6 +333,52 @@ export default function AgentsPage() {
     },
     onError: (err) => {
       setFormError(err instanceof ApiError ? err.message : 'Failed to create agent.');
+    },
+  });
+
+  // Documentation Specialist Agent Trigger Mutation
+  const generateDocsMutation = useMutation({
+    mutationFn: () => agentsApi.triggerDocGeneration(companyId!),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['agents', companyId] });
+      setDocGenerationMessage(
+        `Generated ${data.total_tokens_generated} tokens of machine-optimized docs across ${data.sections.length} files.`
+      );
+      setTimeout(() => setDocGenerationMessage(null), 6000);
+    },
+    onError: (err: ApiError) => {
+      setDocGenerationMessage(`Documentation generation failed: ${err.message || 'Unknown error'}`);
+      setTimeout(() => setDocGenerationMessage(null), 6000);
+    },
+  });
+
+  // External Agents Query
+  const { data: externalAgents = [], refetch: refetchExternal } = useQuery({
+    queryKey: ['external-agents', companyId],
+    queryFn: () => externalAgentsApi.list(companyId!),
+    enabled: !!companyId,
+    staleTime: 30_000,
+  });
+
+  // Dispatch External Agent Mutation
+  const dispatchExternalMutation = useMutation({
+    mutationFn: () =>
+      externalAgentsApi.dispatch(companyId!, {
+        agent_id: selectedExternalAgentId,
+        task_title: extTaskTitle,
+        task_instructions: extTaskInstructions,
+      }),
+    onSuccess: (data) => {
+      setExtResult(data);
+    },
+  });
+
+  // Toggle External Agent Mutation
+  const toggleExternalMutation = useMutation({
+    mutationFn: ({ agentId, isActive }: { agentId: string; isActive: boolean }) =>
+      externalAgentsApi.toggle(companyId!, agentId, isActive),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['external-agents', companyId] });
     },
   });
 
@@ -404,16 +475,46 @@ export default function AgentsPage() {
           </p>
         </div>
 
-        <button
-          id="create-agent-btn"
-          type="button"
-          className="btn btn-primary shrink-0 gap-2"
-          onClick={() => setShowCreate(true)}
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          New Agent
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            id="trigger-doc-agent-btn"
+            type="button"
+            className="btn btn-outline shrink-0 gap-2 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs"
+            disabled={generateDocsMutation.isPending}
+            onClick={() => generateDocsMutation.mutate()}
+            title="Trigger DocuForge-Arch to generate and update machine references for coding agents"
+          >
+            <BookOpen className={`h-4 w-4 ${generateDocsMutation.isPending ? 'animate-spin' : ''}`} aria-hidden="true" />
+            {generateDocsMutation.isPending ? 'Generating Docs...' : 'Update Agent Docs'}
+          </button>
+
+          <button
+            id="create-agent-btn"
+            type="button"
+            className="btn btn-primary shrink-0 gap-2"
+            onClick={() => setShowCreate(true)}
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            New Agent
+          </button>
+        </div>
       </div>
+
+      {/* DOCUMENTATION AGENT NOTIFICATION BANNER */}
+      {docGenerationMessage && (
+        <div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-mono flex items-center justify-between animate-fade-in">
+          <div className="flex items-center gap-2">
+            <FileCode2 className="h-4 w-4 shrink-0" />
+            <span>{docGenerationMessage}</span>
+          </div>
+          <button
+            onClick={() => setDocGenerationMessage(null)}
+            className="text-xs text-muted-foreground hover:text-foreground font-sans px-2"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* 2. FLEET METRICS COUNTERS */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -433,208 +534,508 @@ export default function AgentsPage() {
         ))}
       </div>
 
-      {/* 3. SEARCH & DIRECTORY CONTROLS */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-border bg-card/60">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1">
-          {/* Search Bar */}
-          <div className="relative min-w-[220px] flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
-            <input
-              type="search"
-              className="input pl-9 text-xs h-9"
-              placeholder="Search agents by name, mission, role..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label="Search agents"
-            />
-          </div>
+      {/* DIRECTORY SWITCHER: INTERNAL WORKFORCE VS EXTERNAL AGENTS */}
+      <div className="flex border-b border-border gap-6">
+        <button
+          type="button"
+          onClick={() => setActiveDirectoryTab('internal')}
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
+            activeDirectoryTab === 'internal'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Bot className="h-4 w-4" />
+          Internal Workforce ({agents.length})
+        </button>
 
-          {/* Department Filter */}
-          <select
-            value={departmentFilter}
-            onChange={(e) => setDepartmentFilter(e.target.value)}
-            aria-label="Filter by department"
-            className="input text-xs h-9 w-auto min-w-[150px]"
-          >
-            <option value="ALL">All Departments</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            aria-label="Filter by status"
-            className="input text-xs h-9 w-auto min-w-[140px]"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="AVAILABLE">Available</option>
-            <option value="WORKING">Working</option>
-            <option value="BLOCKED">Blocked</option>
-            <option value="WAITING">Waiting</option>
-            <option value="PAUSED">Paused</option>
-            <option value="OFFLINE">Offline</option>
-          </select>
-        </div>
-
-        {/* View Toggle */}
-        <div className="flex items-center gap-1 border border-border/80 rounded-lg p-0.5 bg-secondary/40">
-          <button
-            type="button"
-            onClick={() => setViewLayout('grid')}
-            className={`p-1.5 rounded-md ${
-              viewLayout === 'grid' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-            }`}
-            title="Grid View"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewLayout('list')}
-            className={`p-1.5 rounded-md ${
-              viewLayout === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-            }`}
-            title="List View"
-          >
-            <List className="h-4 w-4" />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setActiveDirectoryTab('external')}
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
+            activeDirectoryTab === 'external'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Network className="h-4 w-4" />
+          External Autonomous Agents ({externalAgents.length})
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+            Hermes • Muse • Devin
+          </span>
+        </button>
       </div>
 
-      {/* 4. LOADING / ERROR / EMPTY STATES */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading agents" />
-        </div>
-      )}
-
-      {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-rose-400" role="alert">
-          <AlertCircle className="h-5 w-5 shrink-0" />
-          <p>{error instanceof ApiError ? error.message : 'Failed to load agents.'}</p>
-        </div>
-      )}
-
-      {!isLoading && !error && filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border py-20">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary/50">
-            <Brain className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-foreground">
-              {agents.length === 0 ? 'No agents created yet' : 'No matching agents found'}
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {agents.length === 0
-                ? 'Create your first AI employee to start autonomous operations.'
-                : 'Try adjusting your search query or filter criteria.'}
-            </p>
-          </div>
-          {agents.length === 0 && (
-            <button type="button" className="btn btn-primary gap-2" onClick={() => setShowCreate(true)}>
-              <Plus className="h-4 w-4" />
-              Create Agent
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* 5. AGENT DIRECTORY (GRID & LIST VIEWS) */}
-      {filtered.length > 0 && viewLayout === 'grid' && (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((agent) => {
-            const dept = departments.find((d) => d.id === agent.department_id);
-            const role = roles.find((r) => r.id === agent.role_id);
-            return (
-              <AgentCard
-                key={agent.id}
-                agent={agent}
-                departmentName={dept?.name}
-                roleTitle={role?.title}
-                onSelect={() => setSelectedAgentId(agent.id)}
+      {/* 3. SEARCH & DIRECTORY CONTROLS (INTERNAL ONLY) */}
+      {activeDirectoryTab === 'internal' && (
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-border bg-card/60">
+          <div className="flex flex-wrap items-center gap-2.5 flex-1">
+            {/* Search Bar */}
+            <div className="relative min-w-[220px] flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <input
+                type="search"
+                className="input pl-9 text-xs h-9"
+                placeholder="Search agents by name, mission, role..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="Search agents"
               />
-            );
-          })}
+            </div>
+
+            {/* Department Filter */}
+            <select
+              value={departmentFilter}
+              onChange={(e) => setDepartmentFilter(e.target.value)}
+              aria-label="Filter by department"
+              className="input text-xs h-9 w-auto min-w-[150px]"
+            >
+              <option value="ALL">All Departments</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label="Filter by status"
+              className="input text-xs h-9 w-auto min-w-[140px]"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="AVAILABLE">Available</option>
+              <option value="WORKING">Working</option>
+              <option value="BLOCKED">Blocked</option>
+              <option value="WAITING">Waiting</option>
+              <option value="PAUSED">Paused</option>
+              <option value="OFFLINE">Offline</option>
+            </select>
+          </div>
+
+          {/* View Toggle */}
+          <div className="flex items-center gap-1 border border-border/80 rounded-lg p-0.5 bg-secondary/40">
+            <button
+              type="button"
+              onClick={() => setViewLayout('grid')}
+              className={`p-1.5 rounded-md ${
+                viewLayout === 'grid' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              title="Grid View"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewLayout('list')}
+              className={`p-1.5 rounded-md ${
+                viewLayout === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              title="List View"
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       )}
 
-      {filtered.length > 0 && viewLayout === 'list' && (
-        <div className="rounded-2xl border border-border bg-card overflow-hidden">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-secondary/40 text-muted-foreground uppercase font-mono tracking-wider border-b border-border">
-              <tr>
-                <th className="py-3 px-4">Employee</th>
-                <th className="py-3 px-4">Role & Dept</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Autonomy</th>
-                <th className="py-3 px-4">Intelligence</th>
-                <th className="py-3 px-4">Resource Cost</th>
-                <th className="py-3 px-4 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/60">
+      {/* 4. INTERNAL AGENT DIRECTORY (LOADING / ERROR / EMPTY / LIST / GRID) */}
+      {activeDirectoryTab === 'internal' && (
+        <>
+          {isLoading && (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading agents" />
+            </div>
+          )}
+
+          {error && (
+            <div className="flex items-center gap-3 rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-rose-400" role="alert">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              <p>{error instanceof ApiError ? error.message : 'Failed to load agents.'}</p>
+            </div>
+          )}
+
+          {!isLoading && !error && filtered.length === 0 && (
+            <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border py-20">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary/50">
+                <Brain className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-foreground">
+                  {agents.length === 0 ? 'No agents created yet' : 'No matching agents found'}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {agents.length === 0
+                    ? 'Create your first AI employee to start autonomous operations.'
+                    : 'Try adjusting your search query or filter criteria.'}
+                </p>
+              </div>
+              {agents.length === 0 && (
+                <button type="button" className="btn btn-primary gap-2" onClick={() => setShowCreate(true)}>
+                  <Plus className="h-4 w-4" />
+                  Create Agent
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* GRID VIEW */}
+          {filtered.length > 0 && viewLayout === 'grid' && (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {filtered.map((agent) => {
                 const dept = departments.find((d) => d.id === agent.department_id);
                 const role = roles.find((r) => r.id === agent.role_id);
-                const int = (agent.intelligence_config || {}) as { provider?: string; model?: string };
                 return (
-                  <tr
+                  <AgentCard
                     key={agent.id}
-                    onClick={() => setSelectedAgentId(agent.id)}
-                    className="hover:bg-secondary/30 cursor-pointer transition-colors"
-                  >
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-7 w-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-                          <Bot className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground">{agent.name}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono">{agent.id.slice(0, 8)}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <p className="font-medium text-foreground">{role?.title || 'Employee'}</p>
-                      <p className="text-[11px] text-muted-foreground">{dept?.name || 'Unassigned'}</p>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full border ${STATUS_BG[agent.status]} ${STATUS_COLORS[agent.status]}`}>
-                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                        {agent.status}
+                    agent={agent}
+                    departmentName={dept?.name}
+                    roleTitle={role?.title}
+                    onSelect={() => setSelectedAgentId(agent.id)}
+                  />
+                );
+              })}
+            </div>
+          )}
+
+          {/* LIST VIEW */}
+          {filtered.length > 0 && viewLayout === 'list' && (
+            <div className="rounded-2xl border border-border bg-card overflow-hidden">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-secondary/40 text-muted-foreground uppercase font-mono tracking-wider border-b border-border">
+                  <tr>
+                    <th className="py-3 px-4">Employee</th>
+                    <th className="py-3 px-4">Role & Dept</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Autonomy</th>
+                    <th className="py-3 px-4">Intelligence</th>
+                    <th className="py-3 px-4">Resource Cost</th>
+                    <th className="py-3 px-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {filtered.map((agent) => {
+                    const dept = departments.find((d) => d.id === agent.department_id);
+                    const role = roles.find((r) => r.id === agent.role_id);
+                    const int = (agent.intelligence_config || {}) as { provider?: string; model?: string };
+                    return (
+                      <tr
+                        key={agent.id}
+                        onClick={() => setSelectedAgentId(agent.id)}
+                        className="hover:bg-secondary/30 cursor-pointer transition-colors"
+                      >
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <AgentAvatar
+                              name={agent.name}
+                              roleTitle={role?.title}
+                              departmentName={dept?.name}
+                              avatarUrl={agent.identity?.avatar_url as string | undefined}
+                              status={agent.status}
+                              size="sm"
+                              showStatus={false}
+                            />
+                            <div>
+                              <p className="font-semibold text-foreground">{agent.name}</p>
+                              <p className="text-[10px] text-muted-foreground font-mono">{agent.id.slice(0, 8)}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <p className="font-medium text-foreground">{role?.title || 'Employee'}</p>
+                          <p className="text-[11px] text-muted-foreground">{dept?.name || 'Unassigned'}</p>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full border ${STATUS_BG[agent.status]} ${STATUS_COLORS[agent.status]}`}>
+                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                            {agent.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-mono text-[11px]">
+                          {agent.autonomy}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-[11px]">
+                          {int.provider || 'anthropic'} • {int.model || 'claude-sonnet'}
+                        </td>
+                        <td className="py-3 px-4 font-mono">
+                          ${((agent.resource_usage as { total_cost_usd?: number })?.total_cost_usd ?? 0).toFixed(4)}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAgentId(agent.id);
+                            }}
+                            className="btn btn-outline h-7 px-2.5 text-xs text-primary"
+                          >
+                            Inspect
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* 5. EXTERNAL AUTONOMOUS AGENTS COCKPIT */}
+      {activeDirectoryTab === 'external' && (
+        <div className="space-y-6 animate-fade-in">
+          {/* External Fleet Overview */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {externalAgents.map((ext) => {
+              const isSelected = selectedExternalAgentId === ext.id;
+              return (
+                <div
+                  key={ext.id}
+                  onClick={() => setSelectedExternalAgentId(ext.id)}
+                  className={`group relative flex flex-col justify-between rounded-2xl border p-5 transition-all cursor-pointer ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-md shadow-primary/10'
+                      : 'border-border bg-card hover:border-border/80 hover:bg-card/80'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary text-secondary-foreground border border-border">
+                        {ext.vendor}
                       </span>
-                    </td>
-                    <td className="py-3 px-4 font-mono text-[11px]">
-                      {agent.autonomy}
-                    </td>
-                    <td className="py-3 px-4 font-mono text-[11px]">
-                      {int.provider || 'anthropic'} • {int.model || 'claude-sonnet'}
-                    </td>
-                    <td className="py-3 px-4 font-mono">
-                      ${((agent.resource_usage as { total_cost_usd?: number })?.total_cost_usd ?? 0).toFixed(4)}
-                    </td>
-                    <td className="py-3 px-4 text-right">
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedAgentId(agent.id);
+                          toggleExternalMutation.mutate({
+                            agentId: ext.id,
+                            isActive: !ext.is_active,
+                          });
                         }}
-                        className="btn btn-outline h-7 px-2.5 text-xs text-primary"
+                        className={`text-[10px] font-mono px-2 py-0.5 rounded-full border transition-colors ${
+                          ext.is_active
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                            : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
+                        }`}
                       >
-                        Inspect
+                        {ext.is_active ? 'ACTIVE' : 'DISABLED'}
                       </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </div>
+
+                    <h3 className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
+                      {ext.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      {ext.description}
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap gap-1">
+                      {ext.capabilities.map((cap) => (
+                        <span
+                          key={cap}
+                          className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-secondary/60 text-muted-foreground border border-border/50"
+                        >
+                          {cap}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-[11px] font-mono text-muted-foreground">
+                    <span>{ext.default_model}</span>
+                    <span className="text-primary font-semibold">Select Agent →</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Interactive Mission Dispatch Console */}
+          <div className="grid gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-5 rounded-2xl border border-border bg-card p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <Play className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-bold text-foreground">Mission Dispatch Console</h3>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                  Target: {selectedExternalAgentId}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-foreground block mb-1">
+                    Select External Autonomous Agent
+                  </label>
+                  <select
+                    value={selectedExternalAgentId}
+                    onChange={(e) => setSelectedExternalAgentId(e.target.value)}
+                    className="input text-xs"
+                  >
+                    {externalAgents.map((ext) => (
+                      <option key={ext.id} value={ext.id}>
+                        {ext.name} ({ext.vendor})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-foreground block mb-1">
+                    Mission / Task Title
+                  </label>
+                  <input
+                    type="text"
+                    value={extTaskTitle}
+                    onChange={(e) => setExtTaskTitle(e.target.value)}
+                    className="input text-xs"
+                    placeholder="e.g. Audit authentication security tokens"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-foreground block mb-1">
+                    Mission Directives & Instructions
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={extTaskInstructions}
+                    onChange={(e) => setExtTaskInstructions(e.target.value)}
+                    className="input text-xs resize-none"
+                    placeholder="Provide specific guidelines, constraints, and success criteria for the autonomous external agent..."
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  disabled={dispatchExternalMutation.isPending || !extTaskTitle.trim()}
+                  onClick={() => dispatchExternalMutation.mutate()}
+                  className="btn btn-primary w-full gap-2 text-xs py-2.5"
+                >
+                  {dispatchExternalMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Dispatching to {selectedExternalAgentId}...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4" />
+                      Dispatch External Mission
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Execution Telemetry Stream */}
+            <div className="lg:col-span-7 rounded-2xl border border-border bg-card p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <Terminal className="h-4 w-4 text-emerald-400" />
+                    <h3 className="text-sm font-bold text-foreground">External Execution Telemetry</h3>
+                  </div>
+                  {extResult && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      STATUS: {extResult.status} • {extResult.duration_ms.toFixed(1)}ms
+                    </span>
+                  )}
+                </div>
+
+                {!extResult ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                    <Network className="h-8 w-8 mb-2 opacity-50" />
+                    <p className="text-xs">No active execution dispatch.</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Select an external agent and trigger a mission to stream execution telemetry.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Execution Meta */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] font-mono">
+                      <div className="p-2 rounded-lg bg-secondary/40 border border-border">
+                        <span className="text-muted-foreground block text-[9px]">EXECUTION ID</span>
+                        <span className="text-foreground">{extResult.execution_id.slice(0, 16)}...</span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-secondary/40 border border-border">
+                        <span className="text-muted-foreground block text-[9px]">AGENT</span>
+                        <span className="text-foreground">{extResult.agent_name}</span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-secondary/40 border border-border">
+                        <span className="text-muted-foreground block text-[9px]">TOKENS CONSUMED</span>
+                        <span className="text-emerald-400">{extResult.tokens_consumed} TOKENS</span>
+                      </div>
+                    </div>
+
+                    {/* Intermediate Steps */}
+                    <div>
+                      <h4 className="text-[11px] font-mono font-semibold text-muted-foreground uppercase mb-1.5">
+                        Execution Steps ({extResult.intermediate_steps.length})
+                      </h4>
+                      <div className="space-y-1.5">
+                        {extResult.intermediate_steps.map((st, idx) => (
+                          <div
+                            key={idx}
+                            className="p-2 rounded-lg bg-secondary/30 border border-border/80 flex items-start gap-2 text-xs"
+                          >
+                            <span className="text-[10px] font-mono font-bold text-primary mt-0.5">
+                              #{(st.step as number) || idx + 1}
+                            </span>
+                            <div className="flex-1">
+                              <span className="font-semibold text-foreground">
+                                {String(st.action || 'Execute Action')}
+                              </span>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">
+                                {String(st.detail || st.details || JSON.stringify(st))}
+                              </p>
+                            </div>
+                            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                              {String(st.status || 'OK')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Output Payload */}
+                    <div>
+                      <h4 className="text-[11px] font-mono font-semibold text-muted-foreground uppercase mb-1.5">
+                        Output Summary
+                      </h4>
+                      <pre className="p-3 rounded-lg bg-black/40 border border-border text-[11px] font-mono text-foreground overflow-x-auto whitespace-pre-wrap">
+                        {extResult.output_result}
+                      </pre>
+                    </div>
+
+                    {/* Artifacts Created */}
+                    {extResult.artifacts_created.length > 0 && (
+                      <div>
+                        <h4 className="text-[11px] font-mono font-semibold text-muted-foreground uppercase mb-1.5">
+                          Generated Artifacts
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {extResult.artifacts_created.map((art) => (
+                            <span
+                              key={art}
+                              className="text-[11px] font-mono px-2 py-1 rounded bg-secondary text-primary border border-border flex items-center gap-1.5"
+                            >
+                              <FileCode2 className="h-3.5 w-3.5" />
+                              {art}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

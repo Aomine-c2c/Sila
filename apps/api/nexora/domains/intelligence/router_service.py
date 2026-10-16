@@ -260,6 +260,18 @@ class IntelligenceRouter:
         - Structured-output schema verification
         - Comprehensive telemetry logging of every step
         """
+        # Built-in Token Compression
+        compression_result = None
+        if getattr(request, "enable_token_compression", True):
+            from nexora.core.compression import TokenCompressor
+            strat = getattr(request, "compression_strategy", "AGGRESSIVE")
+            compression_result = TokenCompressor.compress(request.prompt, strategy=strat)
+            # Use compressed text for inference prompt
+            request.prompt = compression_result.compressed_text
+            if request.system_prompt:
+                sys_comp = TokenCompressor.compress(request.system_prompt, strategy="BALANCED")
+                request.system_prompt = sys_comp.compressed_text
+
         policy = await self.get_or_create_default_policy(company_id)
         candidates = await self.resolve_candidate_models(request, policy)
 
@@ -340,6 +352,16 @@ class IntelligenceRouter:
                         "attempt": retry_num + 1,
                     })
                     resp.routing_trace = routing_trace
+
+                    # Attach Token Compression Telemetry
+                    if compression_result:
+                        resp.compression_applied = True
+                        resp.original_prompt_tokens = compression_result.original_tokens
+                        resp.compressed_prompt_tokens = compression_result.compressed_tokens
+                        resp.tokens_saved = compression_result.tokens_saved
+                        resp.compression_ratio_pct = compression_result.compression_ratio_pct
+                        cost_per_token = (model.input_cost_per_million or 2.50) / 1_000_000.0
+                        resp.cost_saved_usd = round(compression_result.tokens_saved * cost_per_token, 6)
 
                     # Log to audit ledger
                     log = ModelRequestLog(

@@ -36,6 +36,8 @@ import {
   Activity,
   ChevronRight,
   ShieldAlert,
+  Code2,
+  Globe,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 
@@ -161,6 +163,18 @@ export const GLOBAL_COMMANDS: PaletteCommand[] = [
     requiredRole: 'VIEWER',
     actionType: 'NAVIGATE',
     badge: 'Search',
+  },
+  {
+    id: 'cmd-codebase-graph',
+    title: 'Codebase knowledge graph',
+    category: 'Commands',
+    description: 'Instant AST symbol navigation, call graph, and zero-grep dependency lookup',
+    href: '/dashboard/memory?tab=code_graph',
+    icon: Code2,
+    keywords: ['code graph', 'ast', 'symbols', 'grep', 'pre-index', 'dependencies', 'callers'],
+    requiredRole: 'VIEWER',
+    actionType: 'NAVIGATE',
+    badge: 'AST',
   },
   {
     id: 'cmd-run-simulation',
@@ -347,6 +361,18 @@ export const GLOBAL_COMMANDS: PaletteCommand[] = [
     keywords: ['evolution center', 'self improvement', 'proposals', 'diagnoses', 'lessons'],
     requiredRole: 'VIEWER',
     actionType: 'NAVIGATE',
+  },
+  {
+    id: 'nav-harvester',
+    title: 'Open Web Harvester',
+    category: 'Navigation',
+    description: 'Free platform intelligence gathering from GitHub, Reddit, Hacker News, Wikipedia, and web',
+    href: '/dashboard/harvester',
+    icon: Globe,
+    keywords: ['open web harvester', 'harvester', 'web scraping', 'gather data', 'free search', 'github', 'reddit', 'wikipedia'],
+    requiredRole: 'VIEWER',
+    actionType: 'NAVIGATE',
+    badge: 'Tools',
   },
 ];
 

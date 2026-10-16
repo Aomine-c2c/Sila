@@ -285,15 +285,15 @@ export function MagneticGrainOrb({
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    // Particle texture
+    // Particle texture - crisp concentric luminescent core
     const canvas = document.createElement('canvas');
     canvas.width = 64;
     canvas.height = 64;
     const ctx = canvas.getContext('2d')!;
     const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
     grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    grad.addColorStop(0.35, 'rgba(255, 255, 255, 0.9)');
-    grad.addColorStop(0.7, 'rgba(255, 255, 255, 0.3)');
+    grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.95)');
+    grad.addColorStop(0.65, 'rgba(255, 255, 255, 0.55)');
     grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 64, 64);
@@ -301,20 +301,87 @@ export function MagneticGrainOrb({
     const pointTexture = new THREE.CanvasTexture(canvas);
 
     const material = new THREE.PointsMaterial({
-      size: 2.1,
+      size: 2.3,
       map: pointTexture,
       vertexColors: true,
       transparent: true,
-      opacity: 0.92,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.96,
+      blending: THREE.NormalBlending,
       depthWrite: false,
     });
 
     const particles = new THREE.Points(geometry, material);
     scene.add(particles);
 
-    // 3. Highlight indicator mesh for hovered surface grain
-    const highlightGeom = new THREE.SphereGeometry(3.6, 16, 16);
+    // 3. Phosphorescent Coronas for Designated Work Grains
+    const coronaGroup = new THREE.Group();
+    scene.add(coronaGroup);
+
+    const coronaGeom = new THREE.SphereGeometry(2.8, 14, 14);
+    const coronaList: Array<{ mesh: THREE.Mesh; index: number; colorHex: number }> = [];
+
+    grainMetadataMap.forEach((meta) => {
+      const cMat = new THREE.MeshBasicMaterial({
+        color: meta.colorHex,
+        transparent: true,
+        opacity: 0.65,
+        blending: THREE.AdditiveBlending,
+      });
+      const cMesh = new THREE.Mesh(coronaGeom, cMat);
+      coronaGroup.add(cMesh);
+      coronaList.push({ mesh: cMesh, index: meta.index, colorHex: meta.colorHex });
+    });
+
+    // 4. Great-Circle Neural Constellation Arcs (Connecting tasks)
+    const arcGroup = new THREE.Group();
+    scene.add(arcGroup);
+
+    const arcLines: Array<{ line: THREE.Line; meta1: SurfaceGrainMeta; meta2: SurfaceGrainMeta; mat: THREE.LineBasicMaterial }> = [];
+    const designatedEntries = Array.from(grainMetadataMap.values());
+
+    for (let j = 0; j < designatedEntries.length; j++) {
+      for (let k = j + 1; k < designatedEntries.length; k++) {
+        const m1 = designatedEntries[j];
+        const m2 = designatedEntries[k];
+        // Connect related tasks or active items in proximity
+        if (m1.type === m2.type || m1.targetDrawer === m2.targetDrawer || (j % 2 === 0 && k === j + 1)) {
+          const v1 = new THREE.Vector3(
+            basePositions[m1.index * 3],
+            basePositions[m1.index * 3 + 1],
+            basePositions[m1.index * 3 + 2]
+          ).normalize();
+
+          const v2 = new THREE.Vector3(
+            basePositions[m2.index * 3],
+            basePositions[m2.index * 3 + 1],
+            basePositions[m2.index * 3 + 2]
+          ).normalize();
+
+          // Great-circle interpolation points along sphere surface
+          const arcPoints: THREE.Vector3[] = [];
+          const arcSegs = 24;
+          for (let s = 0; s <= arcSegs; s++) {
+            const frac = s / arcSegs;
+            const pt = new THREE.Vector3().copy(v1).lerp(v2, frac).normalize().multiplyScalar(baseRadius * 1.015);
+            arcPoints.push(pt);
+          }
+
+          const arcGeom = new THREE.BufferGeometry().setFromPoints(arcPoints);
+          const arcMat = new THREE.LineBasicMaterial({
+            color: m1.colorHex,
+            transparent: true,
+            opacity: 0.18,
+            blending: THREE.AdditiveBlending,
+          });
+          const arcLine = new THREE.Line(arcGeom, arcMat);
+          arcGroup.add(arcLine);
+          arcLines.push({ line: arcLine, meta1: m1, meta2: m2, mat: arcMat });
+        }
+      }
+    }
+
+    // 5. Highlight indicator mesh for hovered surface grain
+    const highlightGeom = new THREE.SphereGeometry(4.0, 16, 16);
     const highlightMat = new THREE.MeshBasicMaterial({
       color: 0x38bdf8,
       transparent: true,
@@ -324,7 +391,7 @@ export function MagneticGrainOrb({
     const highlightMesh = new THREE.Mesh(highlightGeom, highlightMat);
     scene.add(highlightMesh);
 
-    // 4. Raycasting & Mouse Interaction directly on Points
+    // 6. Raycasting & Mouse Interaction directly on Points
     const raycaster = new THREE.Raycaster();
     raycaster.params.Points.threshold = 4.2; // Generous hit area for surface picking
     const mouse = new THREE.Vector2(-999, -999);
@@ -351,7 +418,6 @@ export function MagneticGrainOrb({
       const intersects = raycaster.intersectObject(particles);
 
       if (intersects.length > 0) {
-        // Find closest intersect with mapped meta, or fallback to first designated near click
         let hitMeta: SurfaceGrainMeta | null = null;
         for (const hit of intersects) {
           if (hit.index !== undefined && grainMetadataMap.has(hit.index)) {
@@ -360,10 +426,8 @@ export function MagneticGrainOrb({
           }
         }
 
-        // If no named task grain right at center, inspect nearest grain in neighborhood
         if (!hitMeta && intersects[0].index !== undefined) {
           const idx = intersects[0].index;
-          // Check closest neighboring designated slot
           Array.from(grainMetadataMap.entries()).forEach(([gIdx, meta]) => {
             if (!hitMeta && Math.abs(gIdx - idx) < 18) {
               hitMeta = meta;
@@ -380,6 +444,17 @@ export function MagneticGrainOrb({
           });
           document.body.style.cursor = 'pointer';
 
+          // Illuminate connected constellation neural arcs
+          arcLines.forEach(({ meta1, meta2, mat }) => {
+            if (meta1.id === hitMeta!.id || meta2.id === hitMeta!.id) {
+              mat.opacity = 0.85;
+              mat.color.setHex(0xffffff);
+            } else {
+              mat.opacity = 0.08;
+              mat.color.setHex(meta1.colorHex);
+            }
+          });
+
           // Position highlight ring at particle 3D position
           const hitIdx = hitMeta.index;
           const pos = geometry.attributes.position as THREE.BufferAttribute;
@@ -394,12 +469,20 @@ export function MagneticGrainOrb({
           activeHoveredMeta = null;
           setHoveredGrain(null);
           highlightMat.opacity = 0;
+          arcLines.forEach(({ mat, meta1 }) => {
+            mat.opacity = 0.18;
+            mat.color.setHex(meta1.colorHex);
+          });
           document.body.style.cursor = 'default';
         }
       } else {
         activeHoveredMeta = null;
         setHoveredGrain(null);
         highlightMat.opacity = 0;
+        arcLines.forEach(({ mat, meta1 }) => {
+          mat.opacity = 0.18;
+          mat.color.setHex(meta1.colorHex);
+        });
         document.body.style.cursor = 'default';
       }
     };
@@ -413,7 +496,7 @@ export function MagneticGrainOrb({
     container.addEventListener('mousemove', handlePointerMove);
     container.addEventListener('click', handleClick);
 
-    // 5. Organic Ferrofluid Animation Loop
+    // 7. Organic Ferrofluid Animation Loop
     let animId: number;
     const clock = new THREE.Clock();
 
@@ -426,6 +509,9 @@ export function MagneticGrainOrb({
       particles.rotation.y = time * 0.12 + currentRotY;
       particles.rotation.x = Math.sin(time * 0.15) * 0.08 + currentRotX;
 
+      coronaGroup.rotation.copy(particles.rotation);
+      arcGroup.rotation.copy(particles.rotation);
+
       // Ferrofluid surface breathing displacement
       const waveVelocity = 2.0 + (workingAgentsCount > 0 ? 0.4 : 0);
       const posAttr = geometry.attributes.position as THREE.BufferAttribute;
@@ -436,7 +522,6 @@ export function MagneticGrainOrb({
         const by = basePositions[i * 3 + 1];
         const bz = basePositions[i * 3 + 2];
 
-        // Give designated task grains higher localized pulse
         const isDesignated = grainMetadataMap.has(i);
         const wave =
           Math.sin(by * 0.08 + time * waveVelocity + phases[i]) *
@@ -450,6 +535,13 @@ export function MagneticGrainOrb({
         posArray[i * 3 + 2] = bz * displacement;
       }
       posAttr.needsUpdate = true;
+
+      // Update positions of phosphorescent coronas to stay locked to displaced surface grains
+      coronaList.forEach(({ mesh, index }) => {
+        mesh.position.set(posArray[index * 3], posArray[index * 3 + 1], posArray[index * 3 + 2]);
+        const pulse = 1.0 + Math.sin(time * 4 + index) * 0.2;
+        mesh.scale.set(pulse, pulse, pulse);
+      });
 
       // Pulse highlight mesh if grain is hovered
       if (activeHoveredMeta) {
@@ -474,6 +566,9 @@ export function MagneticGrainOrb({
       pointTexture.dispose();
       highlightGeom.dispose();
       highlightMat.dispose();
+      coronaGeom.dispose();
+      coronaGroup.clear();
+      arcGroup.clear();
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
@@ -501,8 +596,8 @@ export function MagneticGrainOrb({
     >
       {/* 3D THREE.JS ACCRETION SPHERE CONTAINER */}
       <div className="relative w-[340px] sm:w-[500px] md:w-[650px] xl:w-[760px] h-[360px] sm:h-[440px] xl:h-[500px] flex items-center justify-center overflow-visible">
-        {/* Subtle dark ambient circular vignette */}
-        <div className="pointer-events-none absolute h-[240px] w-[240px] xl:h-[320px] xl:w-[320px] rounded-full bg-black/85 blur-3xl opacity-80" />
+        {/* Subtle, soft theme-adaptive ambient halo glow */}
+        <div className="pointer-events-none absolute h-[260px] w-[260px] xl:h-[340px] xl:w-[340px] rounded-full bg-primary/5 dark:bg-sky-500/10 blur-3xl opacity-60" />
 
         {/* Three.js canvas container */}
         <div

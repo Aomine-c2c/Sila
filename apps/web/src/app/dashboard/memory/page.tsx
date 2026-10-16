@@ -39,7 +39,14 @@ import {
   Clock,
   History,
   Info,
-  BadgeAlert,
+  Cpu,
+  Network,
+  Share2,
+  Copy,
+  Download,
+  Terminal,
+  Code2,
+  Workflow,
 } from 'lucide-react';
 import {
   memoryApi,
@@ -110,7 +117,21 @@ export default function OrganizationalMemoryPage() {
   const queryClient = useQueryClient();
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<'domains' | 'global_search' | 'decision_explorer' | 'assembly' | 'knowledge_graph' | 'add'>('domains');
+  const [activeTab, setActiveTab] = useState<'domains' | 'global_search' | 'decision_explorer' | 'assembly' | 'knowledge_graph' | 'graphify' | 'memgpt' | 'code_graph' | 'add'>('domains');
+
+  // Codebase AST Knowledge Graph State
+  const [codeSymbolSearch, setCodeSymbolSearch] = useState('');
+  const [selectedCodeSymbol, setSelectedCodeSymbol] = useState<string | null>(null);
+
+  // Graphify & Obsidian State
+  const [copiedVault, setCopiedVault] = useState(false);
+  const [selectedGraphNode, setSelectedGraphNode] = useState<string | null>(null);
+
+  // MemGPT State
+  const [memgptAgentId, setMemgptAgentId] = useState<string>('');
+  const [editingBlockName, setEditingBlockName] = useState<string>('persona');
+  const [editingBlockContent, setEditingBlockContent] = useState<string>('');
+  const [newRecallMessage, setNewRecallMessage] = useState<string>('');
 
   // Domain Filter State
   const [selectedDomain, setSelectedDomain] = useState<MemoryDomain | 'ALL'>('ALL');
@@ -133,6 +154,8 @@ export default function OrganizationalMemoryPage() {
   const [callerRole, setCallerRole] = useState('MEMBER');
   const [callerPermissions, setCallerPermissions] = useState('dept:compliance,role:MEMBER');
   const [maxContextTokens, setMaxContextTokens] = useState('2000');
+  const [assembleCompressContext, setAssembleCompressContext] = useState(true);
+  const [assembleStrategy, setAssembleStrategy] = useState<'CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE' | 'TRIPLETS'>('AGGRESSIVE');
 
   // Ingest Memory State
   const [newTitle, setNewTitle] = useState('');
@@ -194,14 +217,19 @@ export default function OrganizationalMemoryPage() {
     enabled: !!companyId,
   });
 
+  // Knowledge Graph Search & Neighborhood State
+  const [kgSearch, setKgSearch] = useState('');
+  const [kgEntityType, setKgEntityType] = useState('ALL');
+  const [selectedKgEntityId, setSelectedKgEntityId] = useState<string | null>(null);
+
   // --- MUTATIONS ---
   const assembleMutation = useMutation({
     mutationFn: (req: ContextAssemblyRequest) => memoryApi.assembleContext(companyId, req),
   });
 
   const { data: graphData, isLoading: isGraphLoading, refetch: refetchGraph } = useQuery({
-    queryKey: ['memory-knowledge-graph', companyId],
-    queryFn: () => memoryApi.getKnowledgeGraph(companyId),
+    queryKey: ['memory-knowledge-graph', companyId, kgSearch, kgEntityType],
+    queryFn: () => memoryApi.getKnowledgeGraph(companyId, { q: kgSearch, entityType: kgEntityType }),
     enabled: !!companyId,
   });
 
@@ -233,6 +261,77 @@ export default function OrganizationalMemoryPage() {
       queryClient.invalidateQueries({ queryKey: ['memory-items', companyId] });
       setNewActualOutcome('');
       setNewLessonInput('');
+    },
+  });
+
+  // --- CODEBASE AST KNOWLEDGE GRAPH QUERIES ---
+  const {
+    data: codeGraphIndex,
+    isLoading: isCodeGraphLoading,
+    refetch: refetchCodeGraph,
+  } = useQuery({
+    queryKey: ['memory-code-graph-index', companyId],
+    queryFn: () => memoryApi.getCodebaseGraphIndex(companyId),
+    enabled: !!companyId && activeTab === 'code_graph',
+  });
+
+  const syncCodeGraphMutation = useMutation({
+    mutationFn: () => memoryApi.getCodebaseGraphIndex(companyId, { force_refresh: true, sync_db: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['memory-code-graph-index', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['memory-knowledge-graph', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['memory-graphify-network', companyId] });
+    },
+  });
+
+  const { data: codeSymbolResults, isLoading: isSymbolSearching } = useQuery({
+    queryKey: ['memory-code-symbols', companyId, codeSymbolSearch],
+    queryFn: () => memoryApi.searchCodebaseSymbols(companyId, codeSymbolSearch),
+    enabled: !!companyId && codeSymbolSearch.trim().length > 1,
+  });
+
+  // --- GRAPHIFY & OBSIDIAN NETWORK QUERY ---
+  const { data: graphifyData, isLoading: isGraphifyLoading, refetch: refetchGraphify } = useQuery({
+    queryKey: ['memory-graphify-network', companyId],
+    queryFn: () => memoryApi.getGraphifyNetwork(companyId),
+    enabled: !!companyId,
+  });
+
+  // --- MEMGPT HIERARCHICAL CONTEXT QUERIES ---
+  const selectedAgentIdForMemGPT = memgptAgentId || (agents[0]?.id ?? '');
+
+  const { data: memgptContext, isLoading: isMemgptLoading, refetch: refetchMemGPT } = useQuery({
+    queryKey: ['memgpt-context', companyId, selectedAgentIdForMemGPT],
+    queryFn: () => memoryApi.getMemGPTContext(companyId, selectedAgentIdForMemGPT),
+    enabled: !!companyId && !!selectedAgentIdForMemGPT,
+  });
+
+  const { data: coreBlocks = [], refetch: refetchCoreBlocks } = useQuery({
+    queryKey: ['memgpt-core-blocks', companyId, selectedAgentIdForMemGPT],
+    queryFn: () => memoryApi.listCoreMemoryBlocks(companyId, selectedAgentIdForMemGPT),
+    enabled: !!companyId && !!selectedAgentIdForMemGPT,
+  });
+
+  const updateCoreBlockMutation = useMutation({
+    mutationFn: ({ blockName, content, mode }: { blockName: string; content: string; mode?: 'replace' | 'append' }) =>
+      memoryApi.updateCoreMemoryBlock(companyId, selectedAgentIdForMemGPT, {
+        block_name: blockName,
+        content,
+        mode,
+      }),
+    onSuccess: () => {
+      refetchCoreBlocks();
+      refetchMemGPT();
+      setEditingBlockContent('');
+    },
+  });
+
+  const appendRecallMutation = useMutation({
+    mutationFn: ({ role, message }: { role: string; message: string }) =>
+      memoryApi.appendRecallMessage(companyId, selectedAgentIdForMemGPT, { role, message }),
+    onSuccess: () => {
+      refetchMemGPT();
+      setNewRecallMessage('');
     },
   });
 
@@ -455,6 +554,8 @@ export default function OrganizationalMemoryPage() {
       caller_role: callerRole,
       caller_permissions: callerPermissions.split(',').map((p) => p.trim()).filter(Boolean),
       max_context_tokens: parseInt(maxContextTokens, 10) || 2000,
+      compress_context: assembleCompressContext,
+      compression_strategy: assembleStrategy,
     });
   };
 
@@ -573,6 +674,36 @@ export default function OrganizationalMemoryPage() {
         >
           <GitBranch className="h-4 w-4" />
           Knowledge Graph & Triples
+        </button>
+
+        <button
+          onClick={() => setActiveTab('memgpt')}
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
+            activeTab === 'memgpt' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Cpu className="h-4 w-4 text-cyan-400" />
+          MemGPT Virtual Context
+        </button>
+
+        <button
+          onClick={() => setActiveTab('graphify')}
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
+            activeTab === 'graphify' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Network className="h-4 w-4 text-purple-400" />
+          Graphify & Obsidian Vault
+        </button>
+
+        <button
+          onClick={() => setActiveTab('code_graph')}
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors ${
+            activeTab === 'code_graph' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Code2 className="h-4 w-4 text-emerald-400" />
+          Codebase AST Pre-Index
         </button>
 
         <button
@@ -1176,6 +1307,50 @@ export default function OrganizationalMemoryPage() {
                 />
               </div>
 
+              {/* Built-in Token Compression Controls */}
+              <div className="p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={assembleCompressContext}
+                      onChange={(e) => setAssembleCompressContext(e.target.checked)}
+                      className="rounded border-border text-primary focus:ring-primary"
+                    />
+                    Token Compression (Rule 6: Zero-Filler)
+                  </label>
+                  <span className="text-[10px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                    Active
+                  </span>
+                </div>
+                {assembleCompressContext && (
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <div>
+                      <label className="text-[10px] font-medium text-muted-foreground block mb-1">
+                        Strategy
+                      </label>
+                      <select
+                        value={assembleStrategy}
+                        onChange={(e) =>
+                          setAssembleStrategy(
+                            e.target.value as 'CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE' | 'TRIPLETS'
+                          )
+                        }
+                        className="w-full rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground font-mono focus:outline-none focus:border-primary"
+                      >
+                        <option value="AGGRESSIVE">AGGRESSIVE (Bullet Fragments)</option>
+                        <option value="BALANCED">BALANCED (Preamble Scrub)</option>
+                        <option value="TRIPLETS">TRIPLETS (Knowledge Graph)</option>
+                        <option value="CONSERVATIVE">CONSERVATIVE (Pleasantry Strip)</option>
+                      </select>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground flex items-center pt-3">
+                      Compresses assembled context prior to injection into AI inference.
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <button
                 type="submit"
                 disabled={assembleMutation.isPending}
@@ -1241,6 +1416,20 @@ export default function OrganizationalMemoryPage() {
                     </div>
                   </div>
 
+                  {/* Token Compression Savings Ribbon */}
+                  {assembleMutation.data.compression_applied && (
+                    <div className="p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 font-semibold text-emerald-400">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        <span>Built-in Token Compression Active</span>
+                      </div>
+                      <div className="flex items-center gap-3 font-mono text-[11px]">
+                        <span className="text-muted-foreground">Uncompressed: ~{assembleMutation.data.uncompressed_context_tokens}</span>
+                        <span className="font-bold text-emerald-300">Saved: +{assembleMutation.data.tokens_saved} ({assembleMutation.data.compression_ratio_pct}%)</span>
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <label className="text-xs font-medium text-muted-foreground block mb-1">
                       Assembled Minimal Prompt (Injected to AI Provider)
@@ -1294,6 +1483,57 @@ export default function OrganizationalMemoryPage() {
             </div>
           </div>
 
+          {/* Search & Filter Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-border bg-card/60">
+            <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+              <div className="relative flex-1 min-w-[200px] max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  type="search"
+                  value={kgSearch}
+                  onChange={(e) => setKgSearch(e.target.value)}
+                  placeholder="Search entities, concepts, or descriptions..."
+                  className="input pl-8 text-xs h-9 w-full"
+                />
+              </div>
+
+              <select
+                value={kgEntityType}
+                onChange={(e) => setKgEntityType(e.target.value)}
+                className="input text-xs h-9 w-auto min-w-[140px]"
+              >
+                <option value="ALL">All Entity Types</option>
+                <option value="SYSTEM">System Core</option>
+                <option value="GOVERNANCE">Governance</option>
+                <option value="SECURITY">Security</option>
+                <option value="ENGINE">Engine / Intelligence</option>
+                <option value="DATABASE">Database</option>
+                <option value="CONCEPT">Concepts & Facts</option>
+                <option value="POLICY">Policies</option>
+                <option value="AGENT">Agents</option>
+                <option value="TOOL">Tools</option>
+              </select>
+
+              {(kgSearch || kgEntityType !== 'ALL') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setKgSearch('');
+                    setKgEntityType('ALL');
+                    setSelectedKgEntityId(null);
+                  }}
+                  className="btn btn-outline h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+
+            <div className="text-[11px] font-mono text-muted-foreground">
+              Showing {graphData?.entities?.length || 0} nodes / {graphData?.relations?.length || 0} edges
+            </div>
+          </div>
+
           {/* Quick Extract Box */}
           <div className="p-4 rounded-xl border border-border bg-card/60 space-y-3">
             <h3 className="text-xs font-semibold text-foreground flex items-center gap-2">
@@ -1323,50 +1563,111 @@ export default function OrganizationalMemoryPage() {
           {/* Graph Entities & Triples Explorer */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider font-mono">
-                Entities ({graphData?.entities?.length || 0})
-              </h3>
-              <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
-                {graphData?.entities?.map((ent) => (
-                  <div
-                    key={ent.id}
-                    className="p-2.5 rounded-lg border border-border/80 bg-background/80 hover:border-primary/40 transition-colors"
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-foreground uppercase tracking-wider font-mono">
+                  Matched Entities ({graphData?.entities?.length || 0})
+                </h3>
+                {selectedKgEntityId && (
+                  <button
+                    onClick={() => setSelectedKgEntityId(null)}
+                    className="text-[10px] text-primary hover:underline font-mono"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-foreground font-mono">{ent.name}</span>
-                      <span className="badge badge-primary text-[10px] uppercase font-mono">{ent.entity_type}</span>
-                    </div>
-                    {ent.description && (
-                      <p className="text-[11px] text-muted-foreground mt-1">{ent.description}</p>
-                    )}
-                  </div>
-                ))}
+                    Clear Focus
+                  </button>
+                )}
               </div>
+
+              {isGraphLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <RotateCw className="h-5 w-5 animate-spin text-primary" />
+                </div>
+              ) : !graphData?.entities || graphData.entities.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground text-xs font-mono">
+                  No entities matched query &quot;{kgSearch}&quot;.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                  {graphData.entities.map((ent) => {
+                    const isSelected = selectedKgEntityId === ent.id;
+                    return (
+                      <div
+                        key={ent.id}
+                        onClick={() => setSelectedKgEntityId(isSelected ? null : ent.id)}
+                        className={`p-2.5 rounded-lg border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-primary bg-primary/10 shadow-sm'
+                            : 'border-border/80 bg-background/80 hover:border-primary/40'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-foreground font-mono">{ent.name}</span>
+                          <span className="badge badge-primary text-[10px] uppercase font-mono">{ent.entity_type}</span>
+                        </div>
+                        {ent.description && (
+                          <p className="text-[11px] text-muted-foreground mt-1">{ent.description}</p>
+                        )}
+                        {isSelected && (
+                          <div className="mt-2 pt-2 border-t border-primary/20 flex items-center justify-between text-[10px] font-mono text-primary">
+                            <span>FOCUSED NODE</span>
+                            <span>Filter Triples ↳</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider font-mono">
-                Directed Triples ({graphData?.relations?.length || 0})
-              </h3>
-              <div className="space-y-2 max-h-96 overflow-y-auto pr-1 font-mono text-xs">
-                {graphData?.relations?.map((rel) => {
-                  const source = graphData?.entities?.find((e) => e.id === rel.source_id)?.name || rel.source_id.slice(0, 8);
-                  const target = graphData?.entities?.find((e) => e.id === rel.target_id)?.name || rel.target_id.slice(0, 8);
-                  return (
-                    <div
-                      key={rel.id}
-                      className="p-2.5 rounded-lg border border-border/80 bg-background/80 flex items-center justify-between gap-2"
-                    >
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span className="font-bold text-primary truncate">[{source}]</span>
-                        <span className="text-muted-foreground text-[10px]">--({rel.relation_type.toLowerCase()})--&gt;</span>
-                        <span className="font-semibold text-foreground truncate">[{target}]</span>
-                      </div>
-                      <span className="text-[10px] text-muted-foreground shrink-0">w: {rel.weight}</span>
-                    </div>
-                  );
-                })}
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-foreground uppercase tracking-wider font-mono">
+                  {selectedKgEntityId ? 'Connected Sub-Graph Triples' : 'Directed Triples'} ({
+                    (selectedKgEntityId
+                      ? graphData?.relations?.filter((r) => r.source_id === selectedKgEntityId || r.target_id === selectedKgEntityId)
+                      : graphData?.relations)?.length || 0
+                  })
+                </h3>
+                {selectedKgEntityId && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                    Filtered by Node
+                  </span>
+                )}
               </div>
+
+              {isGraphLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <RotateCw className="h-5 w-5 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto pr-1 font-mono text-xs">
+                  {graphData?.relations
+                    ?.filter((r) => !selectedKgEntityId || r.source_id === selectedKgEntityId || r.target_id === selectedKgEntityId)
+                    .map((rel) => {
+                      const source = graphData?.entities?.find((e) => e.id === rel.source_id)?.name || rel.source_id.slice(0, 8);
+                      const target = graphData?.entities?.find((e) => e.id === rel.target_id)?.name || rel.target_id.slice(0, 8);
+                      const isHighlighted = selectedKgEntityId && (rel.source_id === selectedKgEntityId || rel.target_id === selectedKgEntityId);
+
+                      return (
+                        <div
+                          key={rel.id}
+                          className={`p-2.5 rounded-lg border flex items-center justify-between gap-2 transition-all ${
+                            isHighlighted
+                              ? 'border-primary/60 bg-primary/5 font-semibold'
+                              : 'border-border/80 bg-background/80'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span className="font-bold text-primary truncate">[{source}]</span>
+                            <span className="text-muted-foreground text-[10px]">--({rel.relation_type.toLowerCase()})--&gt;</span>
+                            <span className="font-semibold text-foreground truncate">[{target}]</span>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground shrink-0">w: {rel.weight}</span>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1493,6 +1794,816 @@ export default function OrganizationalMemoryPage() {
               )}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* TAB: MEMGPT HIERARCHICAL VIRTUAL CONTEXT */}
+      {activeTab === 'memgpt' && (
+        <div className="space-y-6 animate-fade-in font-mono">
+          {/* Agent Picker Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl border border-border bg-card/80 backdrop-blur-md">
+            <div>
+              <div className="flex items-center gap-2">
+                <Cpu className="h-4 w-4 text-cyan-400" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
+                  MemGPT Virtual Context Controller
+                </h3>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-semibold">
+                  OS Tiered Memory
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 font-sans">
+                Treats LLM context windows as volatile RAM. Core Memory (Persona & User blocks) remain actively in-prompt and self-editable; older conversations page out via FIFO eviction into Archival Storage.
+              </p>
+            </div>
+
+            {/* Agent Selector Dropdown */}
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs text-muted-foreground uppercase font-semibold">Agent:</span>
+              <select
+                value={selectedAgentIdForMemGPT}
+                onChange={(e) => setMemgptAgentId(e.target.value)}
+                className="select select-bordered text-xs bg-background border-border rounded-xl px-3 py-1.5 focus:outline-none focus:border-cyan-400 font-mono"
+              >
+                {agents.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name} ({a.autonomy || 'Autonomous'})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* 3-Tier Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Tier 1: Core Memory */}
+            <div className="p-4 rounded-xl border border-cyan-500/30 bg-cyan-500/5 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-cyan-400">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                  TIER 1 // CORE MEMORY (RAM)
+                </span>
+                <span>{coreBlocks.length} Blocks</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground font-sans">
+                In-prompt working memory. Editable directly by agent tool calls (`core_memory_append`, `core_memory_replace`).
+              </p>
+              <div className="text-[10px] text-cyan-300 font-mono pt-1">
+                Active Tokens: ~{memgptContext?.total_active_tokens ?? 0}
+              </div>
+            </div>
+
+            {/* Tier 2: Recall Memory */}
+            <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-amber-400">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                  TIER 2 // RECALL MEMORY (FIFO)
+                </span>
+                <span>{memgptContext?.fifo_messages?.length ?? 0}/10 In-Prompt</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground font-sans">
+                Active conversation message buffer. Automatically evicts older items into Archival Memory when token capacity is reached.
+              </p>
+              <div className="text-[10px] text-amber-300 font-mono pt-1">
+                Queue Status: Active Nominal
+              </div>
+            </div>
+
+            {/* Tier 3: Archival Memory */}
+            <div className="p-4 rounded-xl border border-purple-500/30 bg-purple-500/5 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-purple-400">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-purple-400" />
+                  TIER 3 // ARCHIVAL (DISK)
+                </span>
+                <span>{memgptContext?.archived_memories_count ?? 0} Items</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground font-sans">
+                Long-term vector and semantic disk storage. Queried on-demand when agent requires historical context.
+              </p>
+              <div className="text-[10px] text-purple-300 font-mono pt-1">
+                Persistence: Permanent Scoped
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Core Memory Editor & FIFO Stream Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column: Core Memory Blocks (Persona, Human, Scratchpad) */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                  <Sliders className="h-3.5 w-3.5 text-cyan-400" />
+                  Core Memory Blocks (RAM)
+                </h4>
+                <span className="text-[10px] text-muted-foreground">Prompt Injected</span>
+              </div>
+
+              {coreBlocks.map((block) => (
+                <div key={block.id} className="p-4 rounded-xl border border-border bg-card/60 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-foreground uppercase tracking-wider font-mono">
+                      [{block.block_name.toUpperCase()}] // {block.label}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {block.content.length}/{block.char_limit} chars
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-foreground/90 font-mono bg-background/80 p-2.5 rounded-lg border border-border/50 whitespace-pre-wrap leading-relaxed">
+                    {block.content || '<empty block>'}
+                  </p>
+
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingBlockName(block.block_name);
+                        setEditingBlockContent(block.content);
+                      }}
+                      className="text-[10px] px-2.5 py-1 rounded bg-secondary hover:bg-secondary/80 text-foreground border border-border transition-colors"
+                    >
+                      Edit Block
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {/* Edit Block Inline Card */}
+              {editingBlockContent !== '' && (
+                <div className="p-4 rounded-xl border border-cyan-500/40 bg-card space-y-3">
+                  <div className="flex items-center justify-between text-xs font-bold text-cyan-400">
+                    <span>EDITING [{editingBlockName.toUpperCase()}] BLOCK</span>
+                    <button
+                      type="button"
+                      onClick={() => setEditingBlockContent('')}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  <textarea
+                    rows={4}
+                    value={editingBlockContent}
+                    onChange={(e) => setEditingBlockContent(e.target.value)}
+                    className="w-full text-xs font-mono bg-background border border-border rounded-lg p-2.5 text-foreground focus:outline-none focus:border-cyan-400"
+                  />
+
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      disabled={updateCoreBlockMutation.isPending}
+                      onClick={() =>
+                        updateCoreBlockMutation.mutate({
+                          blockName: editingBlockName,
+                          content: editingBlockContent,
+                          mode: 'append',
+                        })
+                      }
+                      className="text-[11px] px-3 py-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 border border-border font-semibold transition-colors disabled:opacity-50"
+                    >
+                      Append (+Newline)
+                    </button>
+                    <button
+                      type="button"
+                      disabled={updateCoreBlockMutation.isPending}
+                      onClick={() =>
+                        updateCoreBlockMutation.mutate({
+                          blockName: editingBlockName,
+                          content: editingBlockContent,
+                          mode: 'replace',
+                        })
+                      }
+                      className="text-[11px] px-3 py-1.5 rounded-lg bg-cyan-500 text-black hover:bg-cyan-400 font-bold transition-colors disabled:opacity-50"
+                    >
+                      Replace Core Memory
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: Recall FIFO Stream & Interactive Test */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                  <History className="h-3.5 w-3.5 text-amber-400" />
+                  Recall Memory FIFO Buffer (Active Stream)
+                </h4>
+                <span className="text-[10px] text-amber-400 font-semibold">Evicts after 10 msgs</span>
+              </div>
+
+              {/* FIFO Messages Stream */}
+              <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+                {memgptContext?.fifo_messages && memgptContext.fifo_messages.length > 0 ? (
+                  memgptContext.fifo_messages.map((msg, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-2.5 rounded-lg border text-xs ${
+                        msg.role === 'user'
+                          ? 'border-border/60 bg-secondary/30'
+                          : 'border-cyan-500/20 bg-cyan-500/5'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+                        <span className="font-bold uppercase tracking-wider">{msg.role}</span>
+                        <span>~{msg.tokens} tokens</span>
+                      </div>
+                      <p className="text-foreground/90 font-mono text-[11px]">{msg.content}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-8 text-center text-xs text-muted-foreground italic border border-dashed border-border rounded-xl">
+                    FIFO message buffer is empty. Send a test message below to simulate active execution.
+                  </div>
+                )}
+              </div>
+
+              {/* Append Test Message Input */}
+              <div className="p-3.5 rounded-xl border border-border bg-card/60 space-y-2.5">
+                <span className="text-[11px] font-bold text-foreground uppercase tracking-wider block">
+                  Simulate Message Ingestion (FIFO Queue Test)
+                </span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Enter observation or user message..."
+                    value={newRecallMessage}
+                    onChange={(e) => setNewRecallMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newRecallMessage.trim()) {
+                        appendRecallMutation.mutate({ role: 'user', message: newRecallMessage.trim() });
+                      }
+                    }}
+                    className="flex-1 text-xs bg-background border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-amber-400 font-mono"
+                  />
+                  <button
+                    type="button"
+                    disabled={appendRecallMutation.isPending || !newRecallMessage.trim()}
+                    onClick={() =>
+                      appendRecallMutation.mutate({ role: 'user', message: newRecallMessage.trim() })
+                    }
+                    className="text-xs px-3 py-1.5 rounded-lg bg-amber-500 text-black hover:bg-amber-400 font-bold transition-colors disabled:opacity-50"
+                  >
+                    Send
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: GRAPHIFY & OBSIDIAN VAULT */}
+      {activeTab === 'graphify' && (
+        <div className="space-y-6">
+          {/* Header Controls & Summary Cards */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl border border-purple-500/20 bg-gradient-to-r from-purple-950/20 via-card to-card">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/30">
+                <Network className="h-3.5 w-3.5" />
+                Graphify Topology Engine
+              </div>
+              <h2 className="text-lg font-bold text-foreground">
+                Bidirectional Knowledge Graph & Obsidian Markdown Vault
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                All organizational memories, ADR decisions, agents, workflows, and policies mapped with standard <code className="text-purple-300">[[wikilinks]]</code> and high-degree hub indexing.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (graphifyData?.vault_markdown_export) {
+                    navigator.clipboard.writeText(graphifyData.vault_markdown_export);
+                    setCopiedVault(true);
+                    setTimeout(() => setCopiedVault(false), 2500);
+                  }
+                }}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-purple-600 text-white hover:bg-purple-500 transition-colors shadow-sm"
+              >
+                {copiedVault ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-green-300" />
+                    Copied Vault Markdown!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy Obsidian Vault (.md)
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => refetchGraphify()}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-border bg-card/60 text-foreground hover:border-purple-400/40 transition-colors"
+              >
+                <RotateCw className="h-3.5 w-3.5" /> Recompute Graph
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Metrics Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl border border-border bg-card/60">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Total Nodes</span>
+              <p className="text-xl font-bold font-mono text-purple-400 mt-1">
+                {graphifyData?.nodes?.length || 0}
+              </p>
+            </div>
+            <div className="p-4 rounded-xl border border-border bg-card/60">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Bidirectional Edges</span>
+              <p className="text-xl font-bold font-mono text-cyan-400 mt-1">
+                {graphifyData?.edges?.length || 0}
+              </p>
+            </div>
+            <div className="p-4 rounded-xl border border-border bg-card/60">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Central Concepts</span>
+              <p className="text-xl font-bold font-mono text-amber-400 mt-1">
+                {graphifyData?.central_concepts?.length || 0}
+              </p>
+            </div>
+            <div className="p-4 rounded-xl border border-border bg-card/60">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Vault Format</span>
+              <p className="text-xl font-bold font-mono text-emerald-400 mt-1">
+                Obsidian [[Wiki]]
+              </p>
+            </div>
+          </div>
+
+          {isGraphifyLoading ? (
+            <div className="p-12 text-center border border-dashed border-border rounded-2xl">
+              <RotateCw className="h-6 w-6 animate-spin mx-auto text-purple-400 mb-2" />
+              <p className="text-sm text-muted-foreground">Synthesizing network topology and extracting cross-domain wikilinks...</p>
+            </div>
+          ) : !graphifyData || graphifyData.nodes.length === 0 ? (
+            <div className="p-12 text-center border border-dashed border-border rounded-2xl">
+              <Network className="h-8 w-8 mx-auto text-muted-foreground mb-3 opacity-60" />
+              <p className="text-sm font-semibold text-foreground">No Knowledge Nodes Found</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                Ingest memories, agents, workflows, or decision records to construct your live Obsidian-compatible graph.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Interactive Graph View (Left 2 cols) */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="p-4 rounded-2xl border border-border bg-card/40 flex flex-col">
+                  <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+                    <div className="flex items-center gap-2">
+                      <Share2 className="h-4 w-4 text-purple-400" />
+                      <span className="text-xs font-semibold text-foreground">Interactive Network Canvas</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-muted-foreground">
+                      Click any node to inspect [[wikilinks]] & degree
+                    </span>
+                  </div>
+
+                  {/* SVG Node Graph */}
+                  <div className="relative w-full h-[460px] rounded-xl bg-background/80 border border-border/80 overflow-hidden flex items-center justify-center">
+                    <svg className="w-full h-full select-none" viewBox="0 0 800 500">
+                      <defs>
+                        <linearGradient id="edgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#a855f7" stopOpacity="0.4" />
+                          <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.4" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Render Edges */}
+                      {graphifyData.edges.map((edge, idx) => {
+                        const total = graphifyData.nodes.length;
+                        const srcIdx = graphifyData.nodes.findIndex((n) => n.id === edge.source);
+                        const tgtIdx = graphifyData.nodes.findIndex((n) => n.id === edge.target);
+                        if (srcIdx === -1 || tgtIdx === -1) return null;
+
+                        const cx = 400;
+                        const cy = 250;
+                        const rx = 320;
+                        const ry = 190;
+
+                        const srcAngle = (srcIdx / total) * 2 * Math.PI - Math.PI / 2;
+                        const tgtAngle = (tgtIdx / total) * 2 * Math.PI - Math.PI / 2;
+
+                        const x1 = cx + rx * Math.cos(srcAngle);
+                        const y1 = cy + ry * Math.sin(srcAngle);
+                        const x2 = cx + rx * Math.cos(tgtAngle);
+                        const y2 = cy + ry * Math.sin(tgtAngle);
+
+                        const isHighlighted =
+                          selectedGraphNode === edge.source || selectedGraphNode === edge.target;
+
+                        return (
+                          <line
+                            key={`edge-${idx}`}
+                            x1={x1}
+                            y1={y1}
+                            x2={x2}
+                            y2={y2}
+                            stroke={isHighlighted ? '#c084fc' : 'url(#edgeGrad)'}
+                            strokeWidth={isHighlighted ? 2.5 : Math.max(1, edge.weight * 1.5)}
+                            strokeDasharray={edge.relation === 'domain_cluster' ? '3,3' : undefined}
+                            className="transition-all duration-300"
+                          />
+                        );
+                      })}
+
+                      {/* Render Nodes */}
+                      {graphifyData.nodes.map((node, idx) => {
+                        const total = graphifyData.nodes.length;
+                        const cx = 400;
+                        const cy = 250;
+                        const rx = 320;
+                        const ry = 190;
+                        const angle = (idx / total) * 2 * Math.PI - Math.PI / 2;
+                        const x = cx + rx * Math.cos(angle);
+                        const y = cy + ry * Math.sin(angle);
+
+                        const isSelected = selectedGraphNode === node.id;
+                        const isHub = graphifyData.central_concepts.includes(node.name);
+
+                        let nodeColor = '#a855f7'; // Purple default
+                        if (node.type === 'decision') nodeColor = '#3b82f6'; // Blue
+                        if (node.type === 'agent') nodeColor = '#10b981'; // Green
+                        if (node.type === 'workflow') nodeColor = '#f59e0b'; // Amber
+                        if (node.type === 'policy') nodeColor = '#ef4444'; // Red
+
+                        const nodeRadius = Math.min(22, Math.max(10, 8 + node.degree * 2.5));
+
+                        return (
+                          <g
+                            key={node.id}
+                            className="cursor-pointer group"
+                            onClick={() => setSelectedGraphNode(node.id === selectedGraphNode ? null : node.id)}
+                          >
+                            {isSelected && (
+                              <circle
+                                cx={x}
+                                cy={y}
+                                r={nodeRadius + 6}
+                                fill="none"
+                                stroke="#c084fc"
+                                strokeWidth="2"
+                                strokeDasharray="4,2"
+                                className="animate-spin-slow"
+                              />
+                            )}
+                            <circle
+                              cx={x}
+                              cy={y}
+                              r={nodeRadius}
+                              fill={nodeColor}
+                              fillOpacity={isSelected ? 1 : 0.85}
+                              stroke={isHub ? '#fde047' : '#ffffff'}
+                              strokeWidth={isHub ? 2.5 : 1}
+                              className="transition-all duration-200 group-hover:scale-110"
+                            />
+                            <text
+                              x={x}
+                              y={y + nodeRadius + 12}
+                              textAnchor="middle"
+                              fill={isSelected ? '#ffffff' : '#94a3b8'}
+                              fontSize="9"
+                              fontWeight={isSelected ? 'bold' : 'normal'}
+                              fontFamily="monospace"
+                              className="pointer-events-none select-none"
+                            >
+                              {node.name.length > 14 ? `${node.name.slice(0, 12)}...` : node.name}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  </div>
+
+                  {/* Hub Concept Tags */}
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-semibold text-muted-foreground">Central Concepts:</span>
+                    {graphifyData.central_concepts.map((hub) => (
+                      <span
+                        key={hub}
+                        className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30"
+                      >
+                        [[{hub}]]
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Node Inspector & Obsidian Vault Preview (Right col) */}
+              <div className="space-y-4">
+                {/* Node Inspector */}
+                <div className="p-4 rounded-2xl border border-border bg-card/40">
+                  <h3 className="text-xs font-semibold text-foreground flex items-center gap-2 mb-3">
+                    <Info className="h-4 w-4 text-purple-400" />
+                    Node Inspector
+                  </h3>
+
+                  {selectedGraphNode ? (
+                    (() => {
+                      const activeNode = graphifyData.nodes.find((n) => n.id === selectedGraphNode);
+                      if (!activeNode) return null;
+                      const connectedEdges = graphifyData.edges.filter(
+                        (e) => e.source === activeNode.id || e.target === activeNode.id
+                      );
+
+                      return (
+                        <div className="space-y-3">
+                          <div>
+                            <span className="text-[10px] font-mono text-muted-foreground uppercase">Title / Name</span>
+                            <p className="text-sm font-bold text-foreground mt-0.5">
+                              [[{activeNode.name}]]
+                            </p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="p-2 rounded-lg bg-background/60 border border-border">
+                              <span className="text-[10px] text-muted-foreground uppercase font-mono">Type</span>
+                              <p className="font-semibold text-foreground mt-0.5 capitalize">{activeNode.type.toLowerCase()}</p>
+                            </div>
+                            <div className="p-2 rounded-lg bg-background/60 border border-border">
+                              <span className="text-[10px] text-muted-foreground uppercase font-mono">Degree</span>
+                              <p className="font-semibold text-purple-400 mt-0.5">{activeNode.degree} Connections</p>
+                            </div>
+                          </div>
+
+                          {/* Connected Wikilinks */}
+                          <div>
+                            <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                              Bidirectional Links ({connectedEdges.length})
+                            </span>
+                            <div className="mt-1.5 space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                              {connectedEdges.map((e, idx) => {
+                                const targetId = e.source === activeNode.id ? e.target : e.source;
+                                const targetNode = graphifyData.nodes.find((n) => n.id === targetId);
+                                return (
+                                  <div
+                                    key={`conn-${idx}`}
+                                    onClick={() => setSelectedGraphNode(targetId)}
+                                    className="p-1.5 rounded-lg border border-border bg-background/50 hover:border-purple-400/50 cursor-pointer flex items-center justify-between text-xs"
+                                  >
+                                    <span className="font-mono text-purple-300 truncate">
+                                      [[{targetNode?.name || targetId}]]
+                                    </span>
+                                    <span className="text-[9px] uppercase px-1 rounded bg-muted text-muted-foreground font-mono">
+                                      {e.relation}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="p-6 text-center text-xs text-muted-foreground">
+                      Select any node in the canvas to inspect its bidirectional connections and wikilink hierarchy.
+                    </div>
+                  )}
+                </div>
+
+                {/* Obsidian Vault Instructions & Raw Export */}
+                <div className="p-4 rounded-2xl border border-border bg-card/40 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <BookOpen className="h-4 w-4 text-purple-400" />
+                      Obsidian Vault Export
+                    </h3>
+                    <span className="text-[10px] font-mono text-muted-foreground">Markdown</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Paste this directly into an Obsidian vault note or folder. Obsidian will automatically map the <code className="text-purple-300">[[wikilinks]]</code> in native Graph View.
+                  </p>
+                  <pre className="p-2.5 rounded-xl bg-background/90 border border-border text-[10px] font-mono text-muted-foreground max-h-48 overflow-y-auto overflow-x-hidden whitespace-pre-wrap">
+                    {graphifyData.vault_markdown_export}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB: CODEBASE AST KNOWLEDGE GRAPH (ZERO-GREP PRE-INDEX) */}
+      {activeTab === 'code_graph' && (
+        <div className="space-y-6 animate-fade-in font-mono">
+          {/* Header Action Bar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl border border-border bg-card/80 backdrop-blur-md">
+            <div>
+              <div className="flex items-center gap-2">
+                <Code2 className="h-5 w-5 text-emerald-400" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
+                  Pre-Indexed Codebase Knowledge Graph
+                </h3>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Zero-grep AST topological index of monorepo modules, classes, functions, and call graphs.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => syncCodeGraphMutation.mutate()}
+                disabled={syncCodeGraphMutation.isPending}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all disabled:opacity-50"
+              >
+                <RotateCw className={`h-3.5 w-3.5 ${syncCodeGraphMutation.isPending ? 'animate-spin' : ''}`} />
+                {syncCodeGraphMutation.isPending ? 'Syncing AST Graph...' : 'Re-index & Sync DB'}
+              </button>
+
+              <button
+                onClick={() => refetchCodeGraph()}
+                className="p-2 rounded-xl border border-border hover:bg-secondary text-muted-foreground hover:text-foreground"
+                title="Refresh Index Stats"
+              >
+                <RotateCw className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Metrics Bar */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl border border-border bg-card">
+              <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Indexed Files</div>
+              <div className="text-xl font-bold text-foreground mt-1">
+                {isCodeGraphLoading ? '...' : codeGraphIndex?.indexed_files || 0}
+              </div>
+            </div>
+            <div className="p-4 rounded-xl border border-border bg-card">
+              <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Total Symbols</div>
+              <div className="text-xl font-bold text-emerald-400 mt-1">
+                {isCodeGraphLoading ? '...' : codeGraphIndex?.total_symbols || 0}
+              </div>
+            </div>
+            <div className="p-4 rounded-xl border border-border bg-card">
+              <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Dependencies / Edges</div>
+              <div className="text-xl font-bold text-cyan-400 mt-1">
+                {isCodeGraphLoading ? '...' : codeGraphIndex?.total_dependencies || 0}
+              </div>
+            </div>
+            <div className="p-4 rounded-xl border border-border bg-card">
+              <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Traversal Speed</div>
+              <div className="text-xl font-bold text-purple-400 mt-1">
+                {isCodeGraphLoading ? '...' : `${codeGraphIndex?.duration_ms || 0} ms`}
+              </div>
+            </div>
+          </div>
+
+          {/* Symbol Search Bar (Replaces Grep) */}
+          <div className="p-5 rounded-2xl border border-border bg-card space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+                  <Search className="h-4 w-4 text-emerald-400" />
+                  Instant AST Symbol & Call-Graph Query (Zero-Grep)
+                </h4>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Sub-millisecond definitions, callers, callees, and imports without traversing disk files.
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-mono">
+                <span className="px-1.5 py-0.5 rounded bg-muted">Ctrl+K</span>
+                <span>or type symbol name</span>
+              </div>
+            </div>
+
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search symbol (e.g. ContextAssemblyEngine, TokenCompressor, evaluate_request)..."
+                value={codeSymbolSearch}
+                onChange={(e) => setCodeSymbolSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500 font-mono transition-all"
+              />
+            </div>
+
+            {/* Results Grid */}
+            {isSymbolSearching ? (
+              <div className="py-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+                <RotateCw className="h-4 w-4 animate-spin text-emerald-400" />
+                Querying pre-indexed AST graph topology...
+              </div>
+            ) : codeSymbolResults && codeSymbolResults.symbols.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                {/* Symbol Matches List */}
+                <div className="space-y-2">
+                  <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+                    <span>Matched Symbols ({codeSymbolResults.total_matches})</span>
+                    <span className="text-[10px] text-emerald-400">Indexed in memory</span>
+                  </div>
+                  <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
+                    {codeSymbolResults.symbols.map((sym) => (
+                      <div
+                        key={sym.id}
+                        onClick={() => setSelectedCodeSymbol(sym.id)}
+                        className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${
+                          selectedCodeSymbol === sym.id
+                            ? 'border-emerald-500/50 bg-emerald-500/10'
+                            : 'border-border bg-card/60 hover:border-emerald-500/30 hover:bg-secondary/40'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-foreground truncate">{sym.name}</span>
+                          <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-muted text-emerald-400 font-mono">
+                            {sym.kind}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-1 truncate">
+                          {sym.file_path}:{sym.line_number || 1}
+                        </div>
+                        {sym.signature && (
+                          <div className="text-[10px] text-emerald-300 font-mono mt-1 truncate bg-background/60 px-2 py-0.5 rounded border border-border/40">
+                            {sym.signature}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Callers & Callees Graph Panel */}
+                <div className="p-4 rounded-xl border border-border bg-card/40 space-y-4">
+                  <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Call Graph & Topological Neighbors
+                  </div>
+
+                  {/* Callers */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold">Referenced by (Callers):</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {codeSymbolResults.callers.length > 0 ? (
+                        codeSymbolResults.callers.map((c, i) => (
+                          <span key={i} className="px-2 py-1 rounded bg-secondary text-[10px] font-mono text-purple-300 border border-border/40">
+                            {c}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground italic">No callers in current scan window</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Callees / Dependencies */}
+                  <div className="space-y-1.5 pt-2">
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold">Depends on (Callees):</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {codeSymbolResults.callees.length > 0 ? (
+                        codeSymbolResults.callees.map((c, i) => (
+                          <span key={i} className="px-2 py-1 rounded bg-secondary text-[10px] font-mono text-cyan-300 border border-border/40">
+                            {c}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground italic">No dependencies</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Related Files */}
+                  <div className="space-y-1.5 pt-2 border-t border-border">
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold">Enclosing Files:</span>
+                    <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
+                      {codeSymbolResults.related_files.map((rf, i) => (
+                        <div key={i} className="text-[10px] text-muted-foreground font-mono truncate">
+                          📁 {rf}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : codeSymbolSearch.trim().length > 1 ? (
+              <div className="py-8 text-center text-xs text-muted-foreground">
+                No matching symbols found in current pre-indexed AST graph for &quot;{codeSymbolSearch}&quot;.
+              </div>
+            ) : (
+              <div className="py-8 text-center text-xs text-muted-foreground">
+                Type a symbol name above to query definitions, callers, and dependencies instantly.
+              </div>
+            )}
+          </div>
+
+          {/* Central Modules Hub */}
+          {codeGraphIndex?.central_modules && codeGraphIndex.central_modules.length > 0 && (
+            <div className="p-4 rounded-xl border border-border bg-card/40 space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                Top Central Architecture Hubs
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {codeGraphIndex.central_modules.map((m, idx) => (
+                  <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-background/60 border border-border text-[11px] font-mono text-muted-foreground truncate">
+                    <span className="text-emerald-400 font-bold">#{idx + 1}</span>
+                    <span className="truncate text-foreground">{m}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
