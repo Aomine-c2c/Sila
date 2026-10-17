@@ -38,6 +38,8 @@ import {
   type CouncilMember,
   type ReviewItem,
   type DisagreementRecord,
+  type QuorumVotingModel,
+  type QuorumResult,
 } from '@/lib/api/councils';
 
 // Preset Canonical Architecture Council
@@ -87,6 +89,7 @@ type DeliberationSectionTab =
   | 'PROPOSALS'
   | 'OBJECTIONS'
   | 'SYNTHESIS'
+  | 'QUORUM'
   | 'DECISION';
 
 export default function CouncilsDashboardPage() {
@@ -98,6 +101,9 @@ export default function CouncilsDashboardPage() {
   const [selectedDelib, setSelectedDelib] = useState<CouncilDeliberation | null>(null);
   const [activeSection, setActiveSection] = useState<DeliberationSectionTab>('OVERVIEW');
   const [selectedParticipantIndex, setSelectedParticipantIndex] = useState<number>(0);
+  const [votingModel, setVotingModel] = useState<QuorumVotingModel>('WEIGHTED');
+  const [quorumResult, setQuorumResult] = useState<QuorumResult | null>(null);
+  const [copiedAdr, setCopiedAdr] = useState(false);
 
   // Modals
   const [showCreateCouncil, setShowCreateCouncil] = useState(false);
@@ -185,6 +191,19 @@ export default function CouncilsDashboardPage() {
       qc.invalidateQueries({ queryKey: ['council-deliberations', companyId, selectedCouncil?.id] });
       setSelectedDelib(updated);
       setActiveSection('DECISION');
+    },
+  });
+
+  // 6. Quorum Evaluation Mutation
+  const quorumMutation = useMutation({
+    mutationFn: (overrideVote?: 'APPROVE' | 'REJECT' | 'VETO' | null) =>
+      councilsApi.evaluateQuorum(companyId!, selectedCouncil!.id, selectedDelib!.id, {
+        voting_model: votingModel,
+        override_vote: overrideVote,
+      }),
+    onSuccess: (result) => {
+      setQuorumResult(result);
+      qc.invalidateQueries({ queryKey: ['council-deliberations', companyId, selectedCouncil?.id] });
     },
   });
 
@@ -534,6 +553,7 @@ export default function CouncilsDashboardPage() {
                   { id: 'OBJECTIONS', label: 'Objections & Dissent', icon: ShieldAlert },
                   { id: 'DISCUSSION', label: 'Discussion Threads', icon: MessageSquare },
                   { id: 'SYNTHESIS', label: 'Consensus Synthesis', icon: Sparkles },
+                  { id: 'QUORUM', label: 'Quorum & Voting Ledger', icon: Scale },
                   { id: 'DECISION', label: 'Final Decision', icon: CheckCircle },
                 ].map((tab) => {
                   const Icon = tab.icon;
@@ -1035,6 +1055,264 @@ export default function CouncilsDashboardPage() {
                   ) : (
                     <div className="text-center py-8 text-xs text-muted-foreground">
                       Consensus synthesis is pending completion.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB: QUORUM & VOTING LEDGER */}
+              {activeSection === 'QUORUM' && (
+                <div className="space-y-6">
+                  {/* Console Header & Voting Model Controls */}
+                  <div className="p-6 rounded-2xl border border-border bg-card space-y-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-border">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Scale className="h-5 w-5 text-primary" />
+                          <h3 className="text-sm font-mono uppercase tracking-wider font-bold text-foreground">
+                            Dynamic Consensus Quorum Engine
+                          </h3>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Evaluate independent agent reviews against mathematical consensus rules and trigger autonomous execution.
+                        </p>
+                      </div>
+
+                      {/* Voting Model Selector */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Model:</span>
+                        <select
+                          value={votingModel}
+                          onChange={(e) => setVotingModel(e.target.value as QuorumVotingModel)}
+                          className="select select-sm text-xs bg-secondary border-border"
+                        >
+                          <option value="WEIGHTED">Weighted (Seniority & Autonomy)</option>
+                          <option value="MAJORITY">Simple Majority (&gt;50%)</option>
+                          <option value="UNANIMOUS">Unanimous (100% Approval)</option>
+                          <option value="VETO_ENABLED">Veto-Enabled (Security Gating)</option>
+                        </select>
+
+                        <button
+                          type="button"
+                          onClick={() => quorumMutation.mutate(null)}
+                          disabled={quorumMutation.isPending}
+                          className="btn btn-primary btn-sm text-xs gap-1.5 font-semibold"
+                        >
+                          {quorumMutation.isPending ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Play className="h-3.5 w-3.5" />
+                          )}
+                          Execute Roll-Call
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Operator Manual Override Bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-secondary/40 border border-border/60 text-xs">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Shield className="h-4 w-4 text-primary" />
+                        <span className="font-semibold text-foreground">Executive Manual Override:</span>
+                        <span>Inject supervisory vote with 5.0x weight and veto rights</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => quorumMutation.mutate('APPROVE')}
+                          disabled={quorumMutation.isPending}
+                          className="btn btn-xs btn-outline hover:bg-emerald-500/20 hover:text-emerald-400 gap-1"
+                        >
+                          <Check className="h-3 w-3" />
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => quorumMutation.mutate('REJECT')}
+                          disabled={quorumMutation.isPending}
+                          className="btn btn-xs btn-outline hover:bg-rose-500/20 hover:text-rose-400 gap-1"
+                        >
+                          <ThumbsDown className="h-3 w-3" />
+                          Reject
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => quorumMutation.mutate('VETO')}
+                          disabled={quorumMutation.isPending}
+                          className="btn btn-xs btn-outline hover:bg-amber-500/20 hover:text-amber-400 gap-1"
+                        >
+                          <ShieldAlert className="h-3 w-3" />
+                          Veto
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quorum Execution Telemetry & Result Banner */}
+                  {quorumResult && (
+                    <div
+                      className={`p-6 rounded-2xl border space-y-4 ${
+                        quorumResult.status === 'PASSED'
+                          ? 'border-emerald-500/30 bg-emerald-500/5'
+                          : quorumResult.status === 'VETOED'
+                          ? 'border-amber-500/40 bg-amber-500/10'
+                          : 'border-rose-500/30 bg-rose-500/5'
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border/40">
+                        <div className="flex items-center gap-3">
+                          {quorumResult.status === 'PASSED' ? (
+                            <CheckCircle className="h-6 w-6 text-emerald-400" />
+                          ) : quorumResult.status === 'VETOED' ? (
+                            <ShieldAlert className="h-6 w-6 text-amber-400 animate-pulse" />
+                          ) : (
+                            <AlertTriangle className="h-6 w-6 text-rose-400" />
+                          )}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-base font-bold font-mono text-foreground">
+                                QUORUM STATUS: {quorumResult.status}
+                              </span>
+                              <span
+                                className={`badge text-[10px] font-mono ${
+                                  quorumResult.status === 'PASSED'
+                                    ? 'badge-success'
+                                    : quorumResult.status === 'VETOED'
+                                    ? 'badge-warning'
+                                    : 'badge-error'
+                                }`}
+                              >
+                                {quorumResult.voting_model} MODEL
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Enactment Action: <span className="font-semibold text-foreground">{quorumResult.enactment_action_taken}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 text-xs font-mono">
+                          <div>
+                            <span className="text-muted-foreground block text-[10px]">TOTAL WEIGHT</span>
+                            <span className="font-bold text-foreground">{quorumResult.total_weight.toFixed(1)}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block text-[10px]">APPROVE</span>
+                            <span className="font-bold text-emerald-400">{quorumResult.approve_weight.toFixed(1)}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block text-[10px]">REJECT</span>
+                            <span className="font-bold text-rose-400">{quorumResult.reject_weight.toFixed(1)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Veto Alert Box */}
+                      {quorumResult.veto_exercised && (
+                        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-1">
+                          <div className="flex items-center gap-1.5 font-bold text-amber-400">
+                            <ShieldAlert className="h-4 w-4" />
+                            CRITICAL VETO EXERCISED BY: {quorumResult.veto_by || 'Security Authority'}
+                          </div>
+                          <p className="text-muted-foreground">{quorumResult.veto_rationale}</p>
+                        </div>
+                      )}
+
+                      {/* Round-by-Round Member Ballots Ledger */}
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-mono uppercase tracking-wider font-bold text-foreground">
+                          Roll-Call Ballots Ledger ({quorumResult.ballots.length} Members)
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {quorumResult.ballots.map((ballot, idx) => (
+                            <div
+                              key={idx}
+                              className={`p-4 rounded-xl border text-xs space-y-2 ${
+                                ballot.vote === 'APPROVE'
+                                  ? 'border-emerald-500/20 bg-emerald-500/5'
+                                  : ballot.vote === 'VETO'
+                                  ? 'border-amber-500/30 bg-amber-500/10'
+                                  : 'border-rose-500/20 bg-rose-500/5'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <Bot className="h-4 w-4 text-primary" />
+                                  <div>
+                                    <span className="font-bold text-foreground block">{ballot.role_title}</span>
+                                    <span className="text-[10px] text-muted-foreground">{ballot.agent_name}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary text-muted-foreground">
+                                    {ballot.vote_weight}x
+                                  </span>
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                                      ballot.vote === 'APPROVE'
+                                        ? 'bg-emerald-500/20 text-emerald-400'
+                                        : ballot.vote === 'VETO'
+                                        ? 'bg-amber-500/20 text-amber-400'
+                                        : 'bg-rose-500/20 text-rose-400'
+                                    }`}
+                                  >
+                                    {ballot.vote}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <p className="text-muted-foreground leading-relaxed italic">
+                                &ldquo;{ballot.rationale}&rdquo;
+                              </p>
+
+                              {ballot.objections && ballot.objections.length > 0 && (
+                                <div className="text-[11px] text-rose-300 bg-rose-500/10 p-2 rounded border border-rose-500/20">
+                                  <span className="font-semibold block text-[10px] uppercase">Objections:</span>
+                                  {ballot.objections.join(' • ')}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Live ADR Synthesis Viewer */}
+                      {quorumResult.adr_markdown && (
+                        <div className="p-4 rounded-xl bg-background/80 border border-border space-y-3">
+                          <div className="flex items-center justify-between pb-2 border-b border-border">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-primary" />
+                              <span className="text-xs font-mono font-bold uppercase tracking-wider text-foreground">
+                                Live Architecture Decision Record (ADR)
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(quorumResult.adr_markdown);
+                                setCopiedAdr(true);
+                                setTimeout(() => setCopiedAdr(false), 2000);
+                              }}
+                              className="btn btn-ghost btn-xs text-xs gap-1"
+                            >
+                              {copiedAdr ? <Check className="h-3 w-3 text-emerald-400" /> : <FileText className="h-3 w-3" />}
+                              {copiedAdr ? 'Copied' : 'Copy ADR'}
+                            </button>
+                          </div>
+                          <pre className="text-[11px] font-mono text-muted-foreground whitespace-pre-wrap max-h-60 overflow-y-auto p-3 rounded-lg bg-secondary/30">
+                            {quorumResult.adr_markdown}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {!quorumResult && (
+                    <div className="p-12 rounded-2xl border border-dashed border-border text-center space-y-3">
+                      <Scale className="h-8 w-8 text-muted-foreground mx-auto opacity-50" />
+                      <h4 className="text-xs font-semibold text-foreground">No Quorum Evaluated Yet</h4>
+                      <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                        Select a voting model and click &quot;Execute Roll-Call&quot; to aggregate multi-perspective reviews into a binding consensus decision.
+                      </p>
                     </div>
                   )}
                 </div>

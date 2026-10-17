@@ -139,4 +139,54 @@ export const councilsApi = {
       `/api/v1/companies/${companyId}/councils/deliberations/${deliberationId}/decide`,
       body
     ),
+
+  evaluateQuorum: (
+    companyId: string,
+    councilId: string,
+    deliberationId: string,
+    body: {
+      voting_model: 'UNANIMOUS' | 'MAJORITY' | 'WEIGHTED' | 'VETO_ENABLED';
+      override_vote?: 'APPROVE' | 'REJECT' | 'VETO' | null;
+    }
+  ) =>
+    api.post<QuorumResult>(
+      `/api/v1/companies/${companyId}/councils/${councilId}/deliberations/${deliberationId}/quorum`,
+      body
+    ),
 };
+
+export type QuorumVotingModel = 'UNANIMOUS' | 'MAJORITY' | 'WEIGHTED' | 'VETO_ENABLED';
+export type VoteDecision = 'APPROVE' | 'REJECT' | 'ABSTAIN' | 'VETO';
+
+export interface MemberBallot {
+  member_id: string;
+  agent_name: string;
+  role_title: string;
+  perspective: string;
+  vote: VoteDecision;
+  vote_weight: number;
+  is_veto_holder: boolean;
+  rationale: string;
+  objections: string[];
+  mitigations_demanded: string[];
+}
+
+export interface QuorumResult {
+  deliberation_id: string;
+  council_id: string;
+  voting_model: QuorumVotingModel;
+  quorum_passed: boolean;
+  status: 'PASSED' | 'REJECTED' | 'VETOED' | 'TIE';
+  total_eligible_votes: number;
+  total_weight: number;
+  approve_weight: number;
+  reject_weight: number;
+  abstain_weight: number;
+  veto_exercised: boolean;
+  veto_by?: string | null;
+  veto_rationale?: string | null;
+  enactment_action_taken: string;
+  ballots: MemberBallot[];
+  adr_markdown: string;
+  ratified_at: string;
+}

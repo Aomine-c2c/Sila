@@ -50,10 +50,10 @@ export function OrganizationSwitcher() {
             aria-hidden="true"
           />
           <div
-            className="absolute left-0 top-full mt-1.5 z-50 w-64 rounded-xl border border-border bg-NEIMAN-surface shadow-2xl ring-1 ring-border p-1.5 space-y-1 animate-fade-in"
+            className="absolute left-0 top-full mt-1.5 z-50 w-64 rounded-lg border border-border bg-card shadow-2xl p-1.5 space-y-1 font-mono"
             role="listbox"
           >
-            <div className="px-2.5 py-1.5 text-[10px] font-mono tracking-wider text-muted-foreground uppercase border-b border-border/60">
+            <div className="px-2.5 py-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase border-b border-border">
               Organizations ({companies.length})
             </div>
 
@@ -66,10 +66,11 @@ export function OrganizationSwitcher() {
                     type="button"
                     role="option"
                     aria-selected={isSelected}
-                    className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-xs transition-colors ${isSelected
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'text-foreground/90 hover:bg-secondary/60'
-                      }`}
+                    className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors ${
+                      isSelected
+                        ? 'bg-secondary text-foreground font-bold'
+                        : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
+                    }`}
                     onClick={() => handleSelect(comp)}
                   >
                     <div className="min-w-0 flex items-center gap-2">

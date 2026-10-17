@@ -46,13 +46,13 @@ export function NotificationsCenter() {
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-2xl border border-border bg-NEIMAN-surface shadow-2xl ring-1 ring-border p-3 space-y-2 animate-fade-in">
-            <div className="flex items-center justify-between border-b border-border/60 pb-2 px-1">
+          <div className="absolute right-0 top-full mt-1.5 z-50 w-80 rounded-lg border border-border bg-card shadow-2xl p-3 space-y-2 font-mono text-xs">
+            <div className="flex items-center justify-between border-b border-border pb-2 px-1">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-foreground">Alerts & Approvals</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-foreground">Alerts & Gates</span>
                 {count > 0 && (
-                  <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-400">
-                    {count} pending
+                  <span className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.2 text-[9px] font-bold text-amber-500">
+                    {count} PENDING
                   </span>
                 )}
               </div>

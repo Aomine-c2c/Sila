@@ -12,6 +12,7 @@ interface MagneticGrainOrbProps {
   state?: ControlRoomState | null;
   onOpenDrawer?: (drawerId: string) => void;
   className?: string;
+  compact?: boolean;
 }
 
 interface SurfaceGrainMeta {
@@ -30,6 +31,7 @@ export function MagneticGrainOrb({
   state,
   onOpenDrawer,
   className = '',
+  compact = false,
 }: MagneticGrainOrbProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const activeCompany = useOrganizationContext();
@@ -108,13 +110,13 @@ export function MagneticGrainOrb({
     const container = mountRef.current;
     if (!container) return;
 
-    const width = 760;
-    const height = 500;
+    const width = compact ? 240 : (container.clientWidth || 560);
+    const height = compact ? 240 : (container.clientHeight || 380);
 
     // 1. Scene, Camera, Renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(46, width / height, 0.1, 1000);
-    camera.position.z = 210;
+    camera.position.z = compact ? 150 : 190;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
@@ -125,13 +127,14 @@ export function MagneticGrainOrb({
     container.appendChild(renderer.domElement);
 
     // 2. High-Density Fibonacci Sphere mapped to advancement particleCount
+    const actualParticleCount = compact ? Math.min(5400, particleCount) : particleCount;
     const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
-    const basePositions = new Float32Array(particleCount * 3);
-    const colors = new Float32Array(particleCount * 3);
-    const phases = new Float32Array(particleCount);
+    const positions = new Float32Array(actualParticleCount * 3);
+    const basePositions = new Float32Array(actualParticleCount * 3);
+    const colors = new Float32Array(actualParticleCount * 3);
+    const phases = new Float32Array(actualParticleCount);
 
-    const baseRadius = 68;
+    const baseRadius = compact ? 54 : 68;
 
     // Standard NEIMAN System Palette
     const cEmerald = new THREE.Color(0x10b981); // Completed
@@ -587,7 +590,7 @@ export function MagneticGrainOrb({
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-center select-none py-2 ${className}`}
+      className={`relative flex flex-col items-center justify-center select-none ${compact ? 'p-1' : 'py-2'} ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
@@ -595,9 +598,19 @@ export function MagneticGrainOrb({
       }}
     >
       {/* 3D THREE.JS ACCRETION SPHERE CONTAINER */}
-      <div className="relative w-[340px] sm:w-[500px] md:w-[650px] xl:w-[760px] h-[360px] sm:h-[440px] xl:h-[500px] flex items-center justify-center overflow-visible">
-        {/* Subtle, soft theme-adaptive ambient halo glow */}
-        <div className="pointer-events-none absolute h-[260px] w-[260px] xl:h-[340px] xl:w-[340px] rounded-full bg-primary/5 dark:bg-sky-500/10 blur-3xl opacity-60" />
+      <div
+        className={`relative flex items-center justify-center overflow-visible ${
+          compact
+            ? 'w-[240px] h-[240px]'
+            : 'w-[320px] sm:w-[440px] md:w-[520px] xl:w-[560px] h-[300px] sm:h-[350px] xl:h-[380px]'
+        }`}
+      >
+        {/* Subtle ambient halo glow */}
+        <div
+          className={`pointer-events-none absolute rounded-full bg-primary/10 dark:bg-sky-500/15 blur-2xl opacity-70 ${
+            compact ? 'h-[160px] w-[160px]' : 'h-[220px] w-[220px] xl:h-[280px] xl:w-[280px]'
+          }`}
+        />
 
         {/* Three.js canvas container */}
         <div
@@ -656,54 +669,56 @@ export function MagneticGrainOrb({
       </div>
 
       {/* Live Telemetry Status & Multi-Segment Grain Accretion Pill */}
-      <div className="min-h-[42px] mt-2 flex flex-col sm:flex-row items-center justify-center gap-2 z-20 font-mono">
-        {latestAudit ? (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground/90 bg-card/75 backdrop-blur-md px-3 py-1 rounded-full border border-border/50 shadow-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#D71921] animate-ping" />
-            <span>Audit: {latestAudit.actor_name || 'Agent'} — {latestAudit.action}</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground/75 bg-card/60 backdrop-blur-md px-3 py-1 rounded-full border border-border/40 shadow-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className={accretionTier.color}>{accretionTier.name}</span>
-            <span className="text-muted-foreground/60">({advancementPct}% Advancement)</span>
-          </div>
-        )}
-
-        {/* Work Distribution Breakdown Pill with Total Grain Count */}
-        <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground/80 bg-background/70 backdrop-blur-md px-3 py-1 rounded-full border border-border/40">
-          <span className="flex items-center gap-1.5">
-            <span className="text-foreground font-semibold">
-              {particleCount.toLocaleString()}
-            </span>{' '}
-            Grains
-          </span>
-          <span className="text-border">·</span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span className="text-foreground font-semibold">{completedCount}</span> Done
-          </span>
-          <span className="text-border">·</span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
-            <span className="text-foreground font-semibold">{inProgressCount}</span> Active
-          </span>
-          <span className="text-border">·</span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-            <span className="text-foreground font-semibold">{pendingTasksCount}</span> Backlog
-          </span>
-          {pendingApprovalsCount > 0 && (
-            <>
-              <span className="text-border">·</span>
-              <span className="flex items-center gap-1.5 text-[#D71921]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#D71921] animate-ping" />
-                <span className="font-bold">{pendingApprovalsCount}</span> Sign-Off
-              </span>
-            </>
+      {!compact && (
+        <div className="mt-1 flex flex-col sm:flex-row items-center justify-center gap-1.5 z-20 font-mono text-[10px]">
+          {latestAudit ? (
+            <div className="flex items-center gap-1.5 text-muted-foreground bg-card/90 px-2.5 py-0.5 rounded border border-border">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#D71921] animate-ping" />
+              <span>Audit: {latestAudit.actor_name || 'Agent'} — {latestAudit.action}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-muted-foreground bg-card/90 px-2.5 py-0.5 rounded border border-border">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className={accretionTier.color}>{accretionTier.name}</span>
+              <span className="text-muted-foreground">({advancementPct}%)</span>
+            </div>
           )}
+
+          {/* Work Distribution Breakdown Pill with Total Grain Count */}
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground bg-secondary/60 px-2.5 py-0.5 rounded border border-border">
+            <span className="flex items-center gap-1.5">
+              <span className="text-foreground font-semibold">
+                {particleCount.toLocaleString()}
+              </span>{' '}
+              Grains
+            </span>
+            <span className="text-border">·</span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="text-foreground font-semibold">{completedCount}</span> Done
+            </span>
+            <span className="text-border">·</span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
+              <span className="text-foreground font-semibold">{inProgressCount}</span> Active
+            </span>
+            <span className="text-border">·</span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+              <span className="text-foreground font-semibold">{pendingTasksCount}</span> Backlog
+            </span>
+            {pendingApprovalsCount > 0 && (
+              <>
+                <span className="text-border">·</span>
+                <span className="flex items-center gap-1.5 text-[#D71921]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#D71921] animate-ping" />
+                  <span className="font-bold">{pendingApprovalsCount}</span> Sign-Off
+                </span>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

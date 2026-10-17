@@ -106,8 +106,8 @@ export function SystemResourcePill({ onOpenDrawer }: SystemResourcePillProps) {
 
       {/* Popover Flyout */}
       {popoverOpen && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-xl border border-border bg-card/95 p-4 shadow-2xl backdrop-blur-xl animate-in fade-in-50 zoom-in-95">
-          <div className="flex items-center justify-between pb-3 border-b border-border/60">
+        <div className="absolute right-0 top-full mt-1.5 z-50 w-80 rounded-lg border border-border bg-card p-3.5 shadow-2xl animate-in fade-in-50 zoom-in-95">
+          <div className="flex items-center justify-between pb-2.5 border-b border-border">
             <div className="flex items-center gap-2">
               <Activity className="h-4 w-4 text-primary" />
               <span className="text-xs font-bold text-foreground uppercase tracking-wider">
@@ -115,7 +115,7 @@ export function SystemResourcePill({ onOpenDrawer }: SystemResourcePillProps) {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-[10px] text-muted-foreground font-bold">
                 {previewMode ? 'SYNTHETIC' : 'LIVE'}
               </span>
               <button

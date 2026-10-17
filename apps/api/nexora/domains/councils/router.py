@@ -158,3 +158,51 @@ async def ratify_deliberation_decision(
         user_id=current_user.id,
         record_in_memory=body.record_in_memory,
     )
+
+
+# -------------------------------------------------------------
+# DYNAMIC QUORUM CONSENSUS ENGINE
+# -------------------------------------------------------------
+from pydantic import BaseModel, Field
+from nexora.domains.councils.quorum_engine import QuorumEngine, QuorumResult, QuorumVotingModel
+
+
+class QuorumEvaluateRequest(BaseModel):
+    voting_model: QuorumVotingModel = Field(
+        default=QuorumVotingModel.WEIGHTED,
+        description="Consensus model: UNANIMOUS, MAJORITY, WEIGHTED, or VETO_ENABLED",
+    )
+    override_vote: str | None = Field(
+        default=None,
+        description="Optional manual executive override stance: APPROVE, REJECT, or VETO",
+    )
+
+
+@router.post(
+    "/{council_id}/deliberations/{deliberation_id}/quorum",
+    response_model=QuorumResult,
+    status_code=status.HTTP_200_OK,
+)
+async def evaluate_deliberation_quorum(
+    company_id: uuid.UUID,
+    council_id: uuid.UUID,
+    deliberation_id: uuid.UUID,
+    body: QuorumEvaluateRequest,
+    current_user: CurrentUser,
+    db: DB,
+    _: None = Depends(require_manager()),
+):
+    """
+    Executes a formal roll-call vote under the selected Quorum Voting Model
+    (Unanimous, Majority, Seniority-Weighted, or Veto-Enabled).
+    Generates immutable ADR, commits dissent to memory, and executes autonomous dispatch.
+    """
+    engine = QuorumEngine(db)
+    return await engine.execute_council_quorum(
+        council_id=council_id,
+        deliberation_id=deliberation_id,
+        company_id=company_id,
+        voting_model=body.voting_model,
+        override_vote=body.override_vote,
+    )
+

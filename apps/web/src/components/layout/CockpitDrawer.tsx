@@ -70,12 +70,12 @@ export function CockpitDrawer({
         ref={drawerRef}
         className={`relative flex w-full ${
           isMaximized ? 'h-[96vh] max-w-[98vw]' : `${widthClass} h-[86vh] max-h-[850px]`
-        } flex-col rounded-2xl border border-border/50 bg-background/90 dark:bg-card/90 shadow-2xl backdrop-blur-2xl transition-all duration-200 ease-out animate-in fade-in zoom-in-95`}
+        } flex-col rounded-lg border border-border bg-card shadow-2xl transition-all duration-150 ease-out animate-in fade-in zoom-in-95`}
       >
-        {/* Floating Glass Modal Header */}
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-border/40 px-6 font-mono">
+        {/* Flat Industrial Modal Header */}
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-5 font-mono bg-secondary/30">
           <div className="flex items-center gap-3">
-            <span className="h-2 w-2 rounded-full bg-[#D71921] shadow-[0_0_8px_#D71921]" />
+            <span className="h-2 w-2 rounded-full bg-[#D71921]" />
             <div>
               <div className="flex items-center gap-2">
                 {categoryTag && (
@@ -95,13 +95,13 @@ export function CockpitDrawer({
             </div>
           </div>
 
-          {/* Floating Action Pills */}
-          <div className="flex items-center gap-1.5 bg-secondary/40 backdrop-blur-md p-1 rounded-full border border-border/40">
+          {/* Action Pills */}
+          <div className="flex items-center gap-1 bg-background p-0.5 rounded border border-border">
             {/* Direct Full-Page Standalone Link */}
             {fullPageHref && (
               <Link
                 href={fullPageHref}
-                className="rounded-full p-1.5 text-muted-foreground hover:bg-background hover:text-foreground transition-all"
+                className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
                 title="Open as Standalone Page"
                 onClick={onClose}
               >
@@ -113,7 +113,7 @@ export function CockpitDrawer({
             <button
               type="button"
               onClick={() => setIsMaximized((prev) => !prev)}
-              className="rounded-full p-1.5 text-muted-foreground hover:bg-background hover:text-foreground transition-all"
+              className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
               title={isMaximized ? 'Restore Size' : 'Maximize Console'}
               aria-label="Toggle modal expansion"
             >
@@ -128,7 +128,7 @@ export function CockpitDrawer({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full p-1.5 text-muted-foreground hover:bg-[#D71921] hover:text-white transition-all"
+              className="rounded p-1 text-muted-foreground hover:bg-[#D71921] hover:text-white transition-all"
               aria-label="Close modal (Escape)"
               title="Close (Esc)"
             >
@@ -138,7 +138,7 @@ export function CockpitDrawer({
         </div>
 
         {/* Modal Content Canvas */}
-        <div className="flex-1 overflow-y-auto p-6 select-text font-mono">
+        <div className="flex-1 overflow-y-auto p-5 select-text font-mono">
           {children}
         </div>
       </div>

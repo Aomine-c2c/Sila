@@ -40,24 +40,36 @@ class IntelligenceService:
         from nexora.domains.intelligence.catalog import UNIVERSAL_PROVIDER_CATALOG
 
         result = await self.db.execute(select(ModelProvider))
-        existing_providers = {p.name: p for p in result.scalars().all() if p is not None and getattr(p, 'name', None)}
+        existing_providers = {
+            p.name: p for p in result.scalars().all() if p is not None and getattr(p, "name", None)
+        }
 
         for item in UNIVERSAL_PROVIDER_CATALOG:
-            if item["name"] not in existing_providers:
-                p = ModelProvider(
-                    name=item["name"],
-                    display_name=item["display_name"],
-                    description=item.get("description"),
-                    website_url=item.get("website_url"),
-                    base_url=item.get("base_url"),
-                    is_local=item.get("is_local", False),
-                    is_configured=bool(item.get("is_local")),
-                    is_healthy=bool(item.get("is_local")),
-                )
-                self.db.add(p)
-                existing_providers[item["name"]] = p
-
-        await self.db.flush()
+            name = item["name"]
+            if name not in existing_providers:
+                # Re-check database directly to prevent race conditions across parallel requests
+                check_stmt = select(ModelProvider).where(ModelProvider.name == name)
+                check_res = await self.db.execute(check_stmt)
+                existing = check_res.scalar_one_or_none()
+                if not existing:
+                    p = ModelProvider(
+                        name=name,
+                        display_name=item["display_name"],
+                        description=item.get("description"),
+                        website_url=item.get("website_url"),
+                        base_url=item.get("base_url"),
+                        is_local=item.get("is_local", False),
+                        is_configured=bool(item.get("is_local")),
+                        is_healthy=bool(item.get("is_local")),
+                    )
+                    self.db.add(p)
+                    try:
+                        await self.db.flush()
+                        existing_providers[name] = p
+                    except Exception:
+                        await self.db.rollback()
+                else:
+                    existing_providers[name] = existing
 
         # Seed initial models if models table is empty
         m_count = await self.db.scalar(select(func.count(Model.id)))
